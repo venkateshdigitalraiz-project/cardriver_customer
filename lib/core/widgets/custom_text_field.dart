@@ -19,6 +19,7 @@ class CustomTextField extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final bool autofocus;
   final bool enabled;
+  final bool readOnly;
   final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextField({
@@ -37,6 +38,7 @@ class CustomTextField extends StatefulWidget {
     this.validator,
     this.autofocus = false,
     this.enabled = true,
+    this.readOnly = false,
     this.inputFormatters,
   });
 
@@ -126,6 +128,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             validator: widget.validator,
             autofocus: widget.autofocus,
             enabled: widget.enabled,
+            readOnly: widget.readOnly,
             inputFormatters: widget.inputFormatters,
             style: AppTypography.bodyLarge.copyWith(
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,

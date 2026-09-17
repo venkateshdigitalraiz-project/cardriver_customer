@@ -33,7 +33,6 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-
   void _onSubmit(LoginState state) {
     String? errorMsg;
     if (state.mode == LoginMode.phone) {
@@ -41,7 +40,7 @@ class _LoginFormState extends State<LoginForm> {
     } else {
       errorMsg = Validators.validateEmail(_emailController.text.trim());
     }
-    
+
     if (state.isOtpSent) {
       errorMsg ??= Validators.validateOtp(_passwordController.text);
     }
@@ -52,12 +51,19 @@ class _LoginFormState extends State<LoginForm> {
           content: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   errorMsg,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -65,36 +71,33 @@ class _LoginFormState extends State<LoginForm> {
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFD32F2F), // Premium soft red
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.only(
-            bottom: 32, 
-            left: 24, 
-            right: 24,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
+          margin: const EdgeInsets.only(bottom: 32, left: 24, right: 24),
         ),
       );
       return;
     }
 
-    final contact = state.mode == LoginMode.phone 
-        ? _phoneController.text.trim() 
+    final contact = state.mode == LoginMode.phone
+        ? _phoneController.text.trim()
         : _emailController.text.trim();
 
     if (!state.isOtpSent) {
       context.read<LoginBloc>().add(SendOtpRequested(contact: contact));
     } else {
       context.read<LoginBloc>().add(
-        VerifyOtpSubmitted(
-          contact: contact,
-          otp: _passwordController.text,
-        ),
+        VerifyOtpSubmitted(contact: contact, otp: _passwordController.text),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark && MediaQuery.of(context).size.width == 0; // Forced light theme
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark &&
+        MediaQuery.of(context).size.width == 0; // Forced light theme
 
     return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
@@ -113,7 +116,7 @@ class _LoginFormState extends State<LoginForm> {
                   hintText: 'Enter your phone number',
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
-                  enabled: !state.isOtpSent,
+                  readOnly: state.isOtpSent,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
@@ -148,6 +151,13 @@ class _LoginFormState extends State<LoginForm> {
                       ],
                     ),
                   ),
+                  suffixIcon: state.isOtpSent
+                      ? IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                          onPressed: () => context.read<LoginBloc>().add(const ResetLoginState()),
+                          tooltip: 'Change mobile number',
+                        )
+                      : null,
                 ),
               ] else ...[
                 CustomTextField(
@@ -156,8 +166,15 @@ class _LoginFormState extends State<LoginForm> {
                   hintText: 'name@example.com',
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  enabled: !state.isOtpSent,
+                  readOnly: state.isOtpSent,
                   prefixIcon: const Icon(Icons.mail_outline_rounded),
+                  suffixIcon: state.isOtpSent
+                      ? IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                          onPressed: () => context.read<LoginBloc>().add(const ResetLoginState()),
+                          tooltip: 'Change email address',
+                        )
+                      : null,
                 ),
               ],
 
@@ -166,51 +183,74 @@ class _LoginFormState extends State<LoginForm> {
               if (state.isOtpSent) ...[
                 // OTP Input Field
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
+                  padding: const EdgeInsets.only(bottom: 12.0),
                   child: Text(
                     'Enter 4-Digit OTP',
                     style: AppTypography.labelMedium.copyWith(
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                Pinput(
-                  controller: _passwordController,
-                  length: 4,
-                  onSubmitted: (_) => _onSubmit(state),
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  defaultPinTheme: PinTheme(
-                    width: 64,
-                    height: 64,
-                    textStyle: const TextStyle(fontSize: 24, color: Colors.black, fontWeight: FontWeight.w700),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.inputFillDark : Colors.white,
-                      border: Border.all(
-                        color: isDark ? AppColors.inputBorderDark : AppColors.inputBorderLight,
+                Center(
+                  child: Pinput(
+                    controller: _passwordController,
+                    length: 4,
+                    onSubmitted: (_) => _onSubmit(state),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    separatorBuilder: (index) => const SizedBox(width: 16),
+                    defaultPinTheme: PinTheme(
+                      width: 56,
+                      height: 56,
+                      textStyle: const TextStyle(
+                        fontSize: 20,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  focusedPinTheme: PinTheme(
-                    width: 64,
-                    height: 64,
-                    textStyle: const TextStyle(fontSize: 24, color: Colors.black, fontWeight: FontWeight.w700),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceElevatedDark : Colors.white,
-                      border: Border.all(
-                        color: isDark ? AppColors.primary : AppColors.primaryDark, 
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isDark ? AppColors.primary : AppColors.primaryDark).withValues(alpha: 0.15),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.inputFillDark : Colors.white,
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.inputBorderDark
+                              : AppColors.inputBorderLight,
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    focusedPinTheme: PinTheme(
+                      width: 56,
+                      height: 56,
+                      textStyle: const TextStyle(
+                        fontSize: 20,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.surfaceElevatedDark
+                            : Colors.white,
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.primary
+                              : AppColors.primaryDark,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                (isDark
+                                        ? AppColors.primary
+                                        : AppColors.primaryDark)
+                                    .withValues(alpha: 0.15),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -268,9 +308,9 @@ class _LoginFormState extends State<LoginForm> {
                       onPressed: () {
                         context.read<LoginBloc>().add(
                           SendOtpRequested(
-                            contact: state.mode == LoginMode.phone 
-                                ? _phoneController.text.trim() 
-                                : _emailController.text.trim()
+                            contact: state.mode == LoginMode.phone
+                                ? _phoneController.text.trim()
+                                : _emailController.text.trim(),
                           ),
                         );
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -279,22 +319,33 @@ class _LoginFormState extends State<LoginForm> {
                             content: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                                Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8),
                                 Flexible(
                                   child: Text(
                                     'A new OTP has been sent.',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            backgroundColor: const Color(0xFF1E1E1E), // Premium dark grey
+                            backgroundColor: const Color(
+                              0xFF1E1E1E,
+                            ), // Premium dark grey
                             elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             margin: const EdgeInsets.only(
-                              bottom: 32, 
-                              left: 24, 
+                              bottom: 32,
+                              left: 24,
                               right: 24,
                             ),
                           ),

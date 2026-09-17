@@ -41,7 +41,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   void _onResetLoginState(ResetLoginState event, Emitter<LoginState> emit) {
-    emit(state.copyWith(status: LoginStatus.initial, clearError: true));
+    emit(state.copyWith(status: LoginStatus.initial, clearError: true, isOtpSent: false));
   }
 
   Future<void> _onSendOtpRequested(SendOtpRequested event, Emitter<LoginState> emit) async {
