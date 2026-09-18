@@ -8,6 +8,7 @@ import '../bloc/login_bloc.dart';
 import '../bloc/login_event.dart';
 import '../bloc/login_state.dart';
 import '../widgets/login_form.dart';
+import '../../../main_navigation/presentation/pages/main_page.dart';
 
 class LoginPage extends StatelessWidget {
   final VoidCallback? onToggleTheme;
@@ -135,6 +136,12 @@ class LoginPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.pop(bottomSheetContext);
                       context.read<LoginBloc>().add(const ResetLoginState());
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MainPage(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
