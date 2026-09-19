@@ -16,167 +16,7 @@ class LoginPage extends StatelessWidget {
 
   const LoginPage({super.key, this.onToggleTheme, this.isDarkMode = true});
 
-  void _showSuccessBottomSheet(BuildContext context, LoginState state) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark &&
-        MediaQuery.of(context).size.width == 0; // Forced light theme
-    final user = state.user;
-
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppDimens.radiusXLarge),
-        ),
-      ),
-      builder: (bottomSheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimens.p24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 64,
-                  width: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppColors.primaryGradient,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF11141A),
-                      size: 38,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppDimens.p16),
-                Text(
-                  'Welcome, ${user?.name ?? 'David Sterling'}!',
-                  style: AppTypography.titleLarge.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppDimens.p4),
-                Text(
-                  '${user?.memberTier ?? 'Elite Gold Customer'} • Authenticated',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: AppDimens.p16),
-                Container(
-                  padding: const EdgeInsets.all(AppDimens.p12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: AppDimens.borderRadiusMedium,
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.card_giftcard_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppDimens.p12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '\$25 Chauffeur Credit Applied',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: isDark
-                                    ? AppColors.primaryLight
-                                    : AppColors.primaryDark,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              'Auto-applied to your next hourly or outstation ride',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppDimens.p20),
-                SizedBox(
-                  width: double.infinity,
-                  height: AppDimens.buttonHeight,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(bottomSheetContext);
-                      context.read<LoginBloc>().add(const ResetLoginState());
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainPage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: const Color(0xFF11141A),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: AppDimens.borderRadiusMedium,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Search Nearby Drivers',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: const Color(0xFF11141A),
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(width: AppDimens.p8),
-                        const Icon(
-                          Icons.search_rounded,
-                          size: 20,
-                          color: Color(0xFF11141A),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Bottom sheet removed as per user request to navigate directly
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +53,11 @@ class LoginPage extends StatelessWidget {
             ),
           );
         } else if (state.status == LoginStatus.success) {
-          _showSuccessBottomSheet(context, state);
+          context.read<LoginBloc>().add(const ResetLoginState());
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainPage()),
+          );
         }
       },
       child: Scaffold(

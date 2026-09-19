@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import '../../../../core/theme/app_colors.dart';
 // import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'login_page.dart';
 
 class CustomerDashboardPage extends StatefulWidget {
   const CustomerDashboardPage({super.key});
@@ -62,10 +63,7 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF26262B), // Dark app bar from reference
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Drive You Daily',
           style: AppTypography.titleMedium.copyWith(
@@ -78,6 +76,16 @@ class _CustomerDashboardPageState extends State<CustomerDashboardPage> {
           IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.white),
             onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
+            },
           ),
         ],
       ),

@@ -53,11 +53,11 @@ class _MainPageView extends StatelessWidget {
               onTap: (index) {
                 context.read<NavigationBloc>().add(TabChanged(index));
               },
-              backgroundColor: Colors.white,
+              backgroundColor: Colors.blue.withOpacity(0.2),
               elevation: 0,
               type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.green,
-              unselectedItemColor: Colors.black38,
+              selectedItemColor: Colors.orange, // Maximum visibility
+              unselectedItemColor: Colors.white70,
               selectedLabelStyle: AppTypography.labelMedium.copyWith(
                 fontWeight: FontWeight.w800,
               ),

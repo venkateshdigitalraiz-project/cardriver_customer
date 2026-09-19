@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_event.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -76,15 +77,15 @@ class _HomePageView extends StatelessWidget {
                       Stack(
                         alignment: Alignment.center,
                         children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: IconButton(
-                              icon: const Icon(Icons.menu, color: Colors.white),
-                              onPressed: () {},
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ),
+                          // Align(
+                          //   alignment: Alignment.centerLeft,
+                          //   child: IconButton(
+                          //     icon: const Icon(Icons.menu, color: Colors.white),
+                          //     onPressed: () {},
+                          //     padding: EdgeInsets.zero,
+                          //     constraints: const BoxConstraints(),
+                          //   ),
+                          // ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -111,7 +112,7 @@ class _HomePageView extends StatelessWidget {
                                   ),
                                   children: [
                                     TextSpan(
-                                      text: 'on Hire',
+                                      text: ' on Hire',
                                       style: AppTypography.titleMedium.copyWith(
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white70,
@@ -121,6 +122,26 @@ class _HomePageView extends StatelessWidget {
                                 ),
                               ),
                             ],
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
                           ),
                         ],
                       ),
@@ -244,7 +265,9 @@ class _HomePageView extends StatelessWidget {
                           margin: const EdgeInsets.all(8),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF266475), // Dark teal from image
+                            color: const Color(
+                              0xFF266475,
+                            ), // Dark teal from image
                             borderRadius: BorderRadius.circular(30),
                           ),
                           alignment: Alignment.center,
@@ -432,17 +455,21 @@ class _HomePageView extends StatelessWidget {
         child: Stack(
           children: [
             // IMAGE LAYER (Bottom Layer)
-            // By filling the bounds and using BoxFit.contain, we guarantee the image 
-            // scales to the absolute maximum physical size allowed by the card's width/height 
+            // By filling the bounds and using BoxFit.contain, we guarantee the image
+            // scales to the absolute maximum physical size allowed by the card's width/height
             // without ever clipping or overflowing.
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              top: isSmallHeight ? 0 : 30, // For schedule card, give a small top margin to prevent head from going too high
+              top: isSmallHeight
+                  ? 0
+                  : 30, // For schedule card, give a small top margin to prevent head from going too high
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: isSmallHeight ? 8.0 : 0.0, // Slight right padding for small cards so they don't hit the exact edge
+                  right: isSmallHeight
+                      ? 8.0
+                      : 0.0, // Slight right padding for small cards so they don't hit the exact edge
                   bottom: isSmallHeight ? 8.0 : 0.0,
                 ),
                 child: Image.asset(
@@ -459,7 +486,7 @@ class _HomePageView extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // TEXT LAYER (Top Layer)
             // Drawn on top, so it is mathematically impossible for the image to cover the text
             Positioned(
