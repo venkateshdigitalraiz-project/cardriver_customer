@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -103,47 +105,63 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
 
                           if (value) {
                             try {
-                              bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                              bool serviceEnabled =
+                                  await Geolocator.isLocationServiceEnabled();
                               if (!serviceEnabled) {
-                                throw Exception('Location services are disabled.');
+                                throw Exception(
+                                  'Location services are disabled.',
+                                );
                               }
 
-                              LocationPermission permission = await Geolocator.checkPermission();
+                              LocationPermission permission =
+                                  await Geolocator.checkPermission();
                               if (permission == LocationPermission.denied) {
-                                permission = await Geolocator.requestPermission();
+                                permission =
+                                    await Geolocator.requestPermission();
                                 if (permission == LocationPermission.denied) {
-                                  throw Exception('Location permissions are denied');
+                                  throw Exception(
+                                    'Location permissions are denied',
+                                  );
                                 }
                               }
-                              
-                              if (permission == LocationPermission.deniedForever) {
-                                throw Exception('Location permissions are permanently denied');
+
+                              if (permission ==
+                                  LocationPermission.deniedForever) {
+                                throw Exception(
+                                  'Location permissions are permanently denied',
+                                );
                               }
 
-                              Position position = await Geolocator.getCurrentPosition(
-                                desiredAccuracy: LocationAccuracy.high
-                              );
-                              
+                              Position position =
+                                  await Geolocator.getCurrentPosition(
+                                    desiredAccuracy: LocationAccuracy.high,
+                                  );
+
                               currentLat = position.latitude;
                               currentLng = position.longitude;
 
-                              List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
-                                position.latitude,
-                                position.longitude,
-                              );
+                              List<Placemark> placemarks = await Geocoding()
+                                  .placemarkFromCoordinates(
+                                    position.latitude,
+                                    position.longitude,
+                                  );
 
                               if (placemarks.isNotEmpty) {
                                 Placemark place = placemarks[0];
-                                String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+                                String address =
+                                    '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
                                 // Clean up any empty parts
-                                address = address.replaceAll(RegExp(r'^, |, $'), '').replaceAll(', ,', ',');
+                                address = address
+                                    .replaceAll(RegExp(r'^, |, $'), '')
+                                    .replaceAll(', ,', ',');
                                 setModalState(() {
                                   addressController.text = address;
                                 });
                               }
                             } catch (e) {
                               setModalState(() {
-                                addressController.text = "Error getting location: ${e.toString()}";
+                                addressController.text =
+                                    "Error getting location: ${e.toString()}";
                                 isCurrentLocation = false;
                               });
                             }
@@ -202,9 +220,15 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
                         }
 
                         String finalAddress = addressController.text.trim();
-                        if (finalAddress.isEmpty || finalAddress.startsWith("Fetching") || finalAddress.startsWith("Error")) {
+                        if (finalAddress.isEmpty ||
+                            finalAddress.startsWith("Fetching") ||
+                            finalAddress.startsWith("Error")) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter a valid address or wait for GPS')),
+                            const SnackBar(
+                              content: Text(
+                                'Please enter a valid address or wait for GPS',
+                              ),
+                            ),
                           );
                           return;
                         }
@@ -213,7 +237,9 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
                           id: DateTime.now().millisecondsSinceEpoch.toString(),
                           name: finalName,
                           address: finalAddress,
-                          latitude: currentLat ?? 12.9716, // Use real if available, else mock
+                          latitude:
+                              currentLat ??
+                              12.9716, // Use real if available, else mock
                           longitude: currentLng ?? 77.5946,
                           isCurrentLocation: isCurrentLocation,
                         );
@@ -222,7 +248,7 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
                         context.read<LocationBloc>().add(
                           AddLocation(newLocation),
                         );
-                        
+
                         // Close bottom sheet and SavedLocationsPage to return to Profile
                         Navigator.of(context)
                           ..pop()

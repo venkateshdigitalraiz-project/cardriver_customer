@@ -10,6 +10,7 @@ import '../../../tickets/presentation/pages/tickets_page.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../locations/presentation/pages/saved_locations_page.dart';
 import '../../../locations/presentation/bloc/location_bloc.dart';
+import '../../../locations/presentation/bloc/location_event.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -178,7 +179,7 @@ class ProfileView extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => BlocProvider(
-                                    create: (context) => LocationBloc(),
+                                    create: (context) => LocationBloc()..add(LoadLocations()),
                                     child: const SavedLocationsPage(),
                                   ),
                                 ),

@@ -4,6 +4,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_event.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../drivers/domain/entities/driver_search_type.dart';
+import '../../../drivers/presentation/pages/driver_list_screen.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -36,6 +38,8 @@ class _HomePageView extends StatelessWidget {
             const SizedBox(height: 120), // Space for the floating card
             // "For You" Staggered Grid
             _buildStaggeredGrid(context),
+            const SizedBox(height: 24),
+            _buildLocalOutstationSection(context),
             const SizedBox(height: 32),
 
             // "Suggestions" Carousel
@@ -439,7 +443,7 @@ class _HomePageView extends StatelessWidget {
       },
       child: Container(
         height: height,
-        clipBehavior: Clip.antiAlias, // Clip image to border radius
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -454,22 +458,15 @@ class _HomePageView extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // IMAGE LAYER (Bottom Layer)
-            // By filling the bounds and using BoxFit.contain, we guarantee the image
-            // scales to the absolute maximum physical size allowed by the card's width/height
-            // without ever clipping or overflowing.
+            // IMAGE LAYER
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              top: isSmallHeight
-                  ? 0
-                  : 30, // For schedule card, give a small top margin to prevent head from going too high
+              top: isSmallHeight ? 0 : 30,
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: isSmallHeight
-                      ? 8.0
-                      : 0.0, // Slight right padding for small cards so they don't hit the exact edge
+                  right: isSmallHeight ? 8.0 : 0.0,
                   bottom: isSmallHeight ? 8.0 : 0.0,
                 ),
                 child: Image.asset(
@@ -486,9 +483,7 @@ class _HomePageView extends StatelessWidget {
                 ),
               ),
             ),
-
-            // TEXT LAYER (Top Layer)
-            // Drawn on top, so it is mathematically impossible for the image to cover the text
+            // TEXT LAYER
             Positioned(
               top: 0,
               left: 0,
@@ -504,7 +499,6 @@ class _HomePageView extends StatelessWidget {
                       child: Text(
                         title,
                         maxLines: 1,
-                        // Removed ellipsis so FittedBox forces it to scale down instead of truncating
                         style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.black87,
@@ -532,6 +526,194 @@ class _HomePageView extends StatelessWidget {
       ),
     );
   }
+
+  // Verified Drivers section containing attached Local and Outstation cards
+  Widget _buildLocalOutstationSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Verified Drivers Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE8F5E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.verified_user_rounded,
+                    color: Color(0xFF2E7D32),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Professional & Police Verified Drivers',
+                        style: AppTypography.labelLarge.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black87,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Experienced drivers for your safe journey',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: Colors.black54,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // Attached Local and Outstation Cards
+            Row(
+              children: [
+                // Local Card
+                Expanded(
+                  child: _buildServiceOptionCard(
+                    context: context,
+                    title: 'Local',
+                    subtitle: 'Within city rides',
+                    icon: Icons.directions_car_filled_rounded,
+                    primaryColor: const Color(0xFF266475),
+                    bgColor: const Color(0xFFF2F8F9),
+                    imagePath: 'assets/images/local.png',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DriverListScreen(
+                            searchType: DriverSearchType.local,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Outstation Card
+                Expanded(
+                  child: _buildServiceOptionCard(
+                    context: context,
+                    title: 'Outstation',
+                    subtitle: 'Intercity trips',
+                    icon: Icons.alt_route_rounded,
+                    primaryColor: const Color(0xFFE65100),
+                    bgColor: const Color(0xFFFFF3E0),
+                    imagePath: 'assets/images/outstation.png',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DriverListScreen(
+                            searchType: DriverSearchType.outstation,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceOptionCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color primaryColor,
+    required Color bgColor,
+    required String imagePath,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: primaryColor.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: primaryColor,
+                    size: 22,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: primaryColor.withValues(alpha: 0.6),
+                  size: 18,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTypography.bodySmall.copyWith(
+                color: Colors.black54,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildSuggestionsSection(BuildContext context) {
     return Column(
