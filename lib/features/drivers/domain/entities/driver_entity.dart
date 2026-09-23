@@ -13,6 +13,7 @@ class DriverEntity extends Equatable {
   final String carType;
   final double rating;
   final double distance; // Distance from current location in KM
+  final double price; // Rate per hour/trip in INR
 
   const DriverEntity({
     required this.driverId,
@@ -26,6 +27,7 @@ class DriverEntity extends Equatable {
     required this.carType,
     required this.rating,
     required this.distance,
+    this.price = 250.0,
   });
 
   DriverEntity copyWith({
@@ -40,6 +42,7 @@ class DriverEntity extends Equatable {
     String? carType,
     double? rating,
     double? distance,
+    double? price,
   }) {
     return DriverEntity(
       driverId: driverId ?? this.driverId,
@@ -53,6 +56,7 @@ class DriverEntity extends Equatable {
       carType: carType ?? this.carType,
       rating: rating ?? this.rating,
       distance: distance ?? this.distance,
+      price: price ?? this.price,
     );
   }
 
@@ -69,5 +73,6 @@ class DriverEntity extends Equatable {
         carType,
         rating,
         distance,
+        price,
       ];
 }

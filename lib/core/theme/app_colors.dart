@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  /// Alias: same as textPrimaryLight
+  static const Color textPrimary = textPrimaryLight;
+  /// Alias: same as textSecondaryLight
+  static const Color textSecondary = textSecondaryLight;
+
   // Primary Brand Accents (Luxury Amber Gold & Cyber Yellow)
   static const Color primary = Color(0xFFFFB800);
   static const Color primaryDark = Color(0xFFE69500);

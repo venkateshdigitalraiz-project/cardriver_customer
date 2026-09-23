@@ -5,7 +5,10 @@ import 'navigation_state.dart';
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   NavigationBloc() : super(NavigationInitial(tabIndex: 0)) {
     on<TabChanged>((event, emit) {
-      emit(NavigationInitial(tabIndex: event.tabIndex));
+      emit(NavigationInitial(
+        tabIndex: event.tabIndex,
+        searchType: event.searchType,
+      ));
     });
   }
 }

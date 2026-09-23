@@ -10,7 +10,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
     // Simulate network API call latency
     await Future.delayed(const Duration(milliseconds: 600));
 
-    // Realistic driver dataset with locations near/far from Hyderabad (17.4850, 78.3887)
+    // Realistic driver dataset with locations & prices
     return const [
       // Local drivers (distance <= 100 KM)
       DriverModel(
@@ -25,6 +25,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'Sedan',
         rating: 4.8,
         distance: 5.2,
+        price: 200.0,
       ),
       DriverModel(
         driverId: 'drv_102',
@@ -38,6 +39,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'Sedan',
         rating: 4.9,
         distance: 12.5,
+        price: 250.0,
       ),
       DriverModel(
         driverId: 'drv_103',
@@ -51,6 +53,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'Sedan Premium',
         rating: 4.7,
         distance: 24.0,
+        price: 350.0,
       ),
       DriverModel(
         driverId: 'drv_104',
@@ -64,6 +67,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'SUV',
         rating: 4.9,
         distance: 60.0,
+        price: 450.0,
       ),
       DriverModel(
         driverId: 'drv_105',
@@ -77,6 +81,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'MUV',
         rating: 4.6,
         distance: 95.0,
+        price: 300.0,
       ),
 
       // Outstation drivers (distance > 100 KM)
@@ -92,6 +97,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'SUV Premium',
         rating: 4.9,
         distance: 125.0,
+        price: 600.0,
       ),
       DriverModel(
         driverId: 'drv_202',
@@ -105,6 +111,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'SUV',
         rating: 4.8,
         distance: 148.0,
+        price: 550.0,
       ),
       DriverModel(
         driverId: 'drv_203',
@@ -118,6 +125,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'Luxury SUV',
         rating: 5.0,
         distance: 276.0,
+        price: 900.0,
       ),
       DriverModel(
         driverId: 'drv_204',
@@ -131,6 +139,7 @@ class DriverRemoteDataSourceImpl implements DriverRemoteDataSource {
         carType: 'SUV',
         rating: 4.7,
         distance: 350.0,
+        price: 800.0,
       ),
     ];
   }

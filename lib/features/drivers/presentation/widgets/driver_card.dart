@@ -47,7 +47,7 @@ class DriverCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Avatar, Name, Car Type & Rating
+          // Header: Avatar, Name, Car Type & Rating / Price
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -91,30 +91,43 @@ class DriverCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF8E1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Color(0xFFFFB300),
-                      size: 16,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      driver.rating.toStringAsFixed(1),
-                      style: AppTypography.labelSmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFB300),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          driver.rating.toStringAsFixed(1),
+                          style: AppTypography.labelSmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '₹${driver.price.toInt()}/hr',
+                    style: AppTypography.labelMedium.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF266475),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

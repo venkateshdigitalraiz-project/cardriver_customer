@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_event.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+import '../../../booking/presentation/pages/booking_wizard_screen.dart';
 import '../../../drivers/domain/entities/driver_search_type.dart';
-import '../../../drivers/presentation/pages/driver_list_screen.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -366,6 +366,14 @@ class _HomePageView extends StatelessWidget {
                   imagePath: 'assets/images/schedule.png',
                   fallbackIcon: Icons.schedule,
                   iconColor: const Color(0xFFD32F2F),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BookingWizardScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 8), // Decreased gap
@@ -434,13 +442,15 @@ class _HomePageView extends StatelessWidget {
     required IconData fallbackIcon,
     required Color iconColor,
     bool isSquare = false,
+    VoidCallback? onTap,
   }) {
     final bool isSmallHeight = height <= 150;
 
     return GestureDetector(
-      onTap: () {
-        context.read<NavigationBloc>().add(TabChanged(1));
-      },
+      onTap: onTap ??
+          () {
+            context.read<NavigationBloc>().add(TabChanged(1));
+          },
       child: Container(
         height: height,
         clipBehavior: Clip.antiAlias,
@@ -604,14 +614,9 @@ class _HomePageView extends StatelessWidget {
                     bgColor: const Color(0xFFF2F8F9),
                     imagePath: 'assets/images/local.png',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DriverListScreen(
-                            searchType: DriverSearchType.local,
-                          ),
-                        ),
-                      );
+                      context.read<NavigationBloc>().add(
+                            TabChanged(1, searchType: DriverSearchType.local),
+                          );
                     },
                   ),
                 ),
@@ -627,14 +632,9 @@ class _HomePageView extends StatelessWidget {
                     bgColor: const Color(0xFFFFF3E0),
                     imagePath: 'assets/images/outstation.png',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DriverListScreen(
-                            searchType: DriverSearchType.outstation,
-                          ),
-                        ),
-                      );
+                      context.read<NavigationBloc>().add(
+                            TabChanged(1, searchType: DriverSearchType.outstation),
+                          );
                     },
                   ),
                 ),

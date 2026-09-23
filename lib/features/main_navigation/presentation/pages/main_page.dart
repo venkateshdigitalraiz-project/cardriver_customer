@@ -31,11 +31,14 @@ class _MainPageView extends StatelessWidget {
         return Scaffold(
           body: IndexedStack(
             index: state.tabIndex,
-            children: const [
-              HomePage(),
-              CustomerDashboardPage(),
-              RatesPage(),
-              ProfilePage(),
+            children: [
+              const HomePage(),
+              CustomerDashboardPage(
+                key: ValueKey(state.searchType),
+                searchType: state.searchType,
+              ),
+              const RatesPage(),
+              const ProfilePage(),
             ],
           ),
           bottomNavigationBar: Container(
@@ -53,10 +56,10 @@ class _MainPageView extends StatelessWidget {
               onTap: (index) {
                 context.read<NavigationBloc>().add(TabChanged(index));
               },
-              backgroundColor: Colors.blue.withOpacity(0.2),
+              backgroundColor: const Color(0xFF26262B),
               elevation: 0,
               type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.orange, // Maximum visibility
+              selectedItemColor: const Color(0xFFFFB800),
               unselectedItemColor: Colors.white70,
               selectedLabelStyle: AppTypography.labelMedium.copyWith(
                 fontWeight: FontWeight.w800,
@@ -65,17 +68,20 @@ class _MainPageView extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
               items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.calendar_month),
+                  icon: Icon(Icons.home_rounded),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_month_rounded),
                   label: 'Bookings',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.currency_rupee),
+                  icon: Icon(Icons.currency_rupee_rounded),
                   label: 'Rates',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
+                  icon: Icon(Icons.person_rounded),
                   label: 'Profile',
                 ),
               ],

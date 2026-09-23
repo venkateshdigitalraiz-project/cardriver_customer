@@ -13,6 +13,7 @@ class DriverModel extends DriverEntity {
     required super.carType,
     required super.rating,
     required super.distance,
+    super.price = 250.0,
   });
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +29,7 @@ class DriverModel extends DriverEntity {
       carType: json['carType'] as String? ?? 'Sedan',
       rating: (json['rating'] as num?)?.toDouble() ?? 4.8,
       distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      price: (json['price'] as num?)?.toDouble() ?? 250.0,
     );
   }
 
@@ -44,6 +46,7 @@ class DriverModel extends DriverEntity {
       'carType': carType,
       'rating': rating,
       'distance': distance,
+      'price': price,
     };
   }
 }

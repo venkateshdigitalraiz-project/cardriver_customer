@@ -125,7 +125,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                                 color: Colors.white,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.blue.withOpacity(0.1),
+                                    color: Colors.blue.withValues(alpha: 0.1),
                                     blurRadius: 10,
                                     offset: const Offset(0, 5),
                                   ),
@@ -163,7 +163,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(
+                                        color: AppColors.primary.withValues(alpha: 
                                           0.3,
                                         ),
                                         blurRadius: 8,
@@ -410,7 +410,7 @@ class _EditProfileViewState extends State<EditProfileView> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.04),
+            color: Colors.blue.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -474,7 +474,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     required Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
@@ -533,7 +533,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -560,7 +560,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
