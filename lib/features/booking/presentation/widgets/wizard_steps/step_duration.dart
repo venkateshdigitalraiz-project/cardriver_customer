@@ -12,9 +12,14 @@ class StepDuration extends StatelessWidget {
     return BlocBuilder<BookingFlowBloc, BookingFlowState>(
       builder: (context, state) {
         final isOutstation = state.request.isOutstation;
-        final durations = isOutstation
-            ? [1, 2, 3, 4, 5, 6, 7] // Days for outstation
-            : [1, 2, 3, 4, 5, 6, 8, 10, 12]; // Hours for local
+        final tripType = state.request.tripType;
+        
+        List<int> durations;
+        if (tripType == 'Outstation') {
+          durations = [1, 2, 3, 4, 5, 6]; // Days for outstation
+        } else {
+          durations = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; // Hours for local
+        }
             
         final selectedHours = state.request.durationHours;
 
@@ -68,7 +73,7 @@ class StepDuration extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    '$hours',
+                                    isOutstation ? '$hours' : (hours >= 24 ? '${hours ~/ 24}' : '$hours'),
                                     style: TextStyle(
                                       color: Colors.black87,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
@@ -78,7 +83,7 @@ class StepDuration extends StatelessWidget {
                                   Text(
                                     isOutstation
                                         ? (hours > 1 ? 'Days' : 'Day')
-                                        : (hours > 1 ? 'Hrs' : 'Hr'),
+                                        : (hours >= 24 ? (hours > 24 ? 'Days' : 'Day') : (hours > 1 ? 'Hrs' : 'Hr')),
                                     style: const TextStyle(
                                       color: Colors.black54,
                                       fontSize: 12,

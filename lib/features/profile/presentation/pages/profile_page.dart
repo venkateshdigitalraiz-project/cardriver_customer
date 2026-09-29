@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -11,6 +11,8 @@ import '../../../auth/presentation/pages/login_page.dart';
 import '../../../locations/presentation/pages/saved_locations_page.dart';
 import '../../../locations/presentation/bloc/location_bloc.dart';
 import '../../../locations/presentation/bloc/location_event.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
+import '../../../legal/presentation/pages/legal_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -32,36 +34,8 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              // Pass the current ProfileBloc instance to the EditProfilePage
-              final profileBloc = context.read<ProfileBloc>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      EditProfilePage(profileBloc: profileBloc),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF4F7FB),
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
           final profile = state is ProfileLoaded
@@ -77,185 +51,316 @@ class ProfileView extends StatelessWidget {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 40.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Beautiful Curved Header with Avatar (Read-Only)
-                Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    Container(
-                      height: 140,
-                      margin: const EdgeInsets.only(bottom: 60),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
-                        ),
-                      ),
+                // Brand Yellow Header
+                Container(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
                     ),
-                    Positioned(
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        // AppBar
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const SizedBox(
+                                width: 48,
+                              ), // Balance for centering
+                              const Text(
+                                'My Profile',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.black87,
+                                ),
+                                onPressed: () {
+                                  final profileBloc = context
+                                      .read<ProfileBloc>();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditProfilePage(
+                                        profileBloc: profileBloc,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Profile Info Row
+                        Padding(
+                          padding: EdgeInsets.zero,
+                          // padding: const EdgeInsets.symmetric(
+                          //   horizontal: 24,
+                          //   vertical: 16,
+                          // ),
+                          child: Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.black87,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 45,
+                                  backgroundColor: Colors.white,
+                                  backgroundImage: profile.imagePath != null
+                                      ? FileImage(File(profile.imagePath!))
+                                      : null,
+                                  child: profile.imagePath == null
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: Colors.black54,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              if (profile.fullName.isNotEmpty ||
+                                  profile.lastName.isNotEmpty) ...[
+                                Text(
+                                  '${profile.fullName} ${profile.lastName}'
+                                      .trim(),
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                              if (profile.email.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  profile.email,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // const SizedBox(height: 16),
+
+                        // Stats Row inside Header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildStatItem('Bookings', '24'),
+                                _buildStatDivider(color: Colors.black12),
+                                _buildStatItem('Rating', '4.9 ★'),
+                                _buildStatDivider(color: Colors.black12),
+                                _buildStatItem('Wallet', '₹450'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Menus
+                Padding(
+                  padding: const EdgeInsets.only(top: 24, bottom: 40),
+                  child: Column(
+                    children: [
+                      // Account Section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _buildSectionHeader('Account Settings'),
+                            _buildCardGroup(
+                              children: [
+                                _buildPremiumMenuItem(
+                                  title: 'Saved Locations',
+                                  icon: Icons.location_on_rounded,
+                                  iconBgColor: Colors.blue.shade50,
+                                  iconColor: Colors.blue.shade700,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => BlocProvider(
+                                          create: (context) =>
+                                              LocationBloc()
+                                                ..add(LoadLocations()),
+                                          child: const SavedLocationsPage(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _buildDivider(),
+                                _buildPremiumMenuItem(
+                                  title: 'My Tickets',
+                                  icon: Icons.confirmation_num_rounded,
+                                  iconBgColor: Colors.orange.shade50,
+                                  iconColor: Colors.orange.shade700,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const TicketsPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _buildDivider(),
+                                _buildPremiumMenuItem(
+                                  title: 'Notifications',
+                                  icon: Icons.notifications_rounded,
+                                  iconBgColor: Colors.purple.shade50,
+                                  iconColor: Colors.purple.shade700,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const NotificationsPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Support Section
+                            _buildSectionHeader('Support & About'),
+                            _buildCardGroup(
+                              children: [
+                                // _buildPremiumMenuItem(
+                                //   title: 'Help & Support',
+                                //   icon: Icons.help_rounded,
+                                //   iconBgColor: Colors.green.shade50,
+                                //   iconColor: Colors.green.shade700,
+                                //   onTap: () {
+                                //     Navigator.push(
+                                //       context,
+                                //       MaterialPageRoute(
+                                //         builder: (context) =>
+                                //             const SupportPage(),
+                                //       ),
+                                //     );
+                                //   },
+                                // ),
+                                // _buildDivider(),
+                                _buildPremiumMenuItem(
+                                  title: 'Terms & Conditions',
+                                  icon: Icons.description_rounded,
+                                  iconBgColor: Colors.grey.shade100,
+                                  iconColor: Colors.grey.shade700,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const LegalPage(
+                                          pageType: LegalPageType.terms,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _buildDivider(),
+                                _buildPremiumMenuItem(
+                                  title: 'Privacy Policy',
+                                  icon: Icons.shield_rounded,
+                                  iconBgColor: Colors.grey.shade100,
+                                  iconColor: Colors.grey.shade700,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const LegalPage(
+                                          pageType: LegalPageType.privacy,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Logout Button
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.logout_rounded,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                '     Log Out',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade600,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                minimumSize: const Size(double.infinity, 54),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundColor: Colors.white,
-                          backgroundImage: profile.imagePath != null
-                              ? FileImage(File(profile.imagePath!))
-                              : null,
-                          child: profile.imagePath == null
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: Colors.grey,
-                                )
-                              : null,
-                        ),
                       ),
-                    ),
-                  ],
-                ),
-
-                if (profile.fullName.isNotEmpty ||
-                    profile.lastName.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    '${profile.fullName} ${profile.lastName}'.trim(),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ],
-                if (profile.email.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    profile.email,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Body content
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildCardForm(
-                        children: [
-                          _buildMenuItem(
-                            context,
-                            title: 'Notifications',
-                            icon: Icons.notifications_none_outlined,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Saved Locations',
-                            icon: Icons.location_on_outlined,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BlocProvider(
-                                    create: (context) => LocationBloc()..add(LoadLocations()),
-                                    child: const SavedLocationsPage(),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Help & Support',
-                            icon: Icons.help_outline,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'My Tickets',
-                            icon: Icons.confirmation_num_outlined,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const TicketsPage(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Terms & Conditions',
-                            icon: Icons.description_outlined,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Privacy Policy',
-                            icon: Icons.lock_outline,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Rate App',
-                            icon: Icons.star_border,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Share App',
-                            icon: Icons.share_outlined,
-                            onTap: () {},
-                          ),
-                          _buildDivider(),
-                          _buildMenuItem(
-                            context,
-                            title: 'Logout',
-                            icon: Icons.logout,
-                            textColor: AppColors.error,
-                            iconColor: AppColors.error,
-                            showTrailingArrow: false,
-                            onTap: () {
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginPage(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -267,39 +372,69 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  // Widget _buildSectionHeader(
-  //   BuildContext context,
-  //   String title,
-  //   IconData icon,
-  // ) {
-  //   return Padding(
-  //     padding: const EdgeInsets.only(bottom: 12.0, left: 4.0),
-  //     child: Row(
-  //       children: [
-  //         Icon(icon, color: AppColors.primaryDark, size: 22),
-  //         const SizedBox(width: 10),
-  //         Text(
-  //           title,
-  //           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-  //             fontWeight: FontWeight.w700,
-  //             color: AppColors.textPrimaryLight,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildStatItem(String label, String value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildCardForm({required List<Widget> children}) {
+  Widget _buildStatDivider({Color? color}) {
+    return Container(
+      height: 40,
+      width: 1,
+      color: color ?? Colors.grey.shade200,
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 12.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.black54,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardGroup({required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -311,41 +446,56 @@ class ProfileView extends StatelessWidget {
     return const Divider(
       height: 1,
       thickness: 1,
-      color: Color(0xFFF0F4F9),
-      indent: 16,
+      color: Color(0xFFF4F7FB),
+      indent: 56,
       endIndent: 16,
     );
   }
 
-  Widget _buildMenuItem(
-    BuildContext context, {
+  Widget _buildPremiumMenuItem({
     required String title,
     required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
     required VoidCallback onTap,
-    Color? textColor,
-    Color? iconColor,
     bool showTrailingArrow = true,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor ?? Colors.grey[600], size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: textColor ?? AppColors.textPrimaryLight,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
-            ),
-            if (showTrailingArrow)
-              Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
-          ],
+              if (showTrailingArrow)
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.black26,
+                  size: 16,
+                ),
+            ],
+          ),
         ),
       ),
     );

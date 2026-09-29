@@ -83,7 +83,25 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     SubmitBookingEvent event,
     Emitter<BookingFlowState> emit,
   ) async {
-    emit(state.copyWith(status: BookingFlowStatus.submitting));
+    final request = state.request;
+
+    // Validation
+    if (request.pickupAddress == null || request.pickupAddress!.isEmpty) {
+      emit(state.copyWith(status: BookingFlowStatus.error, errorMessage: 'Pickup location is required.'));
+      return;
+    }
+    if (request.scheduleDate == null || request.scheduleHour == null || request.scheduleMinute == null) {
+      emit(state.copyWith(status: BookingFlowStatus.error, errorMessage: 'Pickup date and time are required.'));
+      return;
+    }
+    if (request.tripType == 'Outstation') {
+      if (request.dropAddress == null || request.dropAddress!.isEmpty) {
+        emit(state.copyWith(status: BookingFlowStatus.error, errorMessage: 'Destination is required for Outstation.'));
+        return;
+      }
+    }
+
+    emit(state.copyWith(status: BookingFlowStatus.submitting, errorMessage: null));
 
     // TODO: Connect to actual repository to submit booking
     await Future.delayed(const Duration(seconds: 2)); // Simulate API call
@@ -98,6 +116,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     // If we switch to outstation, default duration to 1 day (1), else 4 hours (4)
     final updatedRequest = state.request.copyWith(
       isOutstation: event.isOutstation,
+      tripType: event.tripType,
       durationHours: event.isOutstation ? 1 : 4,
     );
     emit(state.copyWith(request: updatedRequest));

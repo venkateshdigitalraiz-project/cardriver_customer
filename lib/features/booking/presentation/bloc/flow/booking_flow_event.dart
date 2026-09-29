@@ -78,9 +78,10 @@ class SubmitBookingEvent extends BookingFlowEvent {}
 
 class UpdateTripTypeEvent extends BookingFlowEvent {
   final bool isOutstation;
+  final String tripType;
 
-  const UpdateTripTypeEvent(this.isOutstation);
+  const UpdateTripTypeEvent({required this.isOutstation, required this.tripType});
 
   @override
-  List<Object?> get props => [isOutstation];
+  List<Object?> get props => [isOutstation, tripType];
 }

@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'active_trip_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/booking_request_entity.dart';
 
@@ -102,7 +103,7 @@ class BookingConfirmedScreen extends StatelessWidget {
                     _buildDetailRow(
                       icon: Icons.schedule,
                       title: 'Duration',
-                      value: '${request.durationHours} hours',
+                      value: '${request.durationHours} ${request.isOutstation ? (request.durationHours > 1 ? 'Days' : 'Day') : (request.durationHours > 1 ? 'hours' : 'hour')}',
                     ),
                     const SizedBox(height: 16),
                     _buildDetailRow(
@@ -125,8 +126,13 @@ class BookingConfirmedScreen extends StatelessWidget {
               // Buttons
               ElevatedButton(
                 onPressed: () {
-                  // Navigate to My Bookings
-                  Navigator.popUntil(context, (route) => route.isFirst);
+                  // Navigate to Active Trip tracking
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ActiveTripScreen(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -136,7 +142,7 @@ class BookingConfirmedScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'View Booking',
+                  'Track Driver',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -179,6 +185,7 @@ class BookingConfirmedScreen extends StatelessWidget {
     Color? valueColor,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(width: 12),
@@ -189,13 +196,18 @@ class BookingConfirmedScreen extends StatelessWidget {
             fontSize: 14,
           ),
         ),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? Colors.black87,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: valueColor ?? Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

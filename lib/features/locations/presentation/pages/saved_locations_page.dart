@@ -19,10 +19,6 @@ import '../bloc/location_bloc.dart';
 import '../bloc/location_event.dart';
 import '../bloc/location_state.dart';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SavedLocationsPage
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 class SavedLocationsPage extends StatefulWidget {
   const SavedLocationsPage({super.key});
 
@@ -77,8 +73,6 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
     }
   }
 
-  // â”€â”€ Navigate to AddLocationScreen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
   void _openAddLocationScreen(BuildContext ctx) async {
     await Navigator.push(
       ctx,
@@ -86,7 +80,75 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
     );
   }
 
-  // â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Future<void> _saveCurrentLocation() async {
+    if (_currentPosition == null) {
+      await _fetchCurrentLocation();
+    }
+    if (_currentPosition == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not fetch current location')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saving current location...')),
+      );
+    }
+
+    try {
+      final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json'
+        '?latlng=${_currentPosition!.latitude},${_currentPosition!.longitude}'
+        '&key=AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s',
+      );
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
+          final result = data['results'][0];
+          final formattedAddress =
+              result['formatted_address']?.toString() ?? 'Current Location';
+
+          final newLocation = LocationEntity(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: 'Current Location',
+            address: formattedAddress,
+            latitude: _currentPosition!.latitude,
+            longitude: _currentPosition!.longitude,
+            isCurrentLocation: true,
+          );
+
+          if (mounted) {
+            context.read<LocationBloc>().add(AddLocation(newLocation));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Current location saved successfully!'),
+              ),
+            );
+            Navigator.pop(context);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not find address for current location'),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving location: $e')));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -296,14 +358,29 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddLocationScreen(context),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add_location_alt, color: Colors.white),
-        label: const Text(
-          'Add Location',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'current_location',
+            onPressed: _saveCurrentLocation,
+            backgroundColor: Colors.white,
+            tooltip: 'Save Current Location',
+            child: const Icon(
+              Icons.my_location,
+              color: AppColors.primary,
+              size: 40,
+            ),
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton(
+            heroTag: 'add_location',
+            onPressed: () => _openAddLocationScreen(context),
+            backgroundColor: AppColors.primary,
+            tooltip: 'Add Location',
+            child: const Icon(Icons.add, color: Colors.white, size: 40),
+          ),
+        ],
       ),
     );
   }
@@ -915,4 +992,3 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PublishLocationField  (reusable â€” used in other parts of the app)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-

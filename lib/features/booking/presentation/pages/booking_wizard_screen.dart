@@ -7,11 +7,11 @@ import '../bloc/flow/booking_flow_state.dart';
 import 'booking_confirmed_screen.dart';
 import '../widgets/wizard_steps/step_location_vehicle.dart';
 import '../widgets/wizard_steps/step_schedule.dart';
-import '../widgets/wizard_steps/step_review_confirm.dart';
 import '../widgets/booking_map_preview.dart';
 
 class BookingWizardScreen extends StatefulWidget {
-  const BookingWizardScreen({super.key});
+  final String initialTripType;
+  const BookingWizardScreen({super.key, this.initialTripType = 'Local'});
 
   @override
   State<BookingWizardScreen> createState() => _BookingWizardScreenState();
@@ -21,7 +21,13 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => BookingFlowBloc(),
+      create: (context) => BookingFlowBloc()
+        ..add(
+          UpdateTripTypeEvent(
+            isOutstation: widget.initialTripType == 'Outstation',
+            tripType: widget.initialTripType,
+          ),
+        ),
       child: BlocConsumer<BookingFlowBloc, BookingFlowState>(
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
@@ -32,14 +38,47 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                 builder: (_) => BookingConfirmedScreen(request: state.request),
               ),
             );
+          } else if (state.status == BookingFlowStatus.error &&
+              state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: Colors.red.shade600,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
         },
         builder: (context, state) {
+          int _calculateFare(var req) {
+            if (req.isOutstation) {
+              return req.durationHours * 1500;
+            }
+            if (req.scheduleHour == null) {
+              return req.durationHours * 150;
+            }
+            int totalFare = 0;
+            int currentHour = req.scheduleHour!;
+            for (int i = 0; i < req.durationHours; i++) {
+              int h = (currentHour + i) % 24;
+              if (h >= 0 && h < 4) {
+                totalFare += 200; // 12 AM to 4 AM
+              } else {
+                totalFare += 150; // 4 AM to 12 AM
+              }
+            }
+            return totalFare;
+          }
+
+          final baseFare = _calculateFare(state.request);
+
           return Scaffold(
             resizeToAvoidBottomInset: false,
             backgroundColor: AppColors.backgroundLight,
             appBar: AppBar(
-              backgroundColor: const Color(0xFF1E1E24), // Dark header like DriveU
+              backgroundColor: const Color(
+                0xFF1E1E24,
+              ), // Dark header like DriveU
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -47,8 +86,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                   Navigator.pop(context);
                 },
               ),
-              title: const Text(
-                'One Way',
+              title: Text(
+                state.request.tripType,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -67,7 +106,7 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                   height: MediaQuery.of(context).size.height * 0.45,
                   child: const BookingMapPreview(),
                 ),
-                
+
                 // 2. Scrollable Form Panel
                 DraggableScrollableSheet(
                   initialChildSize: 0.65,
@@ -77,18 +116,62 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                     return Container(
                       decoration: const BoxDecoration(
                         color: AppColors.backgroundLight,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
                         boxShadow: [
-                          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, -2),
+                          ),
                         ],
                       ),
                       child: SingleChildScrollView(
                         controller: scrollController,
-                        child: const Column(
+                        child: Column(
                           children: [
-                            StepLocationVehicle(),
-                            StepSchedule(),
-                            StepReviewConfirm(),
+                            const StepLocationVehicle(),
+                            const StepSchedule(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.green.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Estimated Total Price',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹ $baseFare',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 100),
                           ],
                         ),
                       ),
@@ -106,7 +189,11 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -118,26 +205,53 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.local_offer, color: Colors.green.shade700, size: 18),
+                                Icon(
+                                  Icons.local_offer,
+                                  color: Colors.green.shade700,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
-                                const Text('Select Offers', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const Text(
+                                  'Select Offers',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ],
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.money, color: Colors.green.shade700, size: 16),
+                                  Icon(
+                                    Icons.money,
+                                    color: Colors.green.shade700,
+                                    size: 16,
+                                  ),
                                   const SizedBox(width: 8),
                                   const Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text('Pay after your trip', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                                      Text('Cash', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                      Text(
+                                        'Pay after your trip',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Cash',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 4),
@@ -150,10 +264,14 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            context.read<BookingFlowBloc>().add(SubmitBookingEvent());
+                            context.read<BookingFlowBloc>().add(
+                              SubmitBookingEvent(),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E1E24), // Dark color from screenshot
+                            backgroundColor: const Color(
+                              0xFF1E1E24,
+                            ), // Dark color from screenshot
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

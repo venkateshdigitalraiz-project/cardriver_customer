@@ -6,7 +6,7 @@ import '../bloc/navigation_state.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../rates/presentation/pages/rates_page.dart';
-import '../../../auth/presentation/pages/customer_dashboard_page.dart';
+import '../../../booking/presentation/pages/my_bookings_page.dart';
 import '../../../../core/theme/app_typography.dart';
 
 class MainPage extends StatelessWidget {
@@ -33,11 +33,7 @@ class _MainPageView extends StatelessWidget {
             index: state.tabIndex,
             children: [
               const HomePage(),
-              CustomerDashboardPage(
-                key: ValueKey(state.searchType),
-                searchType: state.searchType,
-              ),
-              const RatesPage(),
+              const MyBookingsPage(),
               const ProfilePage(),
             ],
           ),
@@ -75,10 +71,6 @@ class _MainPageView extends StatelessWidget {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.calendar_month_rounded),
                   label: 'Bookings',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.currency_rupee_rounded),
-                  label: 'Rates',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_rounded),

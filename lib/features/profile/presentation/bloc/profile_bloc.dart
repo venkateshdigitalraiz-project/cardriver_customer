@@ -8,7 +8,12 @@ import 'profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ImagePicker _picker = ImagePicker();
-  ProfileEntity _currentProfile = ProfileEntity();
+  ProfileEntity _currentProfile = ProfileEntity(
+    fullName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    mobileNumber: '+91 9876543210',
+  );
 
   ProfileBloc() : super(ProfileInitial()) {
     on<PickProfileImageEvent>(_onPickProfileImage);

@@ -4,7 +4,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../../features/main_navigation/presentation/bloc/navigation_event.dart';
 import '../../../booking/presentation/pages/booking_wizard_screen.dart';
-import '../../../drivers/domain/entities/driver_search_type.dart';
+// import '../../../drivers/domain/entities/driver_search_type.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -37,8 +37,8 @@ class _HomePageView extends StatelessWidget {
             _buildHeroSection(context),
             const SizedBox(height: 120), // Space for the floating card
             // "For You" Staggered Grid
-            _buildStaggeredGrid(context),
-            const SizedBox(height: 24),
+            // _buildStaggeredGrid(context),
+            // const SizedBox(height: 24),
             _buildLocalOutstationSection(context),
             const SizedBox(height: 32),
 
@@ -306,236 +306,237 @@ class _HomePageView extends StatelessWidget {
     );
   }
 
-  Widget _buildStaggeredGrid(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'For You',
-                style: AppTypography.titleLarge.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black87,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE1F5FE),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.play_circle_outline,
-                      size: 16,
-                      color: Color(0xFF0277BD),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'How it works',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: const Color(0xFF0277BD),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left Column (Tall Schedule Card)
-              Expanded(
-                flex: 1,
-                child: _buildStaggeredCard(
-                  context: context,
-                  height: 248, // 120 + 8 + 120 = 248
-                  title: 'Schedule',
-                  subtitle: 'Reserve in advance',
-                  imagePath: 'assets/images/schedule.png',
-                  fallbackIcon: Icons.schedule,
-                  iconColor: const Color(0xFFD32F2F),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BookingWizardScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8), // Decreased gap
-              // Right Column
-              Expanded(
-                flex: 1,
-                child: Column(
-                  children: [
-                    // Top Wide Card (Instant)
-                    _buildStaggeredCard(
-                      context: context,
-                      height: 120, // Decreased height
-                      title: 'Instant',
-                      subtitle: 'Get a driver in minutes',
-                      imagePath: 'assets/images/instant.png',
-                      fallbackIcon: Icons.directions_car,
-                      iconColor: const Color(0xFF1976D2),
-                    ),
-                    const SizedBox(height: 8), // Decreased gap
-                    // Bottom Row (Two small square cards)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStaggeredCard(
-                            context: context,
-                            height: 120, // Decreased height
-                            title: 'Subscription',
-                            subtitle: 'Recurring trips',
-                            imagePath: 'assets/images/subs.png',
-                            fallbackIcon: Icons.star,
-                            iconColor: const Color(0xFFFBC02D),
-                            isSquare: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8), // Decreased gap
-                        Expanded(
-                          child: _buildStaggeredCard(
-                            context: context,
-                            height: 120, // Decreased height
-                            title: 'Daily',
-                            subtitle: 'Rides for everyday',
-                            imagePath: 'assets/images/daily.png',
-                            fallbackIcon: Icons.calendar_month,
-                            iconColor: const Color(0xFF1976D2),
-                            isSquare: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStaggeredGrid(BuildContext context) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 20),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Text(
+  //               'For You',
+  //               style: AppTypography.titleLarge.copyWith(
+  //                 fontWeight: FontWeight.w900,
+  //                 color: Colors.black87,
+  //               ),
+  //             ),
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 6,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFFE1F5FE),
+  //                 borderRadius: BorderRadius.circular(20),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   const Icon(
+  //                     Icons.play_circle_outline,
+  //                     size: 16,
+  //                     color: Color(0xFF0277BD),
+  //                   ),
+  //                   const SizedBox(width: 4),
+  //                   Text(
+  //                     'How it works',
+  //                     style: AppTypography.labelSmall.copyWith(
+  //                       color: const Color(0xFF0277BD),
+  //                       fontWeight: FontWeight.w700,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 16),
+  //         Row(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             // Left Column (Tall Schedule Card)
+  //             Expanded(
+  //               flex: 1,
+  //               child: _buildStaggeredCard(
+  //                 context: context,
+  //                 height: 248, // 120 + 8 + 120 = 248
+  //                 title: 'Schedule',
+  //                 subtitle: 'Reserve in advance',
+  //                 imagePath: 'assets/images/schedule.png',
+  //                 fallbackIcon: Icons.schedule,
+  //                 iconColor: const Color(0xFFD32F2F),
+  //                 onTap: () {
+  //                   Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                       builder: (_) => const BookingWizardScreen(),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //             const SizedBox(width: 8), // Decreased gap
+  //             // Right Column
+  //             Expanded(
+  //               flex: 1,
+  //               child: Column(
+  //                 children: [
+  //                   // Top Wide Card (Instant)
+  //                   _buildStaggeredCard(
+  //                     context: context,
+  //                     height: 120, // Decreased height
+  //                     title: 'Instant',
+  //                     subtitle: 'Get a driver in minutes',
+  //                     imagePath: 'assets/images/instant.png',
+  //                     fallbackIcon: Icons.directions_car,
+  //                     iconColor: const Color(0xFF1976D2),
+  //                   ),
+  //                   const SizedBox(height: 8), // Decreased gap
+  //                   // Bottom Row (Two small square cards)
+  //                   Row(
+  //                     children: [
+  //                       Expanded(
+  //                         child: _buildStaggeredCard(
+  //                           context: context,
+  //                           height: 120, // Decreased height
+  //                           title: 'Subscription',
+  //                           subtitle: 'Recurring trips',
+  //                           imagePath: 'assets/images/subs.png',
+  //                           fallbackIcon: Icons.star,
+  //                           iconColor: const Color(0xFFFBC02D),
+  //                           isSquare: true,
+  //                         ),
+  //                       ),
+  //                       const SizedBox(width: 8), // Decreased gap
+  //                       Expanded(
+  //                         child: _buildStaggeredCard(
+  //                           context: context,
+  //                           height: 120, // Decreased height
+  //                           title: 'Daily',
+  //                           subtitle: 'Rides for everyday',
+  //                           imagePath: 'assets/images/daily.png',
+  //                           fallbackIcon: Icons.calendar_month,
+  //                           iconColor: const Color(0xFF1976D2),
+  //                           isSquare: true,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildStaggeredCard({
-    required BuildContext context,
-    required double height,
-    required String title,
-    required String subtitle,
-    required String imagePath,
-    required IconData fallbackIcon,
-    required Color iconColor,
-    bool isSquare = false,
-    VoidCallback? onTap,
-  }) {
-    final bool isSmallHeight = height <= 150;
+  // Widget _buildStaggeredCard({
+  //   required BuildContext context,
+  //   required double height,
+  //   required String title,
+  //   required String subtitle,
+  //   required String imagePath,
+  //   required IconData fallbackIcon,
+  //   required Color iconColor,
+  //   bool isSquare = false,
+  //   VoidCallback? onTap,
+  // }) {
+  //   final bool isSmallHeight = height <= 150;
 
-    return GestureDetector(
-      onTap: onTap ??
-          () {
-            context.read<NavigationBloc>().add(TabChanged(1));
-          },
-      child: Container(
-        height: height,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-        ),
-        child: Stack(
-          children: [
-            // IMAGE LAYER
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              top: isSmallHeight ? 0 : 30,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: isSmallHeight ? 8.0 : 0.0,
-                  bottom: isSmallHeight ? 8.0 : 0.0,
-                ),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                  alignment: Alignment.bottomRight,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      fallbackIcon,
-                      color: iconColor.withValues(alpha: 0.5),
-                      size: isSmallHeight ? 48 : 80,
-                    );
-                  },
-                ),
-              ),
-            ),
-            // TEXT LAYER
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: EdgeInsets.all(isSmallHeight ? 12.0 : 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        style: AppTypography.labelLarge.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
-                          fontSize: isSmallHeight ? 13 : 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: Colors.black54,
-                        fontSize: isSmallHeight ? 10 : 11,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //   return GestureDetector(
+  //     onTap:
+  //         onTap ??
+  //         () {
+  //           context.read<NavigationBloc>().add(TabChanged(1));
+  //         },
+  //     child: Container(
+  //       height: height,
+  //       clipBehavior: Clip.antiAlias,
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.circular(16),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withValues(alpha: 0.03),
+  //             blurRadius: 10,
+  //             offset: const Offset(0, 4),
+  //           ),
+  //         ],
+  //         border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+  //       ),
+  //       child: Stack(
+  //         children: [
+  //           // IMAGE LAYER
+  //           Positioned(
+  //             left: 0,
+  //             right: 0,
+  //             bottom: 0,
+  //             top: isSmallHeight ? 0 : 30,
+  //             child: Padding(
+  //               padding: EdgeInsets.only(
+  //                 right: isSmallHeight ? 8.0 : 0.0,
+  //                 bottom: isSmallHeight ? 8.0 : 0.0,
+  //               ),
+  //               child: Image.asset(
+  //                 imagePath,
+  //                 fit: BoxFit.contain,
+  //                 alignment: Alignment.bottomRight,
+  //                 errorBuilder: (context, error, stackTrace) {
+  //                   return Icon(
+  //                     fallbackIcon,
+  //                     color: iconColor.withValues(alpha: 0.5),
+  //                     size: isSmallHeight ? 48 : 80,
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //           ),
+  //           // TEXT LAYER
+  //           Positioned(
+  //             top: 0,
+  //             left: 0,
+  //             right: 0,
+  //             child: Padding(
+  //               padding: EdgeInsets.all(isSmallHeight ? 12.0 : 16.0),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   FittedBox(
+  //                     fit: BoxFit.scaleDown,
+  //                     alignment: Alignment.centerLeft,
+  //                     child: Text(
+  //                       title,
+  //                       maxLines: 1,
+  //                       style: AppTypography.labelLarge.copyWith(
+  //                         fontWeight: FontWeight.w800,
+  //                         color: Colors.black87,
+  //                         fontSize: isSmallHeight ? 13 : 16,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 2),
+  //                   Text(
+  //                     subtitle,
+  //                     maxLines: 2,
+  //                     overflow: TextOverflow.ellipsis,
+  //                     style: AppTypography.bodySmall.copyWith(
+  //                       color: Colors.black54,
+  //                       fontSize: isSmallHeight ? 10 : 11,
+  //                       height: 1.2,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   // Verified Drivers section containing attached Local and Outstation cards
   Widget _buildLocalOutstationSection(BuildContext context) {
@@ -608,15 +609,18 @@ class _HomePageView extends StatelessWidget {
                   child: _buildServiceOptionCard(
                     context: context,
                     title: 'Local',
-                    subtitle: 'Within city rides',
+                    subtitle: 'Within city • From ₹350',
                     icon: Icons.directions_car_filled_rounded,
                     primaryColor: const Color(0xFF266475),
                     bgColor: const Color(0xFFF2F8F9),
                     imagePath: 'assets/images/local.png',
                     onTap: () {
-                      context.read<NavigationBloc>().add(
-                            TabChanged(1, searchType: DriverSearchType.local),
-                          );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BookingWizardScreen(initialTripType: 'Local'),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -626,15 +630,18 @@ class _HomePageView extends StatelessWidget {
                   child: _buildServiceOptionCard(
                     context: context,
                     title: 'Outstation',
-                    subtitle: 'Intercity trips',
+                    subtitle: 'Intercity • From ₹1000',
                     icon: Icons.alt_route_rounded,
                     primaryColor: const Color(0xFFE65100),
                     bgColor: const Color(0xFFFFF3E0),
                     imagePath: 'assets/images/outstation.png',
                     onTap: () {
-                      context.read<NavigationBloc>().add(
-                            TabChanged(1, searchType: DriverSearchType.outstation),
-                          );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BookingWizardScreen(initialTripType: 'Outstation'),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -678,11 +685,7 @@ class _HomePageView extends StatelessWidget {
                     color: primaryColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    icon,
-                    color: primaryColor,
-                    size: 22,
-                  ),
+                  child: Icon(icon, color: primaryColor, size: 22),
                 ),
                 Icon(
                   Icons.arrow_forward_rounded,
@@ -713,7 +716,6 @@ class _HomePageView extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildSuggestionsSection(BuildContext context) {
     return Column(

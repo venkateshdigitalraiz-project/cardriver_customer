@@ -102,6 +102,7 @@ class _CustomerDashboardPageViewState
   ];
 
   static const List<String> _outstationUsageOptions = [
+    '4\nHrs',
     '8\nHrs',
     '12\nHrs',
     '18\nHrs',
@@ -109,6 +110,7 @@ class _CustomerDashboardPageViewState
     '2\n day',
     '3\n day',
     '4\n day',
+    '5\n day',
   ];
 
   List<String> get _currentUsageOptions =>
@@ -138,19 +140,23 @@ class _CustomerDashboardPageViewState
   int _getOutstationDays(int index) {
     switch (index) {
       case 0:
-        return 1; // 8 Hrs outstation -> 1 day base fare
+        return 1; // 4 Hrs
       case 1:
-        return 1; // 12 Hrs outstation -> 1 day base fare
+        return 1; // 8 Hrs
       case 2:
-        return 1; // 18 Hrs outstation -> 1 day base fare
+        return 1; // 12 Hrs
       case 3:
-        return 1; // 1 day
+        return 1; // 18 Hrs
       case 4:
-        return 2; // 2 days
+        return 1; // 1 day
       case 5:
-        return 3; // 3 days
+        return 2; // 2 days
       case 6:
+        return 3; // 3 days
+      case 7:
         return 4; // 4 days
+      case 8:
+        return 5; // 5 days
       default:
         return 1;
     }

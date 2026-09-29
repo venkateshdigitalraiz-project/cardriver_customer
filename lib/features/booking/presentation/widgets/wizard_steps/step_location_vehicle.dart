@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,6 +24,14 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
     _pickupController.dispose();
     _dropController.dispose();
     super.dispose();
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const p = 0.017453292519943295; // Math.PI / 180
+    final a = 0.5 -
+        math.cos((lat2 - lat1) * p) / 2 +
+        math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2;
+    return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
   }
 
   @override
@@ -69,32 +78,32 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                     child: Column(
                       children: [
                         // Trip Type Selector (One Way, Round Trip, Outstation, Daily)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: TripTypeTabBar(
-                            selectedType: _selectedTripType,
-                            onChanged: (type) {
-                              setState(() {
-                                _selectedTripType = type;
-                                _pickupController.clear();
-                                _dropController.clear();
-                              });
-                              context.read<BookingFlowBloc>().add(
-                                ClearLocationEvent(),
-                              );
-
-                              if (type == 'Outstation') {
-                                context.read<BookingFlowBloc>().add(
-                                  const UpdateTripTypeEvent(true),
-                                );
-                              } else {
-                                context.read<BookingFlowBloc>().add(
-                                  const UpdateTripTypeEvent(false),
-                                );
-                              }
-                            },
-                          ),
-                        ),
+                        // Padding(
+                        //   padding: const EdgeInsets.only(top: 8.0),
+                        //   child: TripTypeTabBar(
+                        //     selectedType: _selectedTripType,
+                        //     onChanged: (type) {
+                        //       setState(() {
+                        //         _selectedTripType = type;
+                        //         _pickupController.clear();
+                        //         _dropController.clear();
+                        //       });
+                        //       context.read<BookingFlowBloc>().add(
+                        //         ClearLocationEvent(),
+                        //       );
+                        //
+                        //       if (type == 'Outstation') {
+                        //         context.read<BookingFlowBloc>().add(
+                        //           UpdateTripTypeEvent(isOutstation: true, tripType: type),
+                        //         );
+                        //       } else {
+                        //         context.read<BookingFlowBloc>().add(
+                        //           UpdateTripTypeEvent(isOutstation: false, tripType: type),
+                        //         );
+                        //       }
+                        //     },
+                        //   ),
+                        // ),
 
                         Row(
                           children: [
@@ -178,6 +187,32 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                     controller: _dropController,
                                     onChanged: (val) {},
                                     onAddressDetailsSelected: (details) {
+                                      if (state.request.pickupLat != null &&
+                                          state.request.pickupLng != null &&
+                                          details.lat != null &&
+                                          details.lng != null) {
+                                        final distance = _calculateDistance(
+                                          state.request.pickupLat!,
+                                          state.request.pickupLng!,
+                                          details.lat!,
+                                          details.lng!,
+                                        );
+
+                                        if (distance > 100 &&
+                                            _selectedTripType != 'Outstation') {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Destination is more than 100km away. Please select Outstation for long distance trips.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          _dropController.clear();
+                                          return;
+                                        }
+                                      }
+
                                       context.read<BookingFlowBloc>().add(
                                         UpdateLocationVehicleEvent(
                                           dropAddress: details.shortAddress,

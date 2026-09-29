@@ -15,6 +15,7 @@ class BookingRequestEntity extends Equatable {
   final int? scheduleMinute;
   final int durationHours;
   final bool isOutstation;
+  final String tripType;
   final double? estimatedFare;
 
   const BookingRequestEntity({
@@ -32,6 +33,7 @@ class BookingRequestEntity extends Equatable {
     this.scheduleMinute,
     this.durationHours = 4, // Default per UI standard
     this.isOutstation = false,
+    this.tripType = 'One Way',
     this.estimatedFare,
   });
 
@@ -50,6 +52,7 @@ class BookingRequestEntity extends Equatable {
     int? scheduleMinute,
     int? durationHours,
     bool? isOutstation,
+    String? tripType,
     double? estimatedFare,
   }) {
     return BookingRequestEntity(
@@ -67,6 +70,7 @@ class BookingRequestEntity extends Equatable {
       scheduleMinute: scheduleMinute ?? this.scheduleMinute,
       durationHours: durationHours ?? this.durationHours,
       isOutstation: isOutstation ?? this.isOutstation,
+      tripType: tripType ?? this.tripType,
       estimatedFare: estimatedFare ?? this.estimatedFare,
     );
   }
@@ -85,6 +89,7 @@ class BookingRequestEntity extends Equatable {
       scheduleMinute: scheduleMinute,
       durationHours: durationHours,
       isOutstation: isOutstation,
+      tripType: tripType,
       estimatedFare: estimatedFare,
     );
   }
@@ -103,6 +108,7 @@ class BookingRequestEntity extends Equatable {
         scheduleMinute,
         durationHours,
         isOutstation,
+        tripType,
         estimatedFare,
       ];
 }
