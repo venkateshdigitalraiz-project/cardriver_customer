@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/flow/booking_flow_bloc.dart';
 import 'active_trip_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/booking_request_entity.dart';
@@ -14,12 +16,16 @@ class BookingConfirmedScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0D253F), // Dark blue from mockup
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               // Success Icon
               Container(
                 padding: const EdgeInsets.all(20),
@@ -118,19 +124,38 @@ class BookingConfirmedScreen extends StatelessWidget {
                       value: request.pickupAddress ?? 'Not provided',
                       valueColor: Colors.green,
                     ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow(
+                      icon: Icons.location_on,
+                      title: 'Drop',
+                      value: request.dropAddress ?? 'Not provided',
+                      valueColor: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow(
+                      icon: Icons.currency_rupee,
+                      title: 'Price',
+                      value: request.estimatedFare != null ? '₹${request.estimatedFare}' : 'Not provided',
+                      valueColor: Colors.green.shade800,
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
               const Spacer(),
 
               // Buttons
               ElevatedButton(
                 onPressed: () {
+                  final bookingBloc = context.read<BookingFlowBloc>();
                   // Navigate to Active Trip tracking
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ActiveTripScreen(),
+                      builder: (context) => BlocProvider.value(
+                        value: bookingBloc,
+                        child: const ActiveTripScreen(),
+                      ),
                     ),
                   );
                 },
@@ -173,6 +198,9 @@ class BookingConfirmedScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+            ),
+          ],
         ),
       ),
     );

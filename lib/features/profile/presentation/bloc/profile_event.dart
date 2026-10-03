@@ -7,6 +7,8 @@ abstract class ProfileEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class LoadProfileEvent extends ProfileEvent {}
+
 class PickProfileImageEvent extends ProfileEvent {
   final bool fromCamera;
 
@@ -21,6 +23,7 @@ class UpdateProfileFieldEvent extends ProfileEvent {
   final String? lastName;
   final String? mobileNumber;
   final String? email;
+  final String? address;
   final String? carType;
   final String? carName;
   final String? registrationNumber;
@@ -31,6 +34,7 @@ class UpdateProfileFieldEvent extends ProfileEvent {
     this.lastName,
     this.mobileNumber,
     this.email,
+    this.address,
     this.carType,
     this.carName,
     this.registrationNumber,
@@ -43,6 +47,7 @@ class UpdateProfileFieldEvent extends ProfileEvent {
         lastName,
         mobileNumber,
         email,
+        address,
         carType,
         carName,
         registrationNumber,

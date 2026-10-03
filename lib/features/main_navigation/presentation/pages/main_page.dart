@@ -5,7 +5,6 @@ import '../bloc/navigation_event.dart';
 import '../bloc/navigation_state.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
-import '../../../rates/presentation/pages/rates_page.dart';
 import '../../../booking/presentation/pages/my_bookings_page.dart';
 import '../../../../core/theme/app_typography.dart';
 

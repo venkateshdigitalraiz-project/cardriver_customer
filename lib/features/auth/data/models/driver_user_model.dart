@@ -13,15 +13,20 @@ class CustomerUserModel extends CustomerUser {
   });
 
   factory CustomerUserModel.fromJson(Map<String, dynamic> json) {
+    String parsedName = json['name'] as String? ?? '';
+    if (parsedName.isEmpty && json['firstName'] != null) {
+      parsedName = '${json['firstName']} ${json['lastName'] ?? ''}'.trim();
+    }
+    
     return CustomerUserModel(
-      id: json['id'] as String? ?? 'cust_${DateTime.now().millisecondsSinceEpoch}',
-      name: json['name'] as String? ?? 'David Sterling',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      name: parsedName,
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      avatarUrl: json['avatar_url'] as String?,
-      memberTier: json['member_tier'] as String? ?? 'Gold Tier Customer',
-      totalRidesTaken: (json['total_rides_taken'] as num?)?.toInt() ?? 14,
-      savedCarsCount: (json['saved_cars_count'] as num?)?.toInt() ?? 2,
+      avatarUrl: json['avatarUrl'] as String? ?? json['avatar_url'] as String?,
+      memberTier: json['memberTier'] as String? ?? json['member_tier'] as String? ?? 'Premium Member',
+      totalRidesTaken: (json['totalRidesTaken'] as num?)?.toInt() ?? (json['total_rides_taken'] as num?)?.toInt() ?? 0,
+      savedCarsCount: (json['savedCarsCount'] as num?)?.toInt() ?? (json['saved_cars_count'] as num?)?.toInt() ?? 0,
     );
   }
 

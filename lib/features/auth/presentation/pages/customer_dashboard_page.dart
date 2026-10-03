@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -42,7 +43,7 @@ class CustomerDashboardPage extends StatelessWidget {
         BlocProvider<BookingBloc>(
           create: (_) => BookingBloc(
             repository: BookingRepositoryImpl(
-              remoteDataSource: BookingRemoteDataSourceImpl(),
+              remoteDataSource: BookingRemoteDataSourceImpl(dio: Dio()),
             ),
             calculateFareUseCase: CalculateFareUseCase(),
             checkBookingRadiusUseCase: CheckBookingRadiusUseCase(),
@@ -805,7 +806,9 @@ class _CustomerDashboardPageViewState
           color: isSelected ? const Color(0xFFF2F8F9) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF266475) : Colors.grey.withValues(alpha: 0.2),
+            color: isSelected
+                ? const Color(0xFF266475)
+                : Colors.grey.withValues(alpha: 0.2),
             width: isSelected ? 2.0 : 1.0,
           ),
           boxShadow: isSelected
@@ -814,7 +817,7 @@ class _CustomerDashboardPageViewState
                     color: const Color(0xFF266475).withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -822,8 +825,12 @@ class _CustomerDashboardPageViewState
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? const Color(0xFF266475) : Colors.grey.shade400,
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              color: isSelected
+                  ? const Color(0xFF266475)
+                  : Colors.grey.shade400,
               size: 24,
             ),
             const SizedBox(width: 12),
@@ -838,7 +845,9 @@ class _CustomerDashboardPageViewState
                         title,
                         style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? const Color(0xFF266475) : Colors.black87,
+                          color: isSelected
+                              ? const Color(0xFF266475)
+                              : Colors.black87,
                         ),
                       ),
                       Text(
@@ -876,7 +885,7 @@ class _CustomerDashboardPageViewState
       builder: (context, state) {
         if (state is BookingFareCalculated) {
           final res = state.fareResult;
-          
+
           Widget? fixedPackageExtra;
           if (res.searchType == DriverSearchType.outstation) {
             fixedPackageExtra = Row(
@@ -919,7 +928,8 @@ class _CustomerDashboardPageViewState
             );
           }
 
-          int estimatedUsageHours = res.searchType == DriverSearchType.outstation
+          int estimatedUsageHours =
+              res.searchType == DriverSearchType.outstation
               ? (_getOutstationDays(_selectedUsageIndex) * 24)
               : _getLocalHours(_selectedUsageIndex);
 
@@ -934,8 +944,8 @@ class _CustomerDashboardPageViewState
             finalCustomerFare = 250.0 * estimatedUsageHours;
           }
 
-          double finalDriverEarnings = res.customerFare > 0 
-              ? (res.driverEarnings / res.customerFare) * finalCustomerFare 
+          double finalDriverEarnings = res.customerFare > 0
+              ? (res.driverEarnings / res.customerFare) * finalCustomerFare
               : 0;
 
           return Column(
@@ -943,7 +953,7 @@ class _CustomerDashboardPageViewState
             children: [
               _buildSectionTitle('Select Pricing Model', required: true),
               const SizedBox(height: 12),
-              
+
               _buildPricingOptionCard(
                 value: 1,
                 title: 'Basic Hourly',
@@ -970,7 +980,11 @@ class _CustomerDashboardPageViewState
               ),
 
               const SizedBox(height: 24),
-              _buildSectionTitle(_selectedPricingModel == 0 ? 'Fixed Package Fare' : 'Estimated Total Fare'),
+              _buildSectionTitle(
+                _selectedPricingModel == 0
+                    ? 'Fixed Package Fare'
+                    : 'Estimated Total Fare',
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),

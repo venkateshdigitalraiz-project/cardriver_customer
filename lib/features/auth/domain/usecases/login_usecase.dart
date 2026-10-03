@@ -25,11 +25,9 @@ class LoginWithPhoneUseCase {
 
   Future<CustomerUser> call({
     required String phone,
-    required String password,
   }) async {
     return await repository.loginWithPhone(
       phone: phone,
-      password: password,
     );
   }
 }

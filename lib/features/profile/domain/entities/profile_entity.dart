@@ -4,6 +4,7 @@ class ProfileEntity {
   final String lastName;
   final String mobileNumber;
   final String email;
+  final String address;
   final String carType;
   final String carName;
   final String registrationNumber;
@@ -15,6 +16,7 @@ class ProfileEntity {
     this.lastName = '',
     this.mobileNumber = '',
     this.email = '',
+    this.address = '',
     this.carType = '',
     this.carName = '',
     this.registrationNumber = '',
@@ -27,6 +29,7 @@ class ProfileEntity {
     String? lastName,
     String? mobileNumber,
     String? email,
+    String? address,
     String? carType,
     String? carName,
     String? registrationNumber,
@@ -38,6 +41,7 @@ class ProfileEntity {
       lastName: lastName ?? this.lastName,
       mobileNumber: mobileNumber ?? this.mobileNumber,
       email: email ?? this.email,
+      address: address ?? this.address,
       carType: carType ?? this.carType,
       carName: carName ?? this.carName,
       registrationNumber: registrationNumber ?? this.registrationNumber,

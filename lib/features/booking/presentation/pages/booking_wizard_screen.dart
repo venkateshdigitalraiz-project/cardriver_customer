@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../bloc/flow/booking_flow_bloc.dart';
@@ -8,6 +8,7 @@ import 'booking_confirmed_screen.dart';
 import '../widgets/wizard_steps/step_location_vehicle.dart';
 import '../widgets/wizard_steps/step_schedule.dart';
 import '../widgets/booking_map_preview.dart';
+import '../../domain/usecases/submit_booking_usecase.dart';
 
 class BookingWizardScreen extends StatefulWidget {
   final String initialTripType;
@@ -21,7 +22,9 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => BookingFlowBloc()
+      create: (context) => BookingFlowBloc(
+        submitBookingUseCase: context.read<SubmitBookingUseCase>(),
+      )
         ..add(
           UpdateTripTypeEvent(
             isOutstation: widget.initialTripType == 'Outstation',
@@ -32,12 +35,7 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
           if (state.status == BookingFlowStatus.success) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BookingConfirmedScreen(request: state.request),
-              ),
-            );
+            // Wait for user to click "Submit" to navigate
           } else if (state.status == BookingFlowStatus.error &&
               state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -71,6 +69,14 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
           }
 
           final baseFare = _calculateFare(state.request);
+          final responseData = state.bookingResponse;
+          final displayFare = responseData?['totalAmount'] ?? 
+                              responseData?['price'] ?? 
+                              (responseData?['data'] is Map ? responseData!['data']['totalAmount'] : null) ?? 
+                              (responseData?['data'] is Map ? responseData!['data']['price'] : null) ?? 
+                              (responseData?['booking'] is Map ? responseData!['booking']['totalAmount'] : null) ?? 
+                              (responseData?['booking'] is Map ? responseData!['booking']['price'] : null) ?? 
+                              baseFare;
 
           return Scaffold(
             resizeToAvoidBottomInset: false,
@@ -133,7 +139,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                           children: [
                             const StepLocationVehicle(),
                             const StepSchedule(),
-                            Padding(
+                            if (state.status == BookingFlowStatus.success)
+                              Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                                 vertical: 16,
@@ -160,7 +167,7 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '₹ $baseFare',
+                                      '₹ $displayFare',
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
@@ -264,23 +271,64 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            context.read<BookingFlowBloc>().add(
-                              SubmitBookingEvent(),
-                            );
+                            if (state.status == BookingFlowStatus.success) {
+                              final bookingBloc = context.read<BookingFlowBloc>();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: bookingBloc,
+                                    child: BookingConfirmedScreen(
+                                      request: state.request.copyWith(
+                                        estimatedFare: double.tryParse(displayFare.toString()),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              debugPrint('🚗 User clicked: Request Plus Driver');
+                              
+                              final request = state.request;
+                              String? validationError;
+                              
+                              if (request.pickupAddress == null || request.pickupLat == null || request.pickupLng == null) {
+                                validationError = 'Please select a pickup location';
+                              } else if (request.dropAddress == null || request.dropLat == null || request.dropLng == null) {
+                                validationError = 'Please select a drop location';
+                              } else if (request.scheduleDate == null || request.scheduleHour == null || request.scheduleMinute == null) {
+                                validationError = 'Please select a schedule time';
+                              }
+                              
+                              if (validationError != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(validationError),
+                                    backgroundColor: Colors.red.shade600,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              context.read<BookingFlowBloc>().add(
+                                SubmitBookingEvent(),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF1E1E24,
-                            ), // Dark color from screenshot
+                            backgroundColor: state.status == BookingFlowStatus.success ? Colors.green.shade700 : const Color(0xFF1E1E24),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             minimumSize: const Size(double.infinity, 50),
                           ),
-                          child: const Text(
-                            'Request Plus Driver',
-                            style: TextStyle(
+                          child: Text(
+                            state.status == BookingFlowStatus.success 
+                                ? 'Confirm Booking (₹$displayFare)' 
+                                : 'Request Plus Driver',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,

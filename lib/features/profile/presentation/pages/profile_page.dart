@@ -14,6 +14,10 @@ import '../../../locations/presentation/bloc/location_event.dart';
 import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../legal/presentation/pages/legal_page.dart';
 
+import '../../domain/usecases/get_user_profile_usecase.dart';
+import '../../domain/usecases/update_user_profile_usecase.dart';
+import '../bloc/profile_event.dart';
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
@@ -22,7 +26,10 @@ class ProfilePage extends StatelessWidget {
     return Theme(
       data: AppTheme.lightTheme.copyWith(scaffoldBackgroundColor: Colors.white),
       child: BlocProvider(
-        create: (context) => ProfileBloc(),
+        create: (context) => ProfileBloc(
+          getUserProfileUseCase: context.read<GetUserProfileUseCase>(),
+          updateUserProfileUseCase: context.read<UpdateUserProfileUseCase>(),
+        )..add(LoadProfileEvent()),
         child: const ProfileView(),
       ),
     );

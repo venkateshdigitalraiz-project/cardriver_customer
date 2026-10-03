@@ -1,15 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/login_usecase.dart';
+import '../../domain/usecases/verify_otp_usecase.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginWithEmailUseCase loginWithEmailUseCase;
   final LoginWithPhoneUseCase loginWithPhoneUseCase;
+  final VerifyOtpUseCase verifyOtpUseCase;
 
   LoginBloc({
     required this.loginWithEmailUseCase,
     required this.loginWithPhoneUseCase,
+    required this.verifyOtpUseCase,
   }) : super(const LoginState()) {
     on<LoginModeChanged>(_onLoginModeChanged);
     on<TogglePasswordVisibility>(_onTogglePasswordVisibility);
@@ -48,17 +51,26 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     emit(state.copyWith(status: LoginStatus.loading, clearError: true));
     
     try {
-      // Simulate API call to send OTP
-      await Future.delayed(const Duration(seconds: 1));
-      
-      emit(state.copyWith(
-        status: LoginStatus.initial, // Reset status so form is usable again
-        isOtpSent: true,
-      ));
+      if (state.mode == LoginMode.phone) {
+        // We use the full phone number (dial code + phone) if needed, but here event.contact has it.
+        await loginWithPhoneUseCase(phone: event.contact);
+        
+        emit(state.copyWith(
+          status: LoginStatus.initial, // Show OTP field
+          isOtpSent: true,
+        ));
+      } else {
+        // email flow if any
+        await Future.delayed(const Duration(seconds: 1));
+        emit(state.copyWith(
+          status: LoginStatus.initial,
+          isOtpSent: true,
+        ));
+      }
     } catch (e) {
       emit(state.copyWith(
         status: LoginStatus.failure,
-        errorMessage: 'Failed to send OTP. Please try again.',
+        errorMessage: e.toString(),
       ));
     }
   }
@@ -67,26 +79,15 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     emit(state.copyWith(status: LoginStatus.loading, clearError: true));
 
     try {
-      // For now, mock the use case or bypass it since we don't have an OTP use case defined yet
-      // Simulate verification delay
-      await Future.delayed(const Duration(seconds: 1));
+      await verifyOtpUseCase(phone: event.contact, otp: event.otp);
       
-      if (event.otp == '1234') {
-        // Mock successful login
-        emit(state.copyWith(
-          status: LoginStatus.success,
-          // user: mockUser,
-        ));
-      } else {
-        emit(state.copyWith(
-          status: LoginStatus.failure,
-          errorMessage: 'Invalid OTP. Please enter 1234.',
-        ));
-      }
+      emit(state.copyWith(
+        status: LoginStatus.success,
+      ));
     } catch (e) {
       emit(state.copyWith(
         status: LoginStatus.failure,
-        errorMessage: 'An unexpected error occurred. Please try again.',
+        errorMessage: e.toString(),
       ));
     }
   }

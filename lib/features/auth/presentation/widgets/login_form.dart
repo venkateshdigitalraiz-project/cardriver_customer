@@ -34,49 +34,7 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void _onSubmit(LoginState state) {
-    String? errorMsg;
-    if (state.mode == LoginMode.phone) {
-      errorMsg = Validators.validatePhone(_phoneController.text.trim());
-    } else {
-      errorMsg = Validators.validateEmail(_emailController.text.trim());
-    }
-
-    if (state.isOtpSent) {
-      errorMsg ??= Validators.validateOtp(_passwordController.text);
-    }
-
-    if (errorMsg != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  errorMsg,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFFD32F2F), // Premium soft red
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.only(bottom: 32, left: 24, right: 24),
-        ),
-      );
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
@@ -117,6 +75,7 @@ class _LoginFormState extends State<LoginForm> {
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   readOnly: state.isOtpSent,
+                  validator: Validators.validatePhone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
@@ -154,7 +113,10 @@ class _LoginFormState extends State<LoginForm> {
                   suffixIcon: state.isOtpSent
                       ? IconButton(
                           icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
-                          onPressed: () => context.read<LoginBloc>().add(const ResetLoginState()),
+                          onPressed: () {
+                            _passwordController.clear();
+                            context.read<LoginBloc>().add(const ResetLoginState());
+                          },
                           tooltip: 'Change mobile number',
                         )
                       : null,
@@ -171,7 +133,10 @@ class _LoginFormState extends State<LoginForm> {
                   suffixIcon: state.isOtpSent
                       ? IconButton(
                           icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
-                          onPressed: () => context.read<LoginBloc>().add(const ResetLoginState()),
+                          onPressed: () {
+                            _passwordController.clear();
+                            context.read<LoginBloc>().add(const ResetLoginState());
+                          },
                           tooltip: 'Change email address',
                         )
                       : null,
@@ -198,6 +163,7 @@ class _LoginFormState extends State<LoginForm> {
                   child: Pinput(
                     controller: _passwordController,
                     length: 4,
+                    validator: Validators.validateOtp,
                     onSubmitted: (_) => _onSubmit(state),
                     mainAxisAlignment: MainAxisAlignment.center,
                     separatorBuilder: (index) => const SizedBox(width: 16),

@@ -9,7 +9,6 @@ abstract class AuthRepository {
 
   Future<CustomerUser> loginWithPhone({
     required String phone,
-    required String password,
   });
 
   Future<void> sendOtp({required String phone});

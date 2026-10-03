@@ -163,8 +163,8 @@ class _EditProfileViewState extends State<EditProfileView> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withValues(alpha: 
-                                          0.3,
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.3,
                                         ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
@@ -208,6 +208,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                               onChanged: (val) => context
                                   .read<ProfileBloc>()
                                   .add(UpdateProfileFieldEvent(fullName: val)),
+                              validator: (val) => (val == null || val.trim().isEmpty) ? 'Full Name is required' : null,
                             ),
                             _buildDivider(),
                             _buildTextField(
@@ -218,6 +219,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                               onChanged: (val) => context
                                   .read<ProfileBloc>()
                                   .add(UpdateProfileFieldEvent(lastName: val)),
+                              validator: (val) => (val == null || val.trim().isEmpty) ? 'Last Name is required' : null,
                             ),
                             _buildDivider(),
                             _buildTextField(
@@ -241,6 +243,25 @@ class _EditProfileViewState extends State<EditProfileView> {
                               onChanged: (val) => context
                                   .read<ProfileBloc>()
                                   .add(UpdateProfileFieldEvent(email: val)),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'Email Address is required';
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
+                                  return 'Enter a valid email address';
+                                }
+                                return null;
+                              },
+                            ),
+                            _buildDivider(),
+                            _buildTextField(
+                              context,
+                              label: 'Address',
+                              initialValue: profile.address,
+                              icon: Icons.home_outlined,
+                              keyboardType: TextInputType.streetAddress,
+                              onChanged: (val) => context
+                                  .read<ProfileBloc>()
+                                  .add(UpdateProfileFieldEvent(address: val)),
+                              validator: (val) => (val == null || val.trim().isEmpty) ? 'Address is required' : null,
                             ),
                           ],
                         ),
@@ -437,6 +458,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     required IconData icon,
     required Function(String) onChanged,
     TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       initialValue: initialValue,
@@ -456,12 +478,13 @@ class _EditProfileViewState extends State<EditProfileView> {
         ),
       ),
       onChanged: onChanged,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Required';
-        }
-        return null;
-      },
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Required';
+            }
+            return null;
+          },
     );
   }
 
@@ -589,3 +612,20 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
   }
 }
+
+/*
+fill edit fields:
+
+curl --request GET \
+  --url http://192.168.0.161:3000/api/user/profile \
+  --header 'Authorization: Bearer <YOUR_JWT_TOKEN>' \
+  --header 'Cookie: user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MDMzMzQ1MywiZXhwIjoxNzkwOTM4MjUzfQ.ugnKPgJx9ljeNuVjELPfVE6HnAsSnHimDrQsesox02o'
+
+
+ curl --request PUT \
+  --url http://192.168.0.161:3000/api/user/profile \
+  --header 'Authorization: Bearer <YOUR_JWT_TOKEN>' \
+  --header 'Cookie: user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MDMzMzQ1MywiZXhwIjoxNzkwOTM4MjUzfQ.ugnKPgJx9ljeNuVjELPfVE6HnAsSnHimDrQsesox02o' \
+  --header 'content-type: application/json' \
+  --data '{"firstName":"Johns","lastName":"Does","email":"john.newemail@example.com","address":"123 New Street"}' 
+ */

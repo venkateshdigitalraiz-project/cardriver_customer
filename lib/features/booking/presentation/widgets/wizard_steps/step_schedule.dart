@@ -19,6 +19,16 @@ class _StepScheduleState extends State<StepSchedule> {
   TimeOfDay _selectedTime = TimeOfDay.now();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateBloc(context);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<BookingFlowBloc, BookingFlowState>(
       builder: (context, state) {

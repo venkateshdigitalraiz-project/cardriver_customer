@@ -15,12 +15,12 @@ class Validators {
 
   static String? validatePhone(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required';
+      return 'Mobile number is required';
     }
-    final phoneRegex = RegExp(r'^[0-9]{8,15}$');
     final cleaned = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    final phoneRegex = RegExp(r'^[0-9]{10}$');
     if (!phoneRegex.hasMatch(cleaned)) {
-      return 'Please enter a valid phone number (8-15 digits)';
+      return 'Please enter a valid 10-digit mobile number';
     }
     return null;
   }

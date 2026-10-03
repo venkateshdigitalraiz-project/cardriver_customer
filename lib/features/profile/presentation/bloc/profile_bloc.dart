@@ -1,27 +1,42 @@
 // ignore_for_file: invalid_use_of_visible_for_testing_member
 
-import 'package:cardriver_customer/features/profile/domain/entities/profile_entity.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../domain/entities/profile_entity.dart';
+import '../../domain/usecases/get_user_profile_usecase.dart';
+import '../../domain/usecases/update_user_profile_usecase.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ImagePicker _picker = ImagePicker();
-  ProfileEntity _currentProfile = ProfileEntity(
-    fullName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    mobileNumber: '+91 9876543210',
-  );
+  final GetUserProfileUseCase getUserProfileUseCase;
+  final UpdateUserProfileUseCase updateUserProfileUseCase;
+  
+  ProfileEntity _currentProfile = ProfileEntity();
 
-  ProfileBloc() : super(ProfileInitial()) {
+  ProfileBloc({
+    required this.getUserProfileUseCase,
+    required this.updateUserProfileUseCase,
+  }) : super(ProfileInitial()) {
+    on<LoadProfileEvent>(_onLoadProfile);
     on<PickProfileImageEvent>(_onPickProfileImage);
     on<UpdateProfileFieldEvent>(_onUpdateProfileField);
     on<SubmitProfileEvent>(_onSubmitProfile);
+  }
 
-    // Emit initial loaded state
-    emit(ProfileLoaded(profile: _currentProfile));
+  Future<void> _onLoadProfile(
+    LoadProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(ProfileLoading(_currentProfile));
+    try {
+      final profile = await getUserProfileUseCase();
+      _currentProfile = profile;
+      emit(ProfileLoaded(profile: _currentProfile));
+    } catch (e) {
+      emit(ProfileError('Failed to load profile: $e', _currentProfile));
+    }
   }
 
   Future<void> _onPickProfileImage(
@@ -40,7 +55,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       }
     } catch (e) {
       emit(ProfileError('Failed to pick image: $e', _currentProfile));
-      // Revert to loaded state after showing error
       emit(ProfileLoaded(profile: _currentProfile));
     }
   }
@@ -54,6 +68,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       lastName: event.lastName,
       mobileNumber: event.mobileNumber,
       email: event.email,
+      address: event.address,
       carType: event.carType,
       carName: event.carName,
       registrationNumber: event.registrationNumber,
@@ -67,18 +82,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading(_currentProfile));
-
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Here you would typically call a repository to save the profile data
-
+      final updatedProfile = await updateUserProfileUseCase(_currentProfile);
+      _currentProfile = updatedProfile;
       emit(ProfileSubmitSuccess(_currentProfile));
-      // Reset back to loaded state so user can continue editing if they want
       emit(ProfileLoaded(profile: _currentProfile));
     } catch (e) {
-      emit(ProfileError('Failed to save profile', _currentProfile));
+      emit(ProfileError('Failed to save profile: $e', _currentProfile));
       emit(ProfileLoaded(profile: _currentProfile));
     }
   }

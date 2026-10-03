@@ -11,4 +11,9 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<BookingRateConfigEntity> getRateConfig() async {
     return await remoteDataSource.fetchRateConfig();
   }
+
+  @override
+  Future<Map<String, dynamic>> submitBooking(Map<String, dynamic> payload) async {
+    return await remoteDataSource.submitBooking(payload);
+  }
 }
