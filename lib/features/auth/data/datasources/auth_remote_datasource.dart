@@ -1,4 +1,6 @@
+// ignore_for_file: avoid_print
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +23,14 @@ abstract class AuthRemoteDataSource {
   Future<CustomerUserModel> verifyOtp({
     required String phone,
     required String otp,
+  });
+
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String address,
   });
 }
 
@@ -207,6 +217,93 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {
       debugPrint('❌ API Exception -> $e');
+      if (e is AuthFailure) rethrow;
+      throw const AuthFailure('An unexpected error occurred. Please try again later.');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String address,
+  }) async {
+    final payload = {
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      'phone': phone,
+      'address': address,
+    };
+
+    final requestLog = '''
+==================== 🌍 REGISTER API REQUEST ====================
+URL     : ${ApiEndpoints.register}
+Method  : POST
+Headers : {"Content-Type": "application/json"}
+Payload : ${jsonEncode(payload)}
+==================================================================''';
+    print(requestLog);
+    developer.log(requestLog, name: 'RegisterAPI');
+
+    try {
+      final response = await dio.post(
+        ApiEndpoints.register,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: payload,
+      );
+
+      final responseLog = '''
+==================== ✅ REGISTER API RESPONSE ====================
+Status Code : ${response.statusCode}
+Headers     : ${response.headers.map}
+Data        : ${response.data is Map || response.data is List ? jsonEncode(response.data) : response.data}
+==================================================================''';
+      print(responseLog);
+      developer.log(responseLog, name: 'RegisterAPI');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data;
+        if (responseData is Map<String, dynamic>) {
+          if (responseData['success'] == false || responseData['status'] == false) {
+            final msg = responseData['message'] ?? 'Registration failed.';
+            print('⚠️ [REGISTER API] Server business error: $msg');
+            throw AuthFailure(msg);
+          }
+          return responseData;
+        }
+        return {'message': 'Registration successful'};
+      } else {
+        throw const AuthFailure('Failed to register. Please try again.');
+      }
+    } on DioException catch (e) {
+      final errorLog = '''
+==================== ❌ REGISTER API DIO EXCEPTION ====================
+Error Type   : ${e.type}
+Error Message: ${e.message}
+Status Code  : ${e.response?.statusCode}
+Response Data: ${e.response?.data != null ? (e.response!.data is Map || e.response!.data is List ? jsonEncode(e.response!.data) : e.response!.data) : "null"}
+======================================================================''';
+      print(errorLog);
+      developer.log(errorLog, name: 'RegisterAPI');
+
+      if (e.response?.data is Map<String, dynamic>) {
+        final data = e.response!.data as Map<String, dynamic>;
+        if (data.containsKey('message')) {
+          throw AuthFailure(data['message']);
+        }
+      }
+      throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
+    } catch (e) {
+      final generalErrorLog = '''
+==================== ❌ REGISTER API EXCEPTION ====================
+Exception: $e
+====================================================================''';
+      print(generalErrorLog);
+      developer.log(generalErrorLog, name: 'RegisterAPI');
+
       if (e is AuthFailure) rethrow;
       throw const AuthFailure('An unexpected error occurred. Please try again later.');
     }

@@ -21,6 +21,9 @@ class CustomTextField extends StatefulWidget {
   final bool enabled;
   final bool readOnly;
   final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final MaxLengthEnforcement? maxLengthEnforcement;
+  final InputCounterWidgetBuilder? buildCounter;
 
   const CustomTextField({
     super.key,
@@ -40,6 +43,9 @@ class CustomTextField extends StatefulWidget {
     this.enabled = true,
     this.readOnly = false,
     this.inputFormatters,
+    this.maxLength,
+    this.maxLengthEnforcement,
+    this.buildCounter,
   });
 
   @override
@@ -130,11 +136,19 @@ class _CustomTextFieldState extends State<CustomTextField> {
             enabled: widget.enabled,
             readOnly: widget.readOnly,
             inputFormatters: widget.inputFormatters,
+            maxLength: widget.maxLength,
+            maxLengthEnforcement: widget.maxLengthEnforcement ??
+                (widget.maxLength != null ? MaxLengthEnforcement.enforced : null),
+            buildCounter: widget.buildCounter ??
+                (widget.maxLength != null
+                    ? (_, {required currentLength, required isFocused, maxLength}) => null
+                    : null),
             style: AppTypography.bodyLarge.copyWith(
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
+              counterText: widget.buildCounter != null ? null : (widget.maxLength != null ? '' : null),
               filled: true,
               fillColor: isDark
                   ? (_isFocused ? AppColors.surfaceElevatedDark : AppColors.inputFillDark)

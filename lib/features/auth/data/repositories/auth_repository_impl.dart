@@ -39,4 +39,21 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     return await remoteDataSource.verifyOtp(phone: phone, otp: otp);
   }
+
+  @override
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String address,
+  }) async {
+    await remoteDataSource.register(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      address: address,
+    );
+  }
 }

@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,11 +28,20 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
     super.dispose();
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     const p = 0.017453292519943295; // Math.PI / 180
-    final a = 0.5 -
+    final a =
+        0.5 -
         math.cos((lat2 - lat1) * p) / 2 +
-        math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2;
+        math.cos(lat1 * p) *
+            math.cos(lat2 * p) *
+            (1 - math.cos((lon2 - lon1) * p)) /
+            2;
     return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
   }
 
@@ -104,7 +115,6 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                         //     },
                         //   ),
                         // ),
-
                         Row(
                           children: [
                             // Timeline Indicators
@@ -194,13 +204,15 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                         final distance = _calculateDistance(
                                           state.request.pickupLat!,
                                           state.request.pickupLng!,
-                                          details.lat!,
-                                          details.lng!,
+                                          details.lat,
+                                          details.lng,
                                         );
 
                                         if (distance > 100 &&
                                             _selectedTripType != 'Outstation') {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             const SnackBar(
                                               content: Text(
                                                 'Destination is more than 100km away. Please select Outstation for long distance trips.',
@@ -429,7 +441,10 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: nameController,
-                      style: const TextStyle(color: Colors.black87, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
@@ -467,7 +482,10 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: colorController,
-                      style: const TextStyle(color: Colors.black87, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                      ),
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
@@ -562,7 +580,9 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
     String currentTransmission,
     String currentCategory,
   ) async {
-    String transmission = currentTransmission.isEmpty ? 'Manual' : currentTransmission;
+    String transmission = currentTransmission.isEmpty
+        ? 'Manual'
+        : currentTransmission;
     String category = currentCategory.isEmpty ? 'Hatchback' : currentCategory;
 
     final result = await showDialog<Map<String, String>>(
@@ -614,13 +634,15 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                             _buildTransmissionPill(
                               title: 'Manual',
                               isSelected: transmission == 'Manual',
-                              onTap: () => setState(() => transmission = 'Manual'),
+                              onTap: () =>
+                                  setState(() => transmission = 'Manual'),
                             ),
                             const SizedBox(width: 12),
                             _buildTransmissionPill(
                               title: 'Automatic',
                               isSelected: transmission == 'Automatic',
-                              onTap: () => setState(() => transmission = 'Automatic'),
+                              onTap: () =>
+                                  setState(() => transmission = 'Automatic'),
                             ),
                           ],
                         ),
@@ -639,7 +661,8 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                             _buildCarTypeCard(
                               title: 'Hatchback',
                               isSelected: category == 'Hatchback',
-                              onTap: () => setState(() => category = 'Hatchback'),
+                              onTap: () =>
+                                  setState(() => category = 'Hatchback'),
                             ),
                             _buildCarTypeCard(
                               title: 'Sedan',
@@ -737,7 +760,8 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isSelected) const Icon(Icons.check, color: Colors.green, size: 16),
+              if (isSelected)
+                const Icon(Icons.check, color: Colors.green, size: 16),
               if (isSelected) const SizedBox(width: 4),
               Text(
                 title,
@@ -770,7 +794,9 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                 color: isSelected ? Colors.green.shade50 : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isSelected ? Colors.green.shade100 : Colors.grey.shade200,
+                  color: isSelected
+                      ? Colors.green.shade100
+                      : Colors.grey.shade200,
                 ),
               ),
               child: Stack(

@@ -8,7 +8,9 @@ import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
 import 'features/auth/domain/usecases/verify_otp_usecase.dart';
+import 'features/auth/domain/usecases/register_usecase.dart';
 import 'features/auth/presentation/bloc/login_bloc.dart';
+import 'features/auth/presentation/bloc/register_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/booking/data/datasources/booking_remote_datasource.dart';
 import 'features/booking/data/repositories/booking_repository_impl.dart';
@@ -58,6 +60,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final loginWithEmailUseCase = LoginWithEmailUseCase(authRepository);
     final loginWithPhoneUseCase = LoginWithPhoneUseCase(authRepository);
     final verifyOtpUseCase = VerifyOtpUseCase(authRepository);
+    final registerUseCase = RegisterUseCase(authRepository);
     
     final bookingRemoteDataSource = BookingRemoteDataSourceImpl(dio: dio);
     final bookingRepository = BookingRepositoryImpl(remoteDataSource: bookingRemoteDataSource);
@@ -70,6 +73,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
 
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider.value(value: registerUseCase),
         RepositoryProvider.value(value: submitBookingUseCase),
         RepositoryProvider.value(value: getUserProfileUseCase),
         RepositoryProvider.value(value: updateUserProfileUseCase),
@@ -81,6 +85,11 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
             loginWithEmailUseCase: loginWithEmailUseCase,
             loginWithPhoneUseCase: loginWithPhoneUseCase,
             verifyOtpUseCase: verifyOtpUseCase,
+          ),
+        ),
+        BlocProvider<RegisterBloc>(
+          create: (_) => RegisterBloc(
+            registerUseCase: registerUseCase,
           ),
         ),
       ],

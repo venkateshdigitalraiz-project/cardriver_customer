@@ -4,6 +4,7 @@ class ApiEndpoints {
   // User Authentication
   static const String login = '$baseUrl/user/login';
   static const String verifyOtp = '$baseUrl/user/verify-otp';
+  static const String register = '$baseUrl/user/register';
 
   // Booking
   static const String driverBooking = '$baseUrl/user/driver-booking';

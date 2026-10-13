@@ -11,6 +11,7 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../bloc/login_bloc.dart';
 import '../bloc/login_event.dart';
 import '../bloc/login_state.dart';
+import '../pages/register_page.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -75,10 +76,15 @@ class _LoginFormState extends State<LoginForm> {
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   readOnly: state.isOtpSent,
+                  maxLength: 10,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
                   validator: Validators.validatePhone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
+                    LengthLimitingTextInputFormatter(
+                      10,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    ),
                   ],
                   prefixIcon: Container(
                     padding: const EdgeInsets.only(
@@ -347,6 +353,45 @@ class _LoginFormState extends State<LoginForm> {
                 ),
                 isLoading: isLoading,
                 onPressed: () => _onSubmit(state),
+              ),
+
+              const SizedBox(height: AppDimens.p20),
+
+              // Register Support Text Link
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: AppTypography.bodySmall.copyWith(
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Register',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: isDark
+                              ? AppColors.primary
+                              : AppColors.primaryDark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

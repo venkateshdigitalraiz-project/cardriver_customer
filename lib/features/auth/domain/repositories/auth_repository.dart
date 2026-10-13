@@ -17,4 +17,12 @@ abstract class AuthRepository {
     required String phone,
     required String otp,
   });
+
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String address,
+  });
 }
