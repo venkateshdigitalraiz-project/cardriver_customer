@@ -8,6 +8,7 @@ import '../../../../../core/widgets/publish_location_field.dart';
 import '../../bloc/flow/booking_flow_bloc.dart';
 import '../../bloc/flow/booking_flow_event.dart';
 import '../../bloc/flow/booking_flow_state.dart';
+import 'step_schedule.dart';
 
 class StepLocationVehicle extends StatefulWidget {
   const StepLocationVehicle({super.key});
@@ -19,7 +20,6 @@ class StepLocationVehicle extends StatefulWidget {
 class _StepLocationVehicleState extends State<StepLocationVehicle> {
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
-  String _selectedTripType = 'One Way';
 
   @override
   void dispose() {
@@ -56,19 +56,121 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
         if (_dropController.text.isEmpty && state.request.dropAddress != null) {
           _dropController.text = state.request.dropAddress!;
         }
-        if (state.request.isOutstation && _selectedTripType != 'Outstation') {
-          _selectedTripType = 'Outstation';
-        } else if (!state.request.isOutstation &&
-            _selectedTripType == 'Outstation') {
-          _selectedTripType = 'One Way';
-        }
+
+        final bool isOutstation = state.request.isOutstation;
+        final bool isRoundTrip =
+            state.request.tripType.toLowerCase().contains('round');
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 12),
+              // Booking Service Type Selector (Local vs Outstation)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          if (isOutstation) {
+                            context.read<BookingFlowBloc>().add(
+                              UpdateTripTypeEvent(
+                                isOutstation: false,
+                                tripType: isRoundTrip ? 'Round Trip' : 'One Way',
+                              ),
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !isOutstation
+                                ? const Color(0xFF1E1E24)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.directions_car_filled_rounded,
+                                size: 16,
+                                color: !isOutstation ? Colors.white : Colors.black87,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Local',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: !isOutstation ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          if (!isOutstation) {
+                            context.read<BookingFlowBloc>().add(
+                              UpdateTripTypeEvent(
+                                isOutstation: true,
+                                tripType: isRoundTrip ? 'Round Trip' : 'One Way',
+                              ),
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isOutstation
+                                ? const Color(0xFF1E1E24)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.alt_route_rounded,
+                                size: 16,
+                                color: isOutstation ? Colors.white : Colors.black87,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Outstation',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: isOutstation ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Rapido Style Unified Location Picker
               Stack(
@@ -130,7 +232,7 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                     color: Colors.green,
                                     size: 14,
                                   ),
-                                  _selectedTripType == 'Round Trip'
+                                  isRoundTrip
                                       ? Container(
                                           height: 48,
                                           alignment: Alignment.center,
@@ -185,15 +287,19 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                     color: Colors.grey.shade300,
                                   ),
                                   PublishLocationField(
-                                    label: _selectedTripType == 'Round Trip'
+                                    label: isRoundTrip
                                         ? 'Drop Location & Return'
-                                        : 'Drop Location (Optional)',
+                                        : (isOutstation
+                                            ? 'Destination (Required)'
+                                            : 'Drop Location (Optional)'),
                                     showLabel: false,
                                     showShadow: false,
                                     backgroundColor: Colors.transparent,
-                                    hint: _selectedTripType == 'Round Trip'
+                                    hint: isRoundTrip
                                         ? 'Search drop & return location'
-                                        : 'Search drop location',
+                                        : (isOutstation
+                                            ? 'Search destination'
+                                            : 'Search drop location'),
                                     controller: _dropController,
                                     onChanged: (val) {},
                                     onAddressDetailsSelected: (details) {
@@ -209,7 +315,7 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                         );
 
                                         if (distance > 100 &&
-                                            _selectedTripType != 'Outstation') {
+                                            !isOutstation) {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -244,6 +350,91 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+
+              // Journey Type Selection (One Way / Round Trip)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Journey Type',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isOutstation
+                          ? Colors.orange.shade50
+                          : Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isOutstation
+                            ? Colors.orange.shade200
+                            : Colors.teal.shade200,
+                      ),
+                    ),
+                    child: Text(
+                      isOutstation ? 'Outstation' : 'Local',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isOutstation
+                            ? Colors.orange.shade900
+                            : Colors.teal.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildTripTypeCard(
+                    title: 'One Way',
+                    subtitle: isOutstation
+                        ? 'Drop at destination'
+                        : 'Single drop-off',
+                    icon: Icons.near_me,
+                    isSelected: !isRoundTrip,
+                    onTap: () {
+                      context.read<BookingFlowBloc>().add(
+                        UpdateTripTypeEvent(
+                          isOutstation: isOutstation,
+                          tripType: 'One Way',
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _buildTripTypeCard(
+                    title: 'Round Trip',
+                    subtitle: isOutstation
+                        ? 'Return to origin'
+                        : 'Return to pickup',
+                    icon: Icons.sync_alt,
+                    isSelected: isRoundTrip,
+                    onTap: () {
+                      context.read<BookingFlowBloc>().add(
+                        UpdateTripTypeEvent(
+                          isOutstation: isOutstation,
+                          tripType: 'Round Trip',
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Step Schedule (Estimated Usage & Pickup Date/Time)
+              const StepSchedule(),
               const SizedBox(height: 24),
 
               // Car for Today
@@ -372,6 +563,86 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTripTypeCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.green.shade50 : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.green : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.green : Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: isSelected ? Colors.white : Colors.black54,
+                    ),
+                  ),
+                  Icon(
+                    isSelected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: isSelected ? Colors.green : Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.green.shade900 : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isSelected ? Colors.green.shade700 : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

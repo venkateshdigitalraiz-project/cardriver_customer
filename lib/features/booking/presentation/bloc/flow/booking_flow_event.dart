@@ -48,7 +48,9 @@ class UpdateLocationVehicleEvent extends BookingFlowEvent {
       ];
 }
 
-class ClearLocationEvent extends BookingFlowEvent {}
+class ClearLocationEvent extends BookingFlowEvent {
+  const ClearLocationEvent();
+}
 
 class UpdateScheduleEvent extends BookingFlowEvent {
   final DateTime date;
@@ -74,7 +76,9 @@ class UpdateDurationEvent extends BookingFlowEvent {
   List<Object?> get props => [durationHours];
 }
 
-class SubmitBookingEvent extends BookingFlowEvent {}
+class SubmitBookingEvent extends BookingFlowEvent {
+  const SubmitBookingEvent();
+}
 
 class UpdateTripTypeEvent extends BookingFlowEvent {
   final bool isOutstation;
@@ -84,4 +88,8 @@ class UpdateTripTypeEvent extends BookingFlowEvent {
 
   @override
   List<Object?> get props => [isOutstation, tripType];
+}
+
+class FetchChargesEvent extends BookingFlowEvent {
+  const FetchChargesEvent();
 }

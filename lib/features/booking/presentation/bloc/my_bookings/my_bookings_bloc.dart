@@ -1,11 +1,15 @@
-import 'package:cardriver_customer/features/booking/domain/entities/booking_entity.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../domain/usecases/get_driver_bookings_usecase.dart';
 import 'my_bookings_event.dart';
 import 'my_bookings_state.dart';
 
 class MyBookingsBloc extends Bloc<MyBookingsEvent, MyBookingsState> {
-  MyBookingsBloc() : super(MyBookingsInitial()) {
+  final GetDriverBookingsUseCase getDriverBookingsUseCase;
+
+  MyBookingsBloc({required this.getDriverBookingsUseCase}) : super(MyBookingsInitial()) {
     on<LoadMyBookings>(_onLoadMyBookings);
+    on<RefreshMyBookings>(_onRefreshMyBookings);
+    on<LoadMoreMyBookings>(_onLoadMoreMyBookings);
   }
 
   Future<void> _onLoadMyBookings(
@@ -15,53 +19,91 @@ class MyBookingsBloc extends Bloc<MyBookingsEvent, MyBookingsState> {
     emit(MyBookingsLoading());
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
+      final result = await getDriverBookingsUseCase(
+        params: GetDriverBookingsParams(
+          page: event.page,
+          limit: event.limit,
+          status: event.status,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          search: event.search,
+        ),
+      );
 
-      // Dummy Data
-      final dummyBookings = [
-        BookingEntity(
-          id: 'BKG-10294',
-          status: 'Upcoming',
-          tripType: 'Local',
-          pickupAddress: 'Gachibowli, Hyderabad, Telangana',
-          scheduleDate: DateTime.now().add(const Duration(days: 1)),
-          duration: 4,
-          fare: 600.0,
-          driverName: 'Unassigned',
-          driverMobile: 'N/A',
-          driverVehicle: 'DriveU Classic',
-        ),
-        BookingEntity(
-          id: 'BKG-10183',
-          status: 'Completed',
-          tripType: 'Outstation',
-          pickupAddress: 'Madhapur, Hyderabad',
-          dropAddress: 'Vijayawada, Andhra Pradesh',
-          scheduleDate: DateTime.now().subtract(const Duration(days: 5)),
-          duration: 2,
-          fare: 3000.0,
-          driverName: 'Rajesh Kumar',
-          driverMobile: '+91 9876543210',
-          driverVehicle: 'DriveU Plus',
-        ),
-        BookingEntity(
-          id: 'BKG-09822',
-          status: 'Cancelled',
-          tripType: 'Local',
-          pickupAddress: 'Kondapur, Hyderabad',
-          scheduleDate: DateTime.now().subtract(const Duration(days: 12)),
-          duration: 8,
-          fare: 1200.0,
-          driverName: 'Suresh Singh',
-          driverMobile: '+91 8765432109',
-          driverVehicle: 'DriveU Classic',
-        ),
-      ];
+      final hasReachedMax = result.pagination.page >= result.pagination.totalPages;
 
-      emit(MyBookingsLoaded(dummyBookings));
+      emit(MyBookingsLoaded(
+        result.bookings,
+        pagination: result.pagination,
+        hasReachedMax: hasReachedMax,
+        currentStatus: event.status,
+      ));
     } catch (e) {
-      emit(MyBookingsError('Failed to load bookings: $e'));
+      emit(MyBookingsError(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onRefreshMyBookings(
+    RefreshMyBookings event,
+    Emitter<MyBookingsState> emit,
+  ) async {
+    try {
+      final result = await getDriverBookingsUseCase(
+        params: GetDriverBookingsParams(
+          page: 1,
+          limit: event.limit,
+          status: event.status,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          search: event.search,
+        ),
+      );
+
+      final hasReachedMax = result.pagination.page >= result.pagination.totalPages;
+
+      emit(MyBookingsLoaded(
+        result.bookings,
+        pagination: result.pagination,
+        hasReachedMax: hasReachedMax,
+        currentStatus: event.status,
+      ));
+    } catch (e) {
+      emit(MyBookingsError(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onLoadMoreMyBookings(
+    LoadMoreMyBookings event,
+    Emitter<MyBookingsState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! MyBookingsLoaded) return;
+    if (currentState.isLoadingMore || currentState.hasReachedMax) return;
+
+    emit(currentState.copyWith(isLoadingMore: true));
+
+    try {
+      final nextPage = currentState.pagination.page + 1;
+      final result = await getDriverBookingsUseCase(
+        params: GetDriverBookingsParams(
+          page: nextPage,
+          limit: currentState.pagination.limit,
+          status: currentState.currentStatus,
+        ),
+      );
+
+      final updatedBookings = List.of(currentState.bookings)..addAll(result.bookings);
+      final hasReachedMax = result.pagination.page >= result.pagination.totalPages;
+
+      emit(currentState.copyWith(
+        bookings: updatedBookings,
+        pagination: result.pagination,
+        isLoadingMore: false,
+        hasReachedMax: hasReachedMax,
+      ));
+    } catch (e) {
+      emit(currentState.copyWith(isLoadingMore: false));
     }
   }
 }
+

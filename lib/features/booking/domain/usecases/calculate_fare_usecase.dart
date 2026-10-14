@@ -1,8 +1,25 @@
 import '../entities/booking_fare_result.dart';
 import '../entities/booking_rate_config_entity.dart';
+import '../entities/charges_entity.dart';
 import '../../../../features/drivers/domain/entities/driver_search_type.dart';
 
 class CalculateFareUseCase {
+  BookingFareResult calculateDynamicFare({
+    required ChargesEntity charges,
+    required bool isOutstation,
+    required String tripType,
+    required int durationHours,
+    int? startHour,
+    int? startMinute,
+  }) {
+    return charges.calculateFareResult(
+      isOutstation: isOutstation,
+      tripType: tripType,
+      durationHours: durationHours,
+      startHour: startHour,
+      startMinute: startMinute,
+    );
+  }
   BookingFareResult calculateLocalFare({
     required int startHour,
     required int startMinute,

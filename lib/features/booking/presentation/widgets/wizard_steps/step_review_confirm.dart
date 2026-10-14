@@ -12,7 +12,7 @@ class StepReviewConfirm extends StatelessWidget {
       builder: (context, state) {
         final req = state.request;
 
-        int _calculateFare(var req) {
+        int calculateFare(var req) {
           if (req.isOutstation) {
             return req.durationHours * 1500; // Assuming outstation daily flat rate
           }
@@ -32,7 +32,7 @@ class StepReviewConfirm extends StatelessWidget {
           return totalFare;
         }
         
-        final baseFare = _calculateFare(req);
+        final baseFare = calculateFare(req);
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),

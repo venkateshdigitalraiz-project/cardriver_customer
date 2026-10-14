@@ -1,4 +1,9 @@
 import 'package:cardriver_customer/features/booking/domain/usecases/submit_booking_usecase.dart';
+import 'package:cardriver_customer/features/booking/domain/usecases/get_charges_usecase.dart';
+import 'package:cardriver_customer/features/booking/domain/usecases/calculate_fare_usecase.dart';
+import 'package:cardriver_customer/features/booking/domain/entities/booking_fare_result.dart';
+import 'package:cardriver_customer/features/booking/domain/entities/booking_request_entity.dart';
+import 'package:cardriver_customer/features/booking/domain/entities/charges_entity.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'booking_flow_event.dart';
 import 'booking_flow_state.dart';
@@ -8,17 +13,38 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
   static const int _maxSteps = 3;
 
   final SubmitBookingUseCase submitBookingUseCase;
+  final GetChargesUseCase getChargesUseCase;
+  final CalculateFareUseCase calculateFareUseCase;
 
-  BookingFlowBloc({required this.submitBookingUseCase})
-    : super(const BookingFlowState()) {
+  BookingFlowBloc({
+    required this.submitBookingUseCase,
+    required this.getChargesUseCase,
+    required this.calculateFareUseCase,
+  }) : super(const BookingFlowState()) {
     on<NextStepEvent>(_onNextStep);
     on<PreviousStepEvent>(_onPreviousStep);
     on<UpdateLocationVehicleEvent>(_onUpdateLocationVehicle);
     on<UpdateScheduleEvent>(_onUpdateSchedule);
     on<UpdateDurationEvent>(_onUpdateDuration);
+    on<FetchChargesEvent>(_onFetchCharges);
     on<SubmitBookingEvent>(_onSubmitBooking);
     on<UpdateTripTypeEvent>(_onUpdateTripType);
     on<ClearLocationEvent>(_onClearLocation);
+  }
+
+  BookingFareResult _calculateFare({
+    required BookingRequestEntity request,
+    required ChargesEntity? charges,
+  }) {
+    final effectiveCharges = charges ?? const ChargesEntity();
+    return calculateFareUseCase.calculateDynamicFare(
+      charges: effectiveCharges,
+      isOutstation: request.isOutstation,
+      tripType: request.tripType,
+      durationHours: request.durationHours,
+      startHour: request.scheduleHour,
+      startMinute: request.scheduleMinute,
+    );
   }
 
   void _onClearLocation(
@@ -65,22 +91,80 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     UpdateScheduleEvent event,
     Emitter<BookingFlowState> emit,
   ) {
-    final updatedRequest = state.request.copyWith(
+    var updatedRequest = state.request.copyWith(
       scheduleDate: event.date,
       scheduleHour: event.hour,
       scheduleMinute: event.minute,
     );
-    emit(state.copyWith(request: updatedRequest));
+    final fareResult = _calculateFare(
+      request: updatedRequest,
+      charges: state.charges,
+    );
+    updatedRequest = updatedRequest.copyWith(estimatedFare: fareResult.customerFare);
+    emit(state.copyWith(
+      request: updatedRequest,
+      driverEarnings: fareResult.driverEarnings,
+    ));
   }
 
-  void _onUpdateDuration(
+  Future<void> _onUpdateDuration(
     UpdateDurationEvent event,
     Emitter<BookingFlowState> emit,
-  ) {
-    final updatedRequest = state.request.copyWith(
+  ) async {
+    var updatedRequest = state.request.copyWith(
       durationHours: event.durationHours,
     );
-    emit(state.copyWith(request: updatedRequest));
+    final currentFare = _calculateFare(
+      request: updatedRequest,
+      charges: state.charges,
+    );
+    updatedRequest = updatedRequest.copyWith(estimatedFare: currentFare.customerFare);
+
+    emit(state.copyWith(
+      request: updatedRequest,
+      driverEarnings: currentFare.driverEarnings,
+      isLoadingCharges: state.charges == null,
+    ));
+
+    if (state.charges == null) {
+      try {
+        final charges = await getChargesUseCase();
+        final fareResult = _calculateFare(
+          request: updatedRequest,
+          charges: charges,
+        );
+        emit(state.copyWith(
+          request: updatedRequest.copyWith(estimatedFare: fareResult.customerFare),
+          driverEarnings: fareResult.driverEarnings,
+          charges: charges,
+          isLoadingCharges: false,
+        ));
+      } catch (_) {
+        emit(state.copyWith(isLoadingCharges: false));
+      }
+    }
+  }
+
+  Future<void> _onFetchCharges(
+    FetchChargesEvent event,
+    Emitter<BookingFlowState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingCharges: true));
+    try {
+      final charges = await getChargesUseCase();
+      final fareResult = _calculateFare(
+        request: state.request,
+        charges: charges,
+      );
+      emit(state.copyWith(
+        request: state.request.copyWith(estimatedFare: fareResult.customerFare),
+        driverEarnings: fareResult.driverEarnings,
+        charges: charges,
+        isLoadingCharges: false,
+      ));
+    } catch (_) {
+      emit(state.copyWith(isLoadingCharges: false));
+    }
   }
 
   Future<void> _onSubmitBooking(
@@ -110,7 +194,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       );
       return;
     }
-    if (request.tripType == 'Outstation') {
+    if (request.isOutstation) {
       if (request.dropAddress == null || request.dropAddress!.isEmpty) {
         emit(
           state.copyWith(
@@ -129,14 +213,9 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     try {
       // Build the payload mapping
       final String serviceType = request.isOutstation ? 'outstation' : 'local';
-      // Assume round_trip by default or calculate based on drop location
-      String tripType = request.tripType.toLowerCase().replaceAll(
-        ' ',
-        '_',
-      );
-      if (tripType == 'local') {
-        tripType = 'round_trip';
-      }
+      final String tripType = request.tripType.toLowerCase().contains('round')
+          ? 'round_trip'
+          : 'one_way';
 
       // Construct ISO timestamp string
       // Example: 2026-09-26T10:00:00.000Z
@@ -197,12 +276,43 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     UpdateTripTypeEvent event,
     Emitter<BookingFlowState> emit,
   ) {
-    // If we switch to outstation, default duration to 1 day (1), else 4 hours (4)
-    final updatedRequest = state.request.copyWith(
+    final bool isSwitchingService =
+        event.isOutstation != state.request.isOutstation;
+    final bool isSwitchingJourney = event.tripType != state.request.tripType;
+
+    int newDuration = state.request.durationHours;
+    if (isSwitchingService) {
+      if (event.isOutstation) {
+        newDuration = 1; // 1 Day default for outstation
+      } else {
+        newDuration = event.tripType.toLowerCase().contains('round') ? 8 : 4;
+      }
+    } else if (isSwitchingJourney && !event.isOutstation) {
+      // Switching between One Way and Round Trip within Local
+      if (event.tripType.toLowerCase().contains('round') && newDuration < 8) {
+        newDuration = 8;
+      } else if (!event.tripType.toLowerCase().contains('round') &&
+          newDuration > 12) {
+        newDuration = 4;
+      }
+    }
+
+    var updatedRequest = state.request.copyWith(
       isOutstation: event.isOutstation,
       tripType: event.tripType,
-      durationHours: event.isOutstation ? 1 : 4,
+      durationHours: newDuration,
     );
-    emit(state.copyWith(request: updatedRequest));
+
+    final fareResult = _calculateFare(
+      request: updatedRequest,
+      charges: state.charges,
+    );
+    updatedRequest =
+        updatedRequest.copyWith(estimatedFare: fareResult.customerFare);
+
+    emit(state.copyWith(
+      request: updatedRequest,
+      driverEarnings: fareResult.driverEarnings,
+    ));
   }
 }

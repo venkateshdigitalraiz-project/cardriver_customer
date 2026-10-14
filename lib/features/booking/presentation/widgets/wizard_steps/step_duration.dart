@@ -5,36 +5,53 @@ import '../../bloc/flow/booking_flow_event.dart';
 import '../../bloc/flow/booking_flow_state.dart';
 
 class StepDuration extends StatelessWidget {
-  const StepDuration({super.key});
+  final EdgeInsetsGeometry? padding;
+  const StepDuration({super.key, this.padding});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<BookingFlowBloc, BookingFlowState>(
       builder: (context, state) {
         final isOutstation = state.request.isOutstation;
-        final tripType = state.request.tripType;
         
-        List<int> durations;
-        if (tripType == 'Outstation') {
+        final List<int> durations;
+        if (isOutstation) {
           durations = [1, 2, 3, 4, 5, 6]; // Days for outstation
+        } else if (state.request.tripType.toLowerCase().contains('round')) {
+          durations = [8, 10, 12, 14, 16, 18, 20]; // Hours for local round trip
         } else {
-          durations = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; // Hours for local
+          durations = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; // Hours for local one way
         }
             
         final selectedHours = state.request.durationHours;
 
         return Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: padding ?? const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Estimated Usage',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Estimated Usage',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (state.isLoadingCharges) ...[
+                    const SizedBox(width: 8),
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 12),
               

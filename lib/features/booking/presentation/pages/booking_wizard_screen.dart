@@ -6,9 +6,10 @@ import '../bloc/flow/booking_flow_event.dart';
 import '../bloc/flow/booking_flow_state.dart';
 import 'booking_confirmed_screen.dart';
 import '../widgets/wizard_steps/step_location_vehicle.dart';
-import '../widgets/wizard_steps/step_schedule.dart';
 import '../widgets/booking_map_preview.dart';
 import '../../domain/usecases/submit_booking_usecase.dart';
+import '../../domain/usecases/get_charges_usecase.dart';
+import '../../domain/usecases/calculate_fare_usecase.dart';
 
 class BookingWizardScreen extends StatefulWidget {
   final String initialTripType;
@@ -21,16 +22,26 @@ class BookingWizardScreen extends StatefulWidget {
 class _BookingWizardScreenState extends State<BookingWizardScreen> {
   @override
   Widget build(BuildContext context) {
+    final bool isOutstation =
+        widget.initialTripType.toLowerCase().contains('outstation');
+    final String journeyType =
+        widget.initialTripType.toLowerCase().contains('round')
+            ? 'Round Trip'
+            : 'One Way';
+
     return BlocProvider(
       create: (context) => BookingFlowBloc(
         submitBookingUseCase: context.read<SubmitBookingUseCase>(),
+        getChargesUseCase: context.read<GetChargesUseCase>(),
+        calculateFareUseCase: context.read<CalculateFareUseCase>(),
       )
         ..add(
           UpdateTripTypeEvent(
-            isOutstation: widget.initialTripType == 'Outstation',
-            tripType: widget.initialTripType,
+            isOutstation: isOutstation,
+            tripType: journeyType,
           ),
-        ),
+        )
+        ..add(const FetchChargesEvent()),
       child: BlocConsumer<BookingFlowBloc, BookingFlowState>(
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
@@ -48,35 +59,24 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
           }
         },
         builder: (context, state) {
-          int _calculateFare(var req) {
-            if (req.isOutstation) {
-              return req.durationHours * 1500;
-            }
-            if (req.scheduleHour == null) {
-              return req.durationHours * 150;
-            }
-            int totalFare = 0;
-            int currentHour = req.scheduleHour!;
-            for (int i = 0; i < req.durationHours; i++) {
-              int h = (currentHour + i) % 24;
-              if (h >= 0 && h < 4) {
-                totalFare += 200; // 12 AM to 4 AM
-              } else {
-                totalFare += 150; // 4 AM to 12 AM
-              }
-            }
-            return totalFare;
-          }
-
-          final baseFare = _calculateFare(state.request);
+          final baseFare = state.request.estimatedFare?.round() ?? 0;
           final responseData = state.bookingResponse;
-          final displayFare = responseData?['totalAmount'] ?? 
-                              responseData?['price'] ?? 
-                              (responseData?['data'] is Map ? responseData!['data']['totalAmount'] : null) ?? 
-                              (responseData?['data'] is Map ? responseData!['data']['price'] : null) ?? 
-                              (responseData?['booking'] is Map ? responseData!['booking']['totalAmount'] : null) ?? 
-                              (responseData?['booking'] is Map ? responseData!['booking']['price'] : null) ?? 
-                              baseFare;
+          final displayFare =
+              responseData?['totalAmount'] ??
+              responseData?['price'] ??
+              (responseData?['data'] is Map
+                  ? responseData!['data']['totalAmount']
+                  : null) ??
+              (responseData?['data'] is Map
+                  ? responseData!['data']['price']
+                  : null) ??
+              (responseData?['booking'] is Map
+                  ? responseData!['booking']['totalAmount']
+                  : null) ??
+              (responseData?['booking'] is Map
+                  ? responseData!['booking']['price']
+                  : null) ??
+              baseFare;
 
           return Scaffold(
             resizeToAvoidBottomInset: false,
@@ -93,8 +93,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                 },
               ),
               title: Text(
-                state.request.tripType,
-                style: TextStyle(
+                '${state.request.isOutstation ? 'Outstation' : 'Local'} • ${state.request.tripType}',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -138,47 +138,93 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         child: Column(
                           children: [
                             const StepLocationVehicle(),
-                            const StepSchedule(),
-                            if (state.status == BookingFlowStatus.success)
+                            if (displayFare > 0 ||
+                                state.status == BookingFlowStatus.success)
                               Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.green.shade200,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.green.shade200,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Estimated Total Price',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            '₹ $displayFare',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green.shade800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (state.driverEarnings != null &&
+                                          state.driverEarnings! > 0) ...[
+                                        const SizedBox(height: 10),
+                                        Divider(
+                                          height: 1,
+                                          color: Colors.green.shade200,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .account_balance_wallet_outlined,
+                                                  size: 16,
+                                                  color: Colors.grey.shade700,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  'Driver Earnings (Est.)',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.grey.shade800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Text(
+                                              '₹ ${state.driverEarnings!.round()}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.blueGrey.shade800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Estimated Total Price',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    Text(
-                                      '₹ $displayFare',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green.shade800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                            const SizedBox(height: 100),
+                            const SizedBox(height: 150),
                           ],
                         ),
                       ),
@@ -272,7 +318,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         ElevatedButton(
                           onPressed: () {
                             if (state.status == BookingFlowStatus.success) {
-                              final bookingBloc = context.read<BookingFlowBloc>();
+                              final bookingBloc = context
+                                  .read<BookingFlowBloc>();
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -280,26 +327,39 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                                     value: bookingBloc,
                                     child: BookingConfirmedScreen(
                                       request: state.request.copyWith(
-                                        estimatedFare: double.tryParse(displayFare.toString()),
+                                        estimatedFare: double.tryParse(
+                                          displayFare.toString(),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               );
                             } else {
-                              debugPrint('🚗 User clicked: Request Plus Driver');
-                              
+                              debugPrint(
+                                '🚗 User clicked: Request Plus Driver',
+                              );
+
                               final request = state.request;
                               String? validationError;
-                              
-                              if (request.pickupAddress == null || request.pickupLat == null || request.pickupLng == null) {
-                                validationError = 'Please select a pickup location';
-                              } else if (request.dropAddress == null || request.dropLat == null || request.dropLng == null) {
-                                validationError = 'Please select a drop location';
-                              } else if (request.scheduleDate == null || request.scheduleHour == null || request.scheduleMinute == null) {
-                                validationError = 'Please select a schedule time';
+
+                              if (request.pickupAddress == null ||
+                                  request.pickupLat == null ||
+                                  request.pickupLng == null) {
+                                validationError =
+                                    'Please select a pickup location';
+                              } else if (request.dropAddress == null ||
+                                  request.dropLat == null ||
+                                  request.dropLng == null) {
+                                validationError =
+                                    'Please select a drop location';
+                              } else if (request.scheduleDate == null ||
+                                  request.scheduleHour == null ||
+                                  request.scheduleMinute == null) {
+                                validationError =
+                                    'Please select a schedule time';
                               }
-                              
+
                               if (validationError != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -317,7 +377,10 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: state.status == BookingFlowStatus.success ? Colors.green.shade700 : const Color(0xFF1E1E24),
+                            backgroundColor:
+                                state.status == BookingFlowStatus.success
+                                ? Colors.green.shade700
+                                : const Color(0xFF1E1E24),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -325,8 +388,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                             minimumSize: const Size(double.infinity, 50),
                           ),
                           child: Text(
-                            state.status == BookingFlowStatus.success 
-                                ? 'Confirm Booking (₹$displayFare)' 
+                            state.status == BookingFlowStatus.success
+                                ? 'Confirm Booking (₹$displayFare)'
                                 : 'Request Plus Driver',
                             style: const TextStyle(
                               fontSize: 16,

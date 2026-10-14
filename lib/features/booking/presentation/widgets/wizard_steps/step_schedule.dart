@@ -21,6 +21,16 @@ class _StepScheduleState extends State<StepSchedule> {
   @override
   void initState() {
     super.initState();
+    final req = context.read<BookingFlowBloc>().state.request;
+    if (req.scheduleDate != null) {
+      _selectedDate = req.scheduleDate!;
+    }
+    if (req.scheduleHour != null && req.scheduleMinute != null) {
+      _selectedTime = TimeOfDay(
+        hour: req.scheduleHour!,
+        minute: req.scheduleMinute!,
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _updateBloc(context);
@@ -28,259 +38,126 @@ class _StepScheduleState extends State<StepSchedule> {
     });
   }
 
+  Future<void> _pickDateTime(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null && context.mounted) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: _selectedTime,
+        builder: (context, child) {
+          return Theme(
+            data: ThemeData.light().copyWith(
+              colorScheme: const ColorScheme.light(primary: AppColors.primary),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (time != null && context.mounted) {
+        setState(() {
+          _selectedDate = date;
+          _selectedTime = time;
+        });
+        _updateBloc(context);
+      } else if (context.mounted) {
+        setState(() {
+          _selectedDate = date;
+        });
+        _updateBloc(context);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<BookingFlowBloc, BookingFlowState>(
       builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Pickup Date & Time',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Pickup Date & Time Header
+            const Text(
+              'Pickup Date & Time',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: () {
-                  _showScheduleBottomSheet(context, state);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_month, color: Colors.green),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              state.request.isOutstation
-                                  ? 'Outstation Trip'
-                                  : 'Local Trip',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${DateFormat('dd MMM yyyy').format(_selectedDate)} at ${_selectedTime.format(context)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.edit, color: Colors.black54, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showScheduleBottomSheet(BuildContext context, BookingFlowState state) {
-    final bloc = context.read<BookingFlowBloc>();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (bottomSheetContext) {
-        return BlocProvider.value(
-          value: bloc,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom,
             ),
-            child: StatefulBuilder(
-              builder: (BuildContext context, StateSetter setModalState) {
-                return SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Handle bar
-                      Center(
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 12, bottom: 20),
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
+            const SizedBox(height: 12),
 
-                      // Duration Chips
-                      const StepDuration(),
-
-                      const SizedBox(height: 12),
-
-                      // Date and Time Picker Button
-                      BlocBuilder<BookingFlowBloc, BookingFlowState>(
-                        builder: (context, currentState) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20.0),
-                                child: Text(
-                                  'Select Date & Time',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20.0,
-                                ),
-                                child: InkWell(
-                                  onTap: () async {
-                                    final date = await showDatePicker(
-                                      context: context,
-                                      initialDate: _selectedDate,
-                                      firstDate: DateTime.now(),
-                                      lastDate: DateTime.now().add(
-                                        const Duration(days: 365),
-                                      ),
-                                      builder: (context, child) {
-                                        return Theme(
-                                          data: ThemeData.light().copyWith(
-                                            colorScheme:
-                                                const ColorScheme.light(
-                                                  primary: AppColors.primary,
-                                                ),
-                                          ),
-                                          child: child!,
-                                        );
-                                      },
-                                    );
-
-                                    if (date != null && context.mounted) {
-                                      final time = await showTimePicker(
-                                        context: context,
-                                        initialTime: _selectedTime,
-                                        builder: (context, child) {
-                                          return Theme(
-                                            data: ThemeData.light().copyWith(
-                                              colorScheme:
-                                                  const ColorScheme.light(
-                                                    primary: AppColors.primary,
-                                                  ),
-                                            ),
-                                            child: child!,
-                                          );
-                                        },
-                                      );
-
-                                      if (time != null && context.mounted) {
-                                        setState(() {
-                                          _selectedDate = date;
-                                          _selectedTime = time;
-                                        });
-                                        setModalState(() {});
-                                        _updateBloc(context);
-                                      }
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${DateFormat('dd MMM yyyy').format(_selectedDate)} at ${_selectedTime.format(context)}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                        const Icon(
-                                          Icons.keyboard_arrow_down,
-                                          color: Colors.black54,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 50),
-
-                      // Done Button
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(bottomSheetContext),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E1E24),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+            // Pickup Date & Time Selector Card
+            InkWell(
+              onTap: () => _pickDateTime(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month, color: Colors.green),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${state.request.isOutstation ? 'Outstation' : 'Local'} • ${state.request.tripType}',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
                             ),
                           ),
-                          child: const Text(
-                            'Done',
-                            style: TextStyle(
-                              fontSize: 16,
+                          const SizedBox(height: 4),
+                          Text(
+                            '${DateFormat('dd MMM yyyy').format(_selectedDate)} at ${_selectedTime.format(context)}',
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontSize: 14,
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                    const Icon(
+                      Icons.edit_calendar,
+                      color: Colors.black54,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 20),
+            // Estimated Usage Duration Chips
+            const StepDuration(padding: EdgeInsets.zero),
+          ],
         );
       },
     );
