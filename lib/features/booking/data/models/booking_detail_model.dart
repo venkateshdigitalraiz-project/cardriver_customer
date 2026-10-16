@@ -122,6 +122,8 @@ class BookingDetailModel extends BookingDetailEntity {
     int durationHours = 1;
     if (bMap['durationHours'] is num) {
       durationHours = (bMap['durationHours'] as num).toInt();
+    } else if (bMap['durationDays'] is num) {
+      durationHours = (bMap['durationDays'] as num).toInt() * 24;
     }
 
     // Pickup Location

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../features/main_navigation/presentation/bloc/navigation_bloc.dart';
-import '../../../../features/main_navigation/presentation/bloc/navigation_event.dart';
 import '../../../booking/presentation/pages/booking_wizard_screen.dart';
 // import '../../../drivers/domain/entities/driver_search_type.dart';
 import '../../../auth/presentation/pages/login_page.dart';
@@ -33,9 +31,10 @@ class _HomePageView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Top Hero Section with integrated App Bar and floating card
+            // Top Hero Section with integrated App Bar & overlay Location Card
             _buildHeroSection(context),
-            const SizedBox(height: 120), // Space for the floating card
+            const SizedBox(height: 52), // Space for the bottom half of the overlay card + gap
+
             // "For You" Staggered Grid
             // _buildStaggeredGrid(context),
             // const SizedBox(height: 24),
@@ -62,7 +61,7 @@ class _HomePageView extends StatelessWidget {
       children: [
         // Top Background Image / Gradient
         SizedBox(
-          height: 280,
+          height: 260,
           width: double.infinity,
           child: Stack(
             fit: StackFit.expand,
@@ -81,15 +80,6 @@ class _HomePageView extends StatelessWidget {
                       Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Align(
-                          //   alignment: Alignment.centerLeft,
-                          //   child: IconButton(
-                          //     icon: const Icon(Icons.menu, color: Colors.white),
-                          //     onPressed: () {},
-                          //     padding: EdgeInsets.zero,
-                          //     constraints: const BoxConstraints(),
-                          //   ),
-                          // ),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -156,387 +146,80 @@ class _HomePageView extends StatelessWidget {
             ],
           ),
         ),
-        // Floating Action Card
+
+        // Floating Overlay Location Card (Overlays GIF and below card)
         Positioned(
-          bottom: -100,
+          bottom: -36,
           left: 20,
           right: 20,
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              // Yellow Banner (Layered underneath)
-              Container(
-                margin: const EdgeInsets.only(top: 30, left: 16, right: 16),
-                padding: const EdgeInsets.only(
-                  top: 50,
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFBE74D), // Yellow from image
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.location_on,
-                        color: Colors.black87,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '617, Kukatpally, Hyderabad',
-                            style: AppTypography.labelMedium.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Telangana, 500072, India',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: Colors.black54,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // White Toggle Card (On Top)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(40),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Plan your trip
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Plan your trip',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: const Color(0xFF0277BD),
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Divider
-                    Container(
-                      height: 30,
-                      width: 1,
-                      color: Colors.grey.shade300,
-                    ),
-                    // Go now
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          // Navigate to booking tab
-                          context.read<NavigationBloc>().add(TabChanged(1));
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF266475,
-                            ), // Dark teal from image
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.flash_on,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Go Now',
-                                style: AppTypography.labelLarge.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          child: _buildLocationCard(context),
         ),
       ],
     );
   }
 
-  // Widget _buildStaggeredGrid(BuildContext context) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 20),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             Text(
-  //               'For You',
-  //               style: AppTypography.titleLarge.copyWith(
-  //                 fontWeight: FontWeight.w900,
-  //                 color: Colors.black87,
-  //               ),
-  //             ),
-  //             Container(
-  //               padding: const EdgeInsets.symmetric(
-  //                 horizontal: 12,
-  //                 vertical: 6,
-  //               ),
-  //               decoration: BoxDecoration(
-  //                 color: const Color(0xFFE1F5FE),
-  //                 borderRadius: BorderRadius.circular(20),
-  //               ),
-  //               child: Row(
-  //                 children: [
-  //                   const Icon(
-  //                     Icons.play_circle_outline,
-  //                     size: 16,
-  //                     color: Color(0xFF0277BD),
-  //                   ),
-  //                   const SizedBox(width: 4),
-  //                   Text(
-  //                     'How it works',
-  //                     style: AppTypography.labelSmall.copyWith(
-  //                       color: const Color(0xFF0277BD),
-  //                       fontWeight: FontWeight.w700,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         const SizedBox(height: 16),
-  //         Row(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             // Left Column (Tall Schedule Card)
-  //             Expanded(
-  //               flex: 1,
-  //               child: _buildStaggeredCard(
-  //                 context: context,
-  //                 height: 248, // 120 + 8 + 120 = 248
-  //                 title: 'Schedule',
-  //                 subtitle: 'Reserve in advance',
-  //                 imagePath: 'assets/images/schedule.png',
-  //                 fallbackIcon: Icons.schedule,
-  //                 iconColor: const Color(0xFFD32F2F),
-  //                 onTap: () {
-  //                   Navigator.push(
-  //                     context,
-  //                     MaterialPageRoute(
-  //                       builder: (_) => const BookingWizardScreen(),
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //             const SizedBox(width: 8), // Decreased gap
-  //             // Right Column
-  //             Expanded(
-  //               flex: 1,
-  //               child: Column(
-  //                 children: [
-  //                   // Top Wide Card (Instant)
-  //                   _buildStaggeredCard(
-  //                     context: context,
-  //                     height: 120, // Decreased height
-  //                     title: 'Instant',
-  //                     subtitle: 'Get a driver in minutes',
-  //                     imagePath: 'assets/images/instant.png',
-  //                     fallbackIcon: Icons.directions_car,
-  //                     iconColor: const Color(0xFF1976D2),
-  //                   ),
-  //                   const SizedBox(height: 8), // Decreased gap
-  //                   // Bottom Row (Two small square cards)
-  //                   Row(
-  //                     children: [
-  //                       Expanded(
-  //                         child: _buildStaggeredCard(
-  //                           context: context,
-  //                           height: 120, // Decreased height
-  //                           title: 'Subscription',
-  //                           subtitle: 'Recurring trips',
-  //                           imagePath: 'assets/images/subs.png',
-  //                           fallbackIcon: Icons.star,
-  //                           iconColor: const Color(0xFFFBC02D),
-  //                           isSquare: true,
-  //                         ),
-  //                       ),
-  //                       const SizedBox(width: 8), // Decreased gap
-  //                       Expanded(
-  //                         child: _buildStaggeredCard(
-  //                           context: context,
-  //                           height: 120, // Decreased height
-  //                           title: 'Daily',
-  //                           subtitle: 'Rides for everyday',
-  //                           imagePath: 'assets/images/daily.png',
-  //                           fallbackIcon: Icons.calendar_month,
-  //                           iconColor: const Color(0xFF1976D2),
-  //                           isSquare: true,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildStaggeredCard({
-  //   required BuildContext context,
-  //   required double height,
-  //   required String title,
-  //   required String subtitle,
-  //   required String imagePath,
-  //   required IconData fallbackIcon,
-  //   required Color iconColor,
-  //   bool isSquare = false,
-  //   VoidCallback? onTap,
-  // }) {
-  //   final bool isSmallHeight = height <= 150;
-
-  //   return GestureDetector(
-  //     onTap:
-  //         onTap ??
-  //         () {
-  //           context.read<NavigationBloc>().add(TabChanged(1));
-  //         },
-  //     child: Container(
-  //       height: height,
-  //       clipBehavior: Clip.antiAlias,
-  //       decoration: BoxDecoration(
-  //         color: Colors.white,
-  //         borderRadius: BorderRadius.circular(16),
-  //         boxShadow: [
-  //           BoxShadow(
-  //             color: Colors.black.withValues(alpha: 0.03),
-  //             blurRadius: 10,
-  //             offset: const Offset(0, 4),
-  //           ),
-  //         ],
-  //         border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-  //       ),
-  //       child: Stack(
-  //         children: [
-  //           // IMAGE LAYER
-  //           Positioned(
-  //             left: 0,
-  //             right: 0,
-  //             bottom: 0,
-  //             top: isSmallHeight ? 0 : 30,
-  //             child: Padding(
-  //               padding: EdgeInsets.only(
-  //                 right: isSmallHeight ? 8.0 : 0.0,
-  //                 bottom: isSmallHeight ? 8.0 : 0.0,
-  //               ),
-  //               child: Image.asset(
-  //                 imagePath,
-  //                 fit: BoxFit.contain,
-  //                 alignment: Alignment.bottomRight,
-  //                 errorBuilder: (context, error, stackTrace) {
-  //                   return Icon(
-  //                     fallbackIcon,
-  //                     color: iconColor.withValues(alpha: 0.5),
-  //                     size: isSmallHeight ? 48 : 80,
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //           ),
-  //           // TEXT LAYER
-  //           Positioned(
-  //             top: 0,
-  //             left: 0,
-  //             right: 0,
-  //             child: Padding(
-  //               padding: EdgeInsets.all(isSmallHeight ? 12.0 : 16.0),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   FittedBox(
-  //                     fit: BoxFit.scaleDown,
-  //                     alignment: Alignment.centerLeft,
-  //                     child: Text(
-  //                       title,
-  //                       maxLines: 1,
-  //                       style: AppTypography.labelLarge.copyWith(
-  //                         fontWeight: FontWeight.w800,
-  //                         color: Colors.black87,
-  //                         fontSize: isSmallHeight ? 13 : 16,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 2),
-  //                   Text(
-  //                     subtitle,
-  //                     maxLines: 2,
-  //                     overflow: TextOverflow.ellipsis,
-  //                     style: AppTypography.bodySmall.copyWith(
-  //                       color: Colors.black54,
-  //                       fontSize: isSmallHeight ? 10 : 11,
-  //                       height: 1.2,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  // User Current Location Card
+  Widget _buildLocationCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBE74D), // Yellow from image
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.location_on,
+              color: Colors.black87,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '617, Kukatpally, Hyderabad',
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Telangana, 500072, India',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // Verified Drivers section containing attached Local and Outstation cards
   Widget _buildLocalOutstationSection(BuildContext context) {
@@ -618,7 +301,9 @@ class _HomePageView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const BookingWizardScreen(initialTripType: 'Local'),
+                          builder: (_) => const BookingWizardScreen(
+                            initialTripType: 'Local',
+                          ),
                         ),
                       );
                     },
@@ -639,7 +324,9 @@ class _HomePageView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const BookingWizardScreen(initialTripType: 'Outstation'),
+                          builder: (_) => const BookingWizardScreen(
+                            initialTripType: 'Outstation',
+                          ),
                         ),
                       );
                     },

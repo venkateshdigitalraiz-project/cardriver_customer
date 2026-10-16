@@ -7,6 +7,8 @@ class BookingFareResult extends Equatable {
   final double driverEarnings;
   final int dayHours;
   final int nightHours;
+  final int dayMinutes;
+  final int nightMinutes;
   final int totalDays;
   final DriverSearchType searchType;
   final bool isCrossedDayNight;
@@ -18,6 +20,8 @@ class BookingFareResult extends Equatable {
     required this.driverEarnings,
     this.dayHours = 0,
     this.nightHours = 0,
+    this.dayMinutes = 0,
+    this.nightMinutes = 0,
     this.totalDays = 0,
     required this.searchType,
     this.isCrossedDayNight = false,
@@ -31,6 +35,8 @@ class BookingFareResult extends Equatable {
         driverEarnings,
         dayHours,
         nightHours,
+        dayMinutes,
+        nightMinutes,
         totalDays,
         searchType,
         isCrossedDayNight,

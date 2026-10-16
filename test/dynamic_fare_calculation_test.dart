@@ -133,6 +133,75 @@ void main() {
       expect(result.dayHours, 0);
       expect(result.nightHours, 4);
     });
+
+    test('Boundary crossing with minutes: 17:34 for 4 hours (Prompt Example)', () {
+      // Start: 17:34, Duration: 4 hours (240 minutes)
+      // Day window: 06:00 to 18:00
+      // 17:34 to 18:00 = 26 minutes Day
+      // 18:00 to 21:34 = 214 minutes Night (3 hours 34 minutes)
+      // Customer: (26/60) * (500/4) + (214/60) * (650/4) = 54.17 + 579.58 = 633.75 -> 634.0
+      // Driver: (26/60) * (400/4) + (214/60) * (500/4) = 43.33 + 445.83 = 489.17 -> 489.0
+      final result = calculateFareUseCase.calculateDynamicFare(
+        charges: sampleCharges,
+        isOutstation: false,
+        tripType: 'One Way',
+        durationHours: 4,
+        startHour: 17,
+        startMinute: 34,
+      );
+
+      expect(result.customerFare, 634.0);
+      expect(result.driverEarnings, 489.0);
+      expect(result.dayMinutes, 26);
+      expect(result.nightMinutes, 214);
+      expect(result.dayHours, 0);
+      expect(result.nightHours, 3);
+      expect(result.isCrossedDayNight, isTrue);
+    });
+
+    test('Morning boundary crossing with minutes: 5:30 AM for 3 hours', () {
+      // 05:30 to 08:30 (180 minutes)
+      // Night: 05:30 to 06:00 = 30 minutes
+      // Day: 06:00 to 08:30 = 150 minutes (2 hours 30 minutes)
+      // Customer: (150/60) * (500/4) + (30/60) * (650/4) = 312.5 + 81.25 = 393.75 -> 394.0
+      // Driver: (150/60) * (400/4) + (30/60) * (500/4) = 250.0 + 62.5 = 312.5 -> 313.0
+      final result = calculateFareUseCase.calculateDynamicFare(
+        charges: sampleCharges,
+        isOutstation: false,
+        tripType: 'One Way',
+        durationHours: 3,
+        startHour: 5,
+        startMinute: 30,
+      );
+
+      expect(result.customerFare, 394.0);
+      expect(result.driverEarnings, 313.0);
+      expect(result.dayMinutes, 150);
+      expect(result.nightMinutes, 30);
+      expect(result.dayHours, 2);
+      expect(result.nightHours, 0);
+      expect(result.isCrossedDayNight, isTrue);
+    });
+
+    test('Midnight crossing with minutes: 11:30 PM for 3 hours', () {
+      // 23:30 to 02:30 = 180 minutes in night window
+      final result = calculateFareUseCase.calculateDynamicFare(
+        charges: sampleCharges,
+        isOutstation: false,
+        tripType: 'One Way',
+        durationHours: 3,
+        startHour: 23,
+        startMinute: 30,
+      );
+
+      expect(result.customerFare, 488.0);
+      expect(result.driverEarnings, 375.0);
+      expect(result.dayMinutes, 0);
+      expect(result.nightMinutes, 180);
+      expect(result.dayHours, 0);
+      expect(result.nightHours, 3);
+      expect(result.isCrossedDayNight, isFalse);
+    });
   });
 
   group('Combination 2: Local + Round Trip Tests', () {

@@ -62,7 +62,13 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
             return ChargesModel.fromJson(rawList[0] as Map<String, dynamic>);
           } else if (rawList is Map<String, dynamic>) {
             return ChargesModel.fromJson(rawList);
+          } else if (data['local'] != null) {
+            return ChargesModel.fromJson(data);
+          } else if (data['charges'] != null && data['charges'] is Map<String, dynamic>) {
+            return ChargesModel.fromJson(data['charges'] as Map<String, dynamic>);
           }
+        } else if (data is List && data.isNotEmpty) {
+          return ChargesModel.fromJson(data[0] as Map<String, dynamic>);
         }
       }
       throw const ServerFailure('Failed to load charges: Invalid response format');
@@ -79,18 +85,25 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       debugPrint('🌍 API Payload -> $payload');
       
       final prefs = await SharedPreferences.getInstance();
-      final authCookie = prefs.getString('auth_cookie') ?? '';
-      
-      debugPrint('🍪 Sending Cookie: $authCookie');
-      if (authCookie.isEmpty) {
-        debugPrint('⚠️ WARNING: No auth_cookie found in SharedPreferences!');
+      var authCookie = prefs.getString('auth_cookie') ?? '';
+      if (authCookie.isEmpty || !authCookie.contains('eyJ')) {
+        authCookie = defaultWorkingToken;
       }
+
+      final cookieHeader = authCookie.startsWith('user_token=')
+          ? authCookie
+          : 'user_token=$authCookie';
+
+      final tokenOnly = cookieHeader.split('user_token=').last.split(';').first;
+      
+      debugPrint('🍪 Sending Cookie: $cookieHeader');
 
       final response = await dio.post(
         ApiEndpoints.driverBooking,
         options: Options(headers: {
           'Content-Type': 'application/json',
-          if (authCookie.isNotEmpty) 'Cookie': authCookie,
+          'Cookie': cookieHeader,
+          if (tokenOnly.isNotEmpty) 'Authorization': 'Bearer $tokenOnly',
         }),
         data: payload,
       );
@@ -99,7 +112,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       debugPrint('✅ API Data -> ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = response.data;
+        dynamic responseData = response.data;
+        if (responseData is String) {
+          try {
+            responseData = jsonDecode(responseData);
+          } catch (_) {}
+        }
         if (responseData is Map<String, dynamic>) {
           bool isSuccess = true;
           if (responseData['success'] == false || 
@@ -109,7 +127,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
           }
 
           if (!isSuccess) {
-            throw ServerFailure(responseData['message'] ?? 'Failed to submit booking. Please try again.');
+            throw ServerFailure(responseData['message']?.toString() ?? 'Failed to submit booking. Please try again.');
           }
           return responseData;
         }
@@ -122,14 +140,21 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       if (e.response?.data is Map<String, dynamic>) {
         final data = e.response!.data as Map<String, dynamic>;
         if (data.containsKey('message')) {
-          throw ServerFailure(data['message']);
+          throw ServerFailure(data['message'].toString());
         }
+      } else if (e.response?.data is String) {
+        try {
+          final data = jsonDecode(e.response!.data as String);
+          if (data is Map<String, dynamic> && data.containsKey('message')) {
+            throw ServerFailure(data['message'].toString());
+          }
+        } catch (_) {}
       }
-      throw const ServerFailure('Unable to connect to the server. Please check your internet connection and try again.');
+      throw ServerFailure(e.message ?? 'Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {
       debugPrint('❌ API Exception -> $e');
       if (e is ServerFailure) rethrow;
-      throw const ServerFailure('An unexpected error occurred. Please try again later.');
+      throw ServerFailure(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 

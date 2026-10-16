@@ -58,120 +58,15 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
         }
 
         final bool isOutstation = state.request.isOutstation;
-        final bool isRoundTrip =
-            state.request.tripType.toLowerCase().contains('round');
+        final bool isRoundTrip = state.request.tripType.toLowerCase().contains(
+          'round',
+        );
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Booking Service Type Selector (Local vs Outstation)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          if (isOutstation) {
-                            context.read<BookingFlowBloc>().add(
-                              UpdateTripTypeEvent(
-                                isOutstation: false,
-                                tripType: isRoundTrip ? 'Round Trip' : 'One Way',
-                              ),
-                            );
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !isOutstation
-                                ? const Color(0xFF1E1E24)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.directions_car_filled_rounded,
-                                size: 16,
-                                color: !isOutstation ? Colors.white : Colors.black87,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Local',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: !isOutstation ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          if (!isOutstation) {
-                            context.read<BookingFlowBloc>().add(
-                              UpdateTripTypeEvent(
-                                isOutstation: true,
-                                tripType: isRoundTrip ? 'Round Trip' : 'One Way',
-                              ),
-                            );
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isOutstation
-                                ? const Color(0xFF1E1E24)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.alt_route_rounded,
-                                size: 16,
-                                color: isOutstation ? Colors.white : Colors.black87,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Outstation',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: isOutstation ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
               // Rapido Style Unified Location Picker
               Stack(
                 children: [
@@ -190,33 +85,6 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                     ),
                     child: Column(
                       children: [
-                        // Trip Type Selector (One Way, Round Trip, Outstation, Daily)
-                        // Padding(
-                        //   padding: const EdgeInsets.only(top: 8.0),
-                        //   child: TripTypeTabBar(
-                        //     selectedType: _selectedTripType,
-                        //     onChanged: (type) {
-                        //       setState(() {
-                        //         _selectedTripType = type;
-                        //         _pickupController.clear();
-                        //         _dropController.clear();
-                        //       });
-                        //       context.read<BookingFlowBloc>().add(
-                        //         ClearLocationEvent(),
-                        //       );
-                        //
-                        //       if (type == 'Outstation') {
-                        //         context.read<BookingFlowBloc>().add(
-                        //           UpdateTripTypeEvent(isOutstation: true, tripType: type),
-                        //         );
-                        //       } else {
-                        //         context.read<BookingFlowBloc>().add(
-                        //           UpdateTripTypeEvent(isOutstation: false, tripType: type),
-                        //         );
-                        //       }
-                        //     },
-                        //   ),
-                        // ),
                         Row(
                           children: [
                             // Timeline Indicators
@@ -290,16 +158,16 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                     label: isRoundTrip
                                         ? 'Drop Location & Return'
                                         : (isOutstation
-                                            ? 'Destination (Required)'
-                                            : 'Drop Location (Optional)'),
+                                              ? 'Destination (Required)'
+                                              : 'Drop Location (Optional)'),
                                     showLabel: false,
                                     showShadow: false,
                                     backgroundColor: Colors.transparent,
                                     hint: isRoundTrip
                                         ? 'Search drop & return location'
                                         : (isOutstation
-                                            ? 'Search destination'
-                                            : 'Search drop location'),
+                                              ? 'Search destination'
+                                              : 'Search drop location'),
                                     controller: _dropController,
                                     onChanged: (val) {},
                                     onAddressDetailsSelected: (details) {
@@ -314,8 +182,7 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                           details.lng,
                                         );
 
-                                        if (distance > 100 &&
-                                            !isOutstation) {
+                                        if (distance > 100 && !isOutstation) {
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(

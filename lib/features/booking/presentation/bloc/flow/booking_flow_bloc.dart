@@ -37,13 +37,14 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     required ChargesEntity? charges,
   }) {
     final effectiveCharges = charges ?? const ChargesEntity();
+    final now = DateTime.now();
     return calculateFareUseCase.calculateDynamicFare(
       charges: effectiveCharges,
       isOutstation: request.isOutstation,
       tripType: request.tripType,
       durationHours: request.durationHours,
-      startHour: request.scheduleHour,
-      startMinute: request.scheduleMinute,
+      startHour: request.scheduleHour ?? now.hour,
+      startMinute: request.scheduleMinute ?? now.minute,
     );
   }
 
@@ -87,10 +88,10 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     emit(state.copyWith(request: updatedRequest));
   }
 
-  void _onUpdateSchedule(
+  Future<void> _onUpdateSchedule(
     UpdateScheduleEvent event,
     Emitter<BookingFlowState> emit,
-  ) {
+  ) async {
     var updatedRequest = state.request.copyWith(
       scheduleDate: event.date,
       scheduleHour: event.hour,
@@ -100,11 +101,35 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       request: updatedRequest,
       charges: state.charges,
     );
-    updatedRequest = updatedRequest.copyWith(estimatedFare: fareResult.customerFare);
-    emit(state.copyWith(
-      request: updatedRequest,
-      driverEarnings: fareResult.driverEarnings,
-    ));
+    updatedRequest = updatedRequest.copyWith(
+      estimatedFare: fareResult.customerFare,
+    );
+    emit(
+      state.copyWith(
+        request: updatedRequest,
+        driverEarnings: fareResult.driverEarnings,
+      ),
+    );
+
+    if (state.charges == null) {
+      try {
+        final charges = await getChargesUseCase();
+        final updatedFare = _calculateFare(
+          request: updatedRequest,
+          charges: charges,
+        );
+        emit(
+          state.copyWith(
+            request: updatedRequest.copyWith(
+              estimatedFare: updatedFare.customerFare,
+            ),
+            driverEarnings: updatedFare.driverEarnings,
+            charges: charges,
+            isLoadingCharges: false,
+          ),
+        );
+      } catch (_) {}
+    }
   }
 
   Future<void> _onUpdateDuration(
@@ -118,13 +143,17 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       request: updatedRequest,
       charges: state.charges,
     );
-    updatedRequest = updatedRequest.copyWith(estimatedFare: currentFare.customerFare);
+    updatedRequest = updatedRequest.copyWith(
+      estimatedFare: currentFare.customerFare,
+    );
 
-    emit(state.copyWith(
-      request: updatedRequest,
-      driverEarnings: currentFare.driverEarnings,
-      isLoadingCharges: state.charges == null,
-    ));
+    emit(
+      state.copyWith(
+        request: updatedRequest,
+        driverEarnings: currentFare.driverEarnings,
+        isLoadingCharges: state.charges == null,
+      ),
+    );
 
     if (state.charges == null) {
       try {
@@ -133,12 +162,16 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
           request: updatedRequest,
           charges: charges,
         );
-        emit(state.copyWith(
-          request: updatedRequest.copyWith(estimatedFare: fareResult.customerFare),
-          driverEarnings: fareResult.driverEarnings,
-          charges: charges,
-          isLoadingCharges: false,
-        ));
+        emit(
+          state.copyWith(
+            request: updatedRequest.copyWith(
+              estimatedFare: fareResult.customerFare,
+            ),
+            driverEarnings: fareResult.driverEarnings,
+            charges: charges,
+            isLoadingCharges: false,
+          ),
+        );
       } catch (_) {
         emit(state.copyWith(isLoadingCharges: false));
       }
@@ -156,12 +189,16 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         request: state.request,
         charges: charges,
       );
-      emit(state.copyWith(
-        request: state.request.copyWith(estimatedFare: fareResult.customerFare),
-        driverEarnings: fareResult.driverEarnings,
-        charges: charges,
-        isLoadingCharges: false,
-      ));
+      emit(
+        state.copyWith(
+          request: state.request.copyWith(
+            estimatedFare: fareResult.customerFare,
+          ),
+          driverEarnings: fareResult.driverEarnings,
+          charges: charges,
+          isLoadingCharges: false,
+        ),
+      );
     } catch (_) {
       emit(state.copyWith(isLoadingCharges: false));
     }
@@ -212,7 +249,9 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
 
     try {
       // Build the payload mapping
-      final String serviceType = request.isOutstation ? 'outstation' : 'local';
+      final bool isOutstation = request.isOutstation;
+      // Always enforce lowercase serviceType to match API enum schema ('local' | 'outstation')
+      final String serviceType = isOutstation ? 'outstation' : 'local';
       final String tripType = request.tripType.toLowerCase().contains('round')
           ? 'round_trip'
           : 'one_way';
@@ -228,11 +267,26 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         request.scheduleMinute ?? 0,
       ).toUtc().toIso8601String();
 
-      final payload = {
+      final int duration = request.durationHours > 0 ? request.durationHours : 1;
+
+      final Map<String, dynamic> payload = {
         "serviceType": serviceType,
         "tripType": tripType,
         "scheduledStartTime": date,
-        "durationHours": request.durationHours,
+        if (isOutstation) ...{
+          "durationDays": duration,
+          "durationHours": duration * 24,
+          if (tripType == 'round_trip')
+            "returnDate": DateTime(
+              dt.year,
+              dt.month,
+              dt.day + duration,
+              request.scheduleHour ?? 0,
+              request.scheduleMinute ?? 0,
+            ).toUtc().toIso8601String(),
+        } else ...{
+          "durationHours": duration,
+        },
         "pickupLocation": {
           "address": request.pickupAddress,
           "location": {
@@ -258,24 +312,44 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       };
 
       final response = await submitBookingUseCase(payload);
-      emit(state.copyWith(
-        status: BookingFlowStatus.success,
-        bookingResponse: response,
-      ));
+
+      // Extract booking details if returned to update estimated fare
+      double? finalFare = request.estimatedFare;
+      final bookingData = response['booking'] ?? response['data'];
+      if (bookingData is Map<String, dynamic>) {
+        if (bookingData['totalAmount'] is num) {
+          finalFare = (bookingData['totalAmount'] as num).toDouble();
+        } else if (bookingData['baseAmount'] is num) {
+          finalFare = (bookingData['baseAmount'] as num).toDouble();
+        }
+      }
+
+      emit(
+        state.copyWith(
+          status: BookingFlowStatus.success,
+          bookingResponse: response,
+          request: request.copyWith(estimatedFare: finalFare),
+        ),
+      );
     } catch (e) {
+      final msg = e
+          .toString()
+          .replaceFirst('Exception: ', '')
+          .replaceFirst('ServerFailure: ', '')
+          .replaceFirst('Failure: ', '');
       emit(
         state.copyWith(
           status: BookingFlowStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: msg,
         ),
       );
     }
   }
 
-  void _onUpdateTripType(
+  Future<void> _onUpdateTripType(
     UpdateTripTypeEvent event,
     Emitter<BookingFlowState> emit,
-  ) {
+  ) async {
     final bool isSwitchingService =
         event.isOutstation != state.request.isOutstation;
     final bool isSwitchingJourney = event.tripType != state.request.tripType;
@@ -307,12 +381,35 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       request: updatedRequest,
       charges: state.charges,
     );
-    updatedRequest =
-        updatedRequest.copyWith(estimatedFare: fareResult.customerFare);
+    updatedRequest = updatedRequest.copyWith(
+      estimatedFare: fareResult.customerFare,
+    );
 
-    emit(state.copyWith(
-      request: updatedRequest,
-      driverEarnings: fareResult.driverEarnings,
-    ));
+    emit(
+      state.copyWith(
+        request: updatedRequest,
+        driverEarnings: fareResult.driverEarnings,
+      ),
+    );
+
+    if (state.charges == null) {
+      try {
+        final charges = await getChargesUseCase();
+        final updatedFare = _calculateFare(
+          request: updatedRequest,
+          charges: charges,
+        );
+        emit(
+          state.copyWith(
+            request: updatedRequest.copyWith(
+              estimatedFare: updatedFare.customerFare,
+            ),
+            driverEarnings: updatedFare.driverEarnings,
+            charges: charges,
+            isLoadingCharges: false,
+          ),
+        );
+      } catch (_) {}
+    }
   }
 }

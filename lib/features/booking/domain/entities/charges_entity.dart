@@ -27,12 +27,8 @@ class ChargesEntity extends Equatable {
       final int packageDay = tripCharge.day > 0 ? tripCharge.day : 1;
       final int days = durationHours > 0 ? durationHours : 1;
 
-      final double customerPrice = tripCharge.customerPrice > 0
-          ? tripCharge.customerPrice
-          : (isRoundTrip ? 4500.0 : 2500.0);
-      final double driverPrice = tripCharge.driverPrice > 0
-          ? tripCharge.driverPrice
-          : (isRoundTrip ? 3800.0 : 2000.0);
+      final double customerPrice = tripCharge.customerPrice;
+      final double driverPrice = tripCharge.driverPrice;
 
       final double customerFare = days * (customerPrice / packageDay);
       final double driverEarnings = days * (driverPrice / packageDay);
@@ -50,43 +46,43 @@ class ChargesEntity extends Equatable {
       final morning = tripCharge.morningHours;
       final night = tripCharge.nightHours;
 
-      final int morningPkgHours =
-          morning.hours > 0 ? morning.hours : (isRoundTrip ? 8 : 4);
-      final int nightPkgHours =
-          night.hours > 0 ? night.hours : (isRoundTrip ? 8 : 4);
+      final int morningPkgHours = morning.hours > 0
+          ? morning.hours
+          : (isRoundTrip ? 8 : 4);
+      final int nightPkgHours = night.hours > 0
+          ? night.hours
+          : (isRoundTrip ? 8 : 4);
 
-      final double morningCustomerPrice = morning.customerPrice > 0
-          ? morning.customerPrice
-          : (isRoundTrip ? 900.0 : 500.0);
-      final double morningDriverPrice = morning.driverPrice > 0
-          ? morning.driverPrice
-          : (isRoundTrip ? 750.0 : 400.0);
+      final double morningCustomerPrice = morning.customerPrice;
+      final double morningDriverPrice = morning.driverPrice;
 
-      final double nightCustomerPrice = night.customerPrice > 0
-          ? night.customerPrice
-          : (isRoundTrip ? 1100.0 : 650.0);
-      final double nightDriverPrice = night.driverPrice > 0
-          ? night.driverPrice
-          : (isRoundTrip ? 900.0 : 500.0);
+      final double nightCustomerPrice = night.customerPrice;
+      final double nightDriverPrice = night.driverPrice;
 
       final double morningHourlyCustomer =
-          morningCustomerPrice / morningPkgHours;
-      final double morningHourlyDriver = morningDriverPrice / morningPkgHours;
+          morningPkgHours > 0 ? (morningCustomerPrice / morningPkgHours) : 0.0;
+      final double morningHourlyDriver =
+          morningPkgHours > 0 ? (morningDriverPrice / morningPkgHours) : 0.0;
 
-      final double nightHourlyCustomer = nightCustomerPrice / nightPkgHours;
-      final double nightHourlyDriver = nightDriverPrice / nightPkgHours;
+      final double nightHourlyCustomer =
+          nightPkgHours > 0 ? (nightCustomerPrice / nightPkgHours) : 0.0;
+      final double nightHourlyDriver =
+          nightPkgHours > 0 ? (nightDriverPrice / nightPkgHours) : 0.0;
 
-      final int sHour = startHour ?? DateTime.now().hour;
-      final int sMinute = startMinute ?? 0;
-      final int totalMinutes =
-          durationHours > 0 ? (durationHours * 60) : ((isRoundTrip ? 8 : 4) * 60);
+      final now = DateTime.now();
+      final int sHour = startHour ?? now.hour;
+      final int sMinute = startMinute ?? now.minute;
+      final int totalMinutes = durationHours > 0
+          ? (durationHours * 60)
+          : ((isRoundTrip ? 8 : 4) * 60);
 
       int dayMinutes = 0;
       int nightMinutes = 0;
 
       for (int m = 0; m < totalMinutes; m++) {
         final int minuteOfDay = (sHour * 60 + sMinute + m) % 1440;
-        // Day hours: 6:00 AM (360 min) to 6:00 PM (1080 min)
+        // Day hours: 06:00 (360 min) to 18:00 (1080 min)
+        // Night hours: 18:00 (1080 min) to 06:00 (360 min)
         if (minuteOfDay >= 360 && minuteOfDay < 1080) {
           dayMinutes++;
         } else {
@@ -101,14 +97,15 @@ class ChargesEntity extends Equatable {
           (dayHours * morningHourlyCustomer) +
           (nightHours * nightHourlyCustomer);
       final double driverEarnings =
-          (dayHours * morningHourlyDriver) +
-          (nightHours * nightHourlyDriver);
+          (dayHours * morningHourlyDriver) + (nightHours * nightHourlyDriver);
 
       return BookingFareResult(
         customerFare: customerFare.roundToDouble(),
         driverEarnings: driverEarnings.roundToDouble(),
-        dayHours: dayHours.round(),
-        nightHours: nightHours.round(),
+        dayHours: dayMinutes ~/ 60,
+        nightHours: nightMinutes ~/ 60,
+        dayMinutes: dayMinutes,
+        nightMinutes: nightMinutes,
         totalDays: 0,
         searchType: DriverSearchType.local,
         isCrossedDayNight: dayMinutes > 0 && nightMinutes > 0,

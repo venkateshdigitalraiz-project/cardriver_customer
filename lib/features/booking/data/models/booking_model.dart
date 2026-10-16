@@ -69,8 +69,12 @@ class BookingModel extends BookingEntity {
 
     // Duration (in hours or days)
     int duration = 1;
-    if (json['durationHours'] is num) {
+    if (json['durationDays'] is num && rawServiceType.toLowerCase() == 'outstation') {
+      duration = (json['durationDays'] as num).toInt();
+    } else if (json['durationHours'] is num) {
       duration = (json['durationHours'] as num).toInt();
+    } else if (json['durationDays'] is num) {
+      duration = (json['durationDays'] as num).toInt();
     }
 
     // Fare amount

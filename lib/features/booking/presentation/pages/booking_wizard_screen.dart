@@ -4,12 +4,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../bloc/flow/booking_flow_bloc.dart';
 import '../bloc/flow/booking_flow_event.dart';
 import '../bloc/flow/booking_flow_state.dart';
-import 'booking_confirmed_screen.dart';
 import '../widgets/wizard_steps/step_location_vehicle.dart';
 import '../widgets/booking_map_preview.dart';
 import '../../domain/usecases/submit_booking_usecase.dart';
 import '../../domain/usecases/get_charges_usecase.dart';
 import '../../domain/usecases/calculate_fare_usecase.dart';
+import 'booking_confirmed_screen.dart';
 
 class BookingWizardScreen extends StatefulWidget {
   final String initialTripType;
@@ -22,31 +22,53 @@ class BookingWizardScreen extends StatefulWidget {
 class _BookingWizardScreenState extends State<BookingWizardScreen> {
   @override
   Widget build(BuildContext context) {
-    final bool isOutstation =
-        widget.initialTripType.toLowerCase().contains('outstation');
+    final bool isOutstation = widget.initialTripType.toLowerCase().contains(
+      'outstation',
+    );
     final String journeyType =
         widget.initialTripType.toLowerCase().contains('round')
-            ? 'Round Trip'
-            : 'One Way';
+        ? 'Round Trip'
+        : 'One Way';
 
     return BlocProvider(
-      create: (context) => BookingFlowBloc(
-        submitBookingUseCase: context.read<SubmitBookingUseCase>(),
-        getChargesUseCase: context.read<GetChargesUseCase>(),
-        calculateFareUseCase: context.read<CalculateFareUseCase>(),
-      )
-        ..add(
-          UpdateTripTypeEvent(
-            isOutstation: isOutstation,
-            tripType: journeyType,
-          ),
-        )
-        ..add(const FetchChargesEvent()),
+      create: (context) =>
+          BookingFlowBloc(
+              submitBookingUseCase: context.read<SubmitBookingUseCase>(),
+              getChargesUseCase: context.read<GetChargesUseCase>(),
+              calculateFareUseCase: context.read<CalculateFareUseCase>(),
+            )
+            ..add(
+              UpdateTripTypeEvent(
+                isOutstation: isOutstation,
+                tripType: journeyType,
+              ),
+            )
+            ..add(const FetchChargesEvent()),
       child: BlocConsumer<BookingFlowBloc, BookingFlowState>(
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
           if (state.status == BookingFlowStatus.success) {
-            // Wait for user to click "Submit" to navigate
+            final bookingBloc = context.read<BookingFlowBloc>();
+            final bookingData = state.bookingResponse?['booking'] ??
+                state.bookingResponse?['data'];
+            String? bookingId;
+            if (bookingData is Map<String, dynamic>) {
+              bookingId = bookingData['bookingId']?.toString() ??
+                  bookingData['_id']?.toString();
+            }
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: bookingBloc,
+                  child: BookingConfirmedScreen(
+                    request: state.request,
+                    bookingId: bookingId,
+                  ),
+                ),
+              ),
+            );
           } else if (state.status == BookingFlowStatus.error &&
               state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -178,48 +200,6 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                                           ),
                                         ],
                                       ),
-                                      if (state.driverEarnings != null &&
-                                          state.driverEarnings! > 0) ...[
-                                        const SizedBox(height: 10),
-                                        Divider(
-                                          height: 1,
-                                          color: Colors.green.shade200,
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons
-                                                      .account_balance_wallet_outlined,
-                                                  size: 16,
-                                                  color: Colors.grey.shade700,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'Driver Earnings (Est.)',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            Text(
-                                              '₹ ${state.driverEarnings!.round()}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.blueGrey.shade800,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ),
@@ -316,82 +296,59 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: () {
-                            if (state.status == BookingFlowStatus.success) {
-                              final bookingBloc = context
-                                  .read<BookingFlowBloc>();
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: bookingBloc,
-                                    child: BookingConfirmedScreen(
-                                      request: state.request.copyWith(
-                                        estimatedFare: double.tryParse(
-                                          displayFare.toString(),
-                                        ),
+                          onPressed: state.status == BookingFlowStatus.submitting
+                              ? null
+                              : () {
+                                  debugPrint(
+                                    '🚗 User clicked: Confirm Booking',
+                                  );
+
+                                  final request = state.request;
+                                  String? validationError;
+
+                                  if (request.pickupAddress == null ||
+                                      request.pickupLat == null ||
+                                      request.pickupLng == null) {
+                                    validationError =
+                                        'Please select a pickup location';
+                                  } else if (request.dropAddress == null ||
+                                      request.dropLat == null ||
+                                      request.dropLng == null) {
+                                    validationError =
+                                        'Please select a drop location';
+                                  } else if (request.scheduleDate == null ||
+                                      request.scheduleHour == null ||
+                                      request.scheduleMinute == null) {
+                                    validationError =
+                                        'Please select a schedule time';
+                                  }
+
+                                  if (validationError != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(validationError),
+                                        backgroundColor: Colors.red.shade600,
+                                        behavior: SnackBarBehavior.floating,
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            } else {
-                              debugPrint(
-                                '🚗 User clicked: Request Plus Driver',
-                              );
+                                    );
+                                    return;
+                                  }
 
-                              final request = state.request;
-                              String? validationError;
-
-                              if (request.pickupAddress == null ||
-                                  request.pickupLat == null ||
-                                  request.pickupLng == null) {
-                                validationError =
-                                    'Please select a pickup location';
-                              } else if (request.dropAddress == null ||
-                                  request.dropLat == null ||
-                                  request.dropLng == null) {
-                                validationError =
-                                    'Please select a drop location';
-                              } else if (request.scheduleDate == null ||
-                                  request.scheduleHour == null ||
-                                  request.scheduleMinute == null) {
-                                validationError =
-                                    'Please select a schedule time';
-                              }
-
-                              if (validationError != null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(validationError),
-                                    backgroundColor: Colors.red.shade600,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              context.read<BookingFlowBloc>().add(
-                                SubmitBookingEvent(),
-                              );
-                            }
-                          },
+                                  context.read<BookingFlowBloc>().add(
+                                    SubmitBookingEvent(),
+                                  );
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                state.status == BookingFlowStatus.success
-                                ? Colors.green.shade700
-                                : const Color(0xFF1E1E24),
+                            backgroundColor: const Color(0xFF1E1E24),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             minimumSize: const Size(double.infinity, 50),
                           ),
-                          child: Text(
-                            state.status == BookingFlowStatus.success
-                                ? 'Confirm Booking (₹$displayFare)'
-                                : 'Request Plus Driver',
-                            style: const TextStyle(
+                          child: const Text(
+                            'Confirm Booking',
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,

@@ -1,11 +1,7 @@
 import '../../domain/entities/charges_entity.dart';
 
 class ChargesModel extends ChargesEntity {
-  const ChargesModel({
-    super.id,
-    super.local,
-    super.outstation,
-  });
+  const ChargesModel({super.id, super.local, super.outstation});
 
   factory ChargesModel.fromJson(Map<String, dynamic> json) {
     return ChargesModel(
@@ -13,50 +9,55 @@ class ChargesModel extends ChargesEntity {
       local: json['local'] != null && json['local'] is Map<String, dynamic>
           ? LocalChargesModel.fromJson(json['local'] as Map<String, dynamic>)
           : const LocalChargesEntity(),
-      outstation: json['outstation'] != null && json['outstation'] is Map<String, dynamic>
-          ? OutstationChargesModel.fromJson(json['outstation'] as Map<String, dynamic>)
+      outstation:
+          json['outstation'] != null &&
+              json['outstation'] is Map<String, dynamic>
+          ? OutstationChargesModel.fromJson(
+              json['outstation'] as Map<String, dynamic>,
+            )
           : const OutstationChargesEntity(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-    };
+    return {'_id': id};
   }
 }
 
 class LocalChargesModel extends LocalChargesEntity {
-  const LocalChargesModel({
-    super.oneWay,
-    super.roundTrip,
-  });
+  const LocalChargesModel({super.oneWay, super.roundTrip});
 
   factory LocalChargesModel.fromJson(Map<String, dynamic> json) {
+    final oneWayData = json['one_way'] ?? json['oneWay'];
+    final roundTripData = json['round_trip'] ?? json['roundTrip'];
+
     return LocalChargesModel(
-      oneWay: json['one_way'] != null && json['one_way'] is Map<String, dynamic>
-          ? LocalTripChargesModel.fromJson(json['one_way'] as Map<String, dynamic>)
+      oneWay: oneWayData != null && oneWayData is Map<String, dynamic>
+          ? LocalTripChargesModel.fromJson(oneWayData)
           : const LocalTripChargesEntity(),
-      roundTrip: json['round_trip'] != null && json['round_trip'] is Map<String, dynamic>
-          ? LocalTripChargesModel.fromJson(json['round_trip'] as Map<String, dynamic>)
+      roundTrip: roundTripData != null && roundTripData is Map<String, dynamic>
+          ? LocalTripChargesModel.fromJson(roundTripData)
           : const LocalTripChargesEntity(),
     );
   }
 }
 
 class LocalTripChargesModel extends LocalTripChargesEntity {
-  const LocalTripChargesModel({
-    super.morningHours,
-    super.nightHours,
-  });
+  const LocalTripChargesModel({super.morningHours, super.nightHours});
 
   factory LocalTripChargesModel.fromJson(Map<String, dynamic> json) {
+    final morningData = json['morningHours'] ??
+        json['morning_hours'] ??
+        json['dayHours'] ??
+        json['day_hours'];
+    final nightData = json['nightHours'] ?? json['night_hours'];
+
     return LocalTripChargesModel(
-      morningHours: json['morningHours'] != null && json['morningHours'] is Map<String, dynamic>
-          ? TimeSlotChargeModel.fromJson(json['morningHours'] as Map<String, dynamic>)
+      morningHours: morningData != null && morningData is Map<String, dynamic>
+          ? TimeSlotChargeModel.fromJson(morningData)
           : const TimeSlotChargeEntity(),
-      nightHours: json['nightHours'] != null && json['nightHours'] is Map<String, dynamic>
-          ? TimeSlotChargeModel.fromJson(json['nightHours'] as Map<String, dynamic>)
+      nightHours: nightData != null && nightData is Map<String, dynamic>
+          ? TimeSlotChargeModel.fromJson(nightData)
           : const TimeSlotChargeEntity(),
     );
   }
@@ -73,26 +74,32 @@ class TimeSlotChargeModel extends TimeSlotChargeEntity {
   factory TimeSlotChargeModel.fromJson(Map<String, dynamic> json) {
     return TimeSlotChargeModel(
       hours: (json['hours'] as num?)?.toInt() ?? 4,
-      timeRange: json['timeRange']?.toString() ?? '',
-      customerPrice: (json['customerPrice'] as num?)?.toDouble() ?? 0.0,
-      driverPrice: (json['driverPrice'] as num?)?.toDouble() ?? 0.0,
+      timeRange: (json['timeRange'] ?? json['time_range'])?.toString() ?? '',
+      customerPrice:
+          ((json['customerPrice'] ?? json['customer_price'] ?? json['price'])
+                  as num?)
+              ?.toDouble() ??
+          0.0,
+      driverPrice:
+          ((json['driverPrice'] ?? json['driver_price']) as num?)?.toDouble() ??
+          0.0,
     );
   }
 }
 
 class OutstationChargesModel extends OutstationChargesEntity {
-  const OutstationChargesModel({
-    super.oneWay,
-    super.roundTrip,
-  });
+  const OutstationChargesModel({super.oneWay, super.roundTrip});
 
   factory OutstationChargesModel.fromJson(Map<String, dynamic> json) {
+    final oneWayData = json['one_way'] ?? json['oneWay'];
+    final roundTripData = json['round_trip'] ?? json['roundTrip'];
+
     return OutstationChargesModel(
-      oneWay: json['one_way'] != null && json['one_way'] is Map<String, dynamic>
-          ? OutstationTripChargeModel.fromJson(json['one_way'] as Map<String, dynamic>)
+      oneWay: oneWayData != null && oneWayData is Map<String, dynamic>
+          ? OutstationTripChargeModel.fromJson(oneWayData)
           : const OutstationTripChargeEntity(),
-      roundTrip: json['round_trip'] != null && json['round_trip'] is Map<String, dynamic>
-          ? OutstationTripChargeModel.fromJson(json['round_trip'] as Map<String, dynamic>)
+      roundTrip: roundTripData != null && roundTripData is Map<String, dynamic>
+          ? OutstationTripChargeModel.fromJson(roundTripData)
           : const OutstationTripChargeEntity(),
     );
   }
@@ -108,8 +115,14 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
   factory OutstationTripChargeModel.fromJson(Map<String, dynamic> json) {
     return OutstationTripChargeModel(
       day: (json['day'] as num?)?.toInt() ?? 1,
-      customerPrice: (json['customerPrice'] as num?)?.toDouble() ?? 0.0,
-      driverPrice: (json['driverPrice'] as num?)?.toDouble() ?? 0.0,
+      customerPrice:
+          ((json['customerPrice'] ?? json['customer_price'] ?? json['price'])
+                  as num?)
+              ?.toDouble() ??
+          0.0,
+      driverPrice:
+          ((json['driverPrice'] ?? json['driver_price']) as num?)?.toDouble() ??
+          0.0,
     );
   }
 }

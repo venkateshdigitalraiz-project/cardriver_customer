@@ -8,8 +8,13 @@ import '../../domain/entities/booking_request_entity.dart';
 
 class BookingConfirmedScreen extends StatelessWidget {
   final BookingRequestEntity request;
+  final String? bookingId;
 
-  const BookingConfirmedScreen({super.key, required this.request});
+  const BookingConfirmedScreen({
+    super.key,
+    required this.request,
+    this.bookingId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,9 +92,11 @@ class BookingConfirmedScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '#CDR123456',
-                      style: TextStyle(
+                    Text(
+                      bookingId != null && bookingId!.isNotEmpty
+                          ? (bookingId!.startsWith('#') ? bookingId! : '#$bookingId')
+                          : '#CDR123456',
+                      style: const TextStyle(
                         color: Colors.black87,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -135,7 +142,7 @@ class BookingConfirmedScreen extends StatelessWidget {
                     _buildDetailRow(
                       icon: Icons.currency_rupee,
                       title: 'Price',
-                      value: request.estimatedFare != null ? '₹${request.estimatedFare}' : 'Not provided',
+                      value: request.estimatedFare != null ? '₹${request.estimatedFare!.round()}' : 'Not provided',
                       valueColor: Colors.green.shade800,
                     ),
                   ],
