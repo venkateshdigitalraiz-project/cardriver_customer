@@ -33,6 +33,13 @@ import 'features/profile/data/datasources/profile_remote_datasource.dart';
 import 'features/profile/data/repositories/profile_repository_impl.dart';
 import 'features/profile/domain/usecases/get_user_profile_usecase.dart';
 import 'features/profile/domain/usecases/update_user_profile_usecase.dart';
+import 'features/valet_parking/data/datasources/valet_parking_remote_datasource.dart';
+import 'features/valet_parking/data/repositories/valet_parking_repository_impl.dart';
+import 'features/valet_parking/domain/usecases/get_valet_bookings_usecase.dart';
+import 'features/valet_parking/domain/usecases/get_valet_locations_usecase.dart';
+import 'features/valet_parking/domain/usecases/get_active_valet_tickets_usecase.dart';
+import 'features/valet_parking/domain/usecases/request_valet_booking_usecase.dart';
+import 'features/valet_parking/domain/usecases/request_vehicle_retrieval_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,6 +107,15 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final clearAllNotificationsUseCase = ClearAllNotificationsUseCase(notificationRepository);
     final getDeviceTokenUseCase = GetDeviceTokenUseCase(notificationRepository);
 
+    // Valet Parking dependencies
+    final valetParkingRemoteDataSource = ValetParkingRemoteDataSourceImpl(dio: dio);
+    final valetParkingRepository = ValetParkingRepositoryImpl(remoteDataSource: valetParkingRemoteDataSource);
+    final getValetBookingsUseCase = GetValetBookingsUseCase(valetParkingRepository);
+    final getValetLocationsUseCase = GetValetLocationsUseCase(valetParkingRepository);
+    final getActiveValetTicketsUseCase = GetActiveValetTicketsUseCase(valetParkingRepository);
+    final requestValetBookingUseCase = RequestValetBookingUseCase(valetParkingRepository);
+    final requestVehicleRetrievalUseCase = RequestVehicleRetrievalUseCase(valetParkingRepository);
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: registerUseCase),
@@ -115,6 +131,11 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
         RepositoryProvider.value(value: markNotificationAsReadUseCase),
         RepositoryProvider.value(value: clearAllNotificationsUseCase),
         RepositoryProvider.value(value: getDeviceTokenUseCase),
+        RepositoryProvider.value(value: getValetBookingsUseCase),
+        RepositoryProvider.value(value: getValetLocationsUseCase),
+        RepositoryProvider.value(value: getActiveValetTicketsUseCase),
+        RepositoryProvider.value(value: requestValetBookingUseCase),
+        RepositoryProvider.value(value: requestVehicleRetrievalUseCase),
       ],
       child: MultiBlocProvider(
         providers: [

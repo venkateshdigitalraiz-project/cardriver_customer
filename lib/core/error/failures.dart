@@ -1,16 +1,22 @@
 import 'package:equatable/equatable.dart';
 
 /// Base Failure definition for Clean Architecture domain layer.
-abstract class Failure extends Equatable {
+abstract class Failure extends Equatable implements Exception {
   final String message;
   const Failure(this.message);
 
   @override
   List<Object?> get props => [message];
+
+  @override
+  String toString() => message;
 }
 
 class AuthFailure extends Failure {
   const AuthFailure(super.message);
+
+  @override
+  String toString() => message;
 }
 
 class NetworkFailure extends Failure {

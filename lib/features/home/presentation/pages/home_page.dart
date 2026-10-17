@@ -7,6 +7,7 @@ import '../../../auth/presentation/pages/login_page.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../widgets/valet_event_booking_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -39,6 +40,10 @@ class _HomePageView extends StatelessWidget {
             // _buildStaggeredGrid(context),
             // const SizedBox(height: 24),
             _buildLocalOutstationSection(context),
+            const SizedBox(height: 32),
+
+            // Valet Event Booking Card with labeled sample fields & Add button
+            _buildValetEventBookingSection(context),
             const SizedBox(height: 32),
 
             // "Suggestions" Carousel
@@ -401,6 +406,212 @@ class _HomePageView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildValetEventBookingSection(BuildContext context) {
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        final hasBooking = state.valetBookingResponse != null;
+        final bookingData = state.valetBookingResponse?.data;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                onTap: () => _openValetBookingBottomSheet(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      // Simple, clean circular service icon
+                      Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBE74D).withValues(alpha: 0.22),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.local_parking_rounded,
+                          color: Colors.black87,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+
+                      // Clean Title and Subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Valet Event Booking',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black87,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                if (hasBooking) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      bookingData?.bookingId ?? 'BOOKED',
+                                      style: const TextStyle(
+                                        color: Color(0xFF047857),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              hasBooking
+                                  ? 'Royals Wedding Gala • View details'
+                                  : 'Weddings & events • From ₹11,800',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: Colors.black54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Professional action button
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBE74D),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              hasBooking ? 'View' : 'Book',
+                              style: AppTypography.labelSmall.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black87,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.black87,
+                              size: 14,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openValetBookingBottomSheet(BuildContext context) {
+    final homeBloc = context.read<HomeBloc>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        return BlocProvider.value(
+          value: homeBloc,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+            ),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(modalContext).size.height * 0.92,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      child: ValetEventBookingCard(isBottomSheet: true),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

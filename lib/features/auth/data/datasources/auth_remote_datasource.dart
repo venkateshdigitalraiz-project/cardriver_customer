@@ -61,6 +61,33 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
   }
 
+  Map<String, dynamic> _parseResponseMap(dynamic rawData) {
+    if (rawData is Map<String, dynamic>) return rawData;
+    if (rawData is Map) return Map<String, dynamic>.from(rawData);
+    if (rawData is String && rawData.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawData);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+    return {};
+  }
+
+  String? _extractErrorMessage(DioException e) {
+    final rawData = e.response?.data;
+    if (rawData is Map) {
+      return rawData['message']?.toString();
+    } else if (rawData is String && rawData.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawData);
+        if (decoded is Map) {
+          return decoded['message']?.toString();
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   @override
   Future<CustomerUserModel> loginWithPhone({
     required String phone,
@@ -79,37 +106,51 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       debugPrint('✅ API Data -> ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = response.data;
+        final responseData = _parseResponseMap(response.data);
 
-        if (responseData is Map<String, dynamic>) {
-          if (responseData['isRegistered'] == false) {
-            throw AuthFailure(responseData['message'] ?? 'Mobile number is not registered. Please sign up.');
-          }
-          if (responseData['success'] == false || responseData['status'] == false) {
-             throw AuthFailure(responseData['message'] ?? 'Failed to login.');
-          }
+        final isRegistered = responseData['isRegistered'];
+        if (isRegistered == false || isRegistered?.toString().toLowerCase() == 'false') {
+          final msg = responseData['message']?.toString();
+          final userMsg = (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'User not registered';
+          debugPrint('⚠️ [loginWithPhone] User not registered: $userMsg');
+          throw AuthFailure(userMsg);
         }
 
-        // Assuming the API returns user data in 'data' field or directly
-        final userData = (responseData is Map<String, dynamic> && responseData.containsKey('data')) 
-            ? responseData['data'] 
-            : responseData;
-        return CustomerUserModel.fromJson(userData ?? {});
+        final successVal = responseData['success'];
+        final statusVal = responseData['status'];
+        if (successVal == false || 
+            successVal?.toString().toLowerCase() == 'false' || 
+            statusVal == false || 
+            statusVal?.toString().toLowerCase() == 'false' ||
+            statusVal == 'failed') {
+          final msg = responseData['message']?.toString();
+          throw AuthFailure(
+            (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'Failed to send OTP. Please try again.',
+          );
+        }
+
+        Map<String, dynamic> userMap = {};
+        if (responseData.containsKey('data') && responseData['data'] is Map) {
+          userMap = Map<String, dynamic>.from(responseData['data'] as Map);
+        } else {
+          userMap = responseData;
+        }
+
+        return CustomerUserModel.fromJson(userMap);
       } else {
         throw const AuthFailure('Failed to login. Please try again.');
       }
     } on DioException catch (e) {
       debugPrint('❌ API DioException -> ${e.message}, Response: ${e.response?.data}');
-      if (e.response?.data is Map<String, dynamic>) {
-        final data = e.response!.data as Map<String, dynamic>;
-        if (data.containsKey('message')) {
-          throw AuthFailure(data['message']);
-        }
+      final serverMessage = _extractErrorMessage(e);
+      if (serverMessage != null && serverMessage.trim().isNotEmpty) {
+        throw AuthFailure(serverMessage.trim());
       }
       throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {
-      debugPrint('❌ API Exception -> $e');
+      debugPrint('❌ API Exception -> ${e is Failure ? e.message : e}');
       if (e is AuthFailure) rethrow;
+      if (e is Failure) rethrow;
       throw const AuthFailure('An unexpected error occurred. Please try again later.');
     }
   }
@@ -138,7 +179,37 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       debugPrint('✅ API Data -> ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // --- Extract and save the cookie ---
+        final responseData = _parseResponseMap(response.data);
+
+        // 1. Check isRegistered first
+        final isRegistered = responseData['isRegistered'];
+        if (isRegistered == false || isRegistered?.toString().toLowerCase() == 'false') {
+          final msg = responseData['message']?.toString();
+          final userMsg = (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'User not registered';
+          debugPrint('⚠️ [verifyOtp] User not registered: $userMsg');
+          throw AuthFailure(userMsg);
+        }
+
+        // 2. Check success / status
+        final successVal = responseData['success'];
+        final statusVal = responseData['status'];
+        bool isSuccess = true;
+        if (successVal == false || 
+            successVal?.toString().toLowerCase() == 'false' || 
+            statusVal == false || 
+            statusVal?.toString().toLowerCase() == 'false' ||
+            statusVal == 'failed') {
+          isSuccess = false;
+        }
+
+        if (!isSuccess) {
+          final msg = responseData['message']?.toString();
+          throw AuthFailure(
+            (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'Invalid OTP entered. Please try again.',
+          );
+        }
+
+        // --- Extract and save the cookie only upon successful verification ---
         String tokenCookie = '';
         final cookies = response.headers['set-cookie'];
         if (cookies != null && cookies.isNotEmpty) {
@@ -150,13 +221,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           }
         }
         
-        final responseData = response.data;
-        
         // Fallback: If Set-Cookie header is missing, check if token is in the JSON body
-        if (tokenCookie.isEmpty && responseData is Map<String, dynamic>) {
-          String? bodyToken = responseData['token'];
-          if (bodyToken == null && responseData['data'] is Map<String, dynamic>) {
-            bodyToken = responseData['data']['token'];
+        if (tokenCookie.isEmpty) {
+          String? bodyToken = responseData['token']?.toString();
+          if (bodyToken == null && responseData['data'] is Map) {
+            bodyToken = (responseData['data'] as Map)['token']?.toString();
           }
           if (bodyToken != null && bodyToken.isNotEmpty) {
             tokenCookie = 'user_token=$bodyToken';
@@ -169,55 +238,38 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           debugPrint('🔑 Saved Auth Cookie: $tokenCookie');
         }
         // -----------------------------------
-        
-        // Ensure the API explicitly returned success if it follows standard envelope format
-        if (responseData is Map<String, dynamic>) {
-          if (responseData['isRegistered'] == false) {
-            throw AuthFailure(responseData['message'] ?? 'User not registered. Please sign up.');
-          }
 
-          bool isSuccess = true;
-          if (responseData['success'] == false || 
-              responseData['status'] == false || 
-              responseData['status'] == 'failed') {
-            isSuccess = false;
-          }
-
-          if (!isSuccess) {
-            throw AuthFailure(responseData['message'] ?? 'Invalid OTP entered. Please try again.');
-          }
+        Map<String, dynamic> userMap = {};
+        if (responseData.containsKey('user') && responseData['user'] is Map) {
+          userMap = Map<String, dynamic>.from(responseData['user'] as Map);
+        } else if (responseData.containsKey('data') && responseData['data'] is Map) {
+          userMap = Map<String, dynamic>.from(responseData['data'] as Map);
+        } else {
+          userMap = responseData;
         }
-
-        // Assuming the API returns user data in 'data' field or directly, or 'user' field
-        final userData = (responseData is Map<String, dynamic> && responseData.containsKey('user'))
-            ? responseData['user']
-            : (responseData is Map<String, dynamic> && responseData.containsKey('data')) 
-                ? responseData['data'] 
-                : responseData;
 
         // Save the user data to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
-        if (userData != null && userData is Map<String, dynamic>) {
-           await prefs.setString('user_data', jsonEncode(userData));
-           debugPrint('👤 Saved User Data: ${jsonEncode(userData)}');
+        if (userMap.isNotEmpty) {
+          await prefs.setString('user_data', jsonEncode(userMap));
+          debugPrint('👤 Saved User Data: ${jsonEncode(userMap)}');
         }
             
-        return CustomerUserModel.fromJson(userData ?? {});
+        return CustomerUserModel.fromJson(userMap);
       } else {
         throw const AuthFailure('Failed to verify OTP. Please try again.');
       }
     } on DioException catch (e) {
       debugPrint('❌ API DioException -> ${e.message}, Response: ${e.response?.data}');
-      if (e.response?.data is Map<String, dynamic>) {
-        final data = e.response!.data as Map<String, dynamic>;
-        if (data.containsKey('message')) {
-          throw AuthFailure(data['message']);
-        }
+      final serverMessage = _extractErrorMessage(e);
+      if (serverMessage != null && serverMessage.trim().isNotEmpty) {
+        throw AuthFailure(serverMessage.trim());
       }
       throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {
-      debugPrint('❌ API Exception -> $e');
+      debugPrint('❌ API Exception -> ${e is Failure ? e.message : e}');
       if (e is AuthFailure) rethrow;
+      if (e is Failure) rethrow;
       throw const AuthFailure('An unexpected error occurred. Please try again later.');
     }
   }
@@ -265,16 +317,13 @@ Data        : ${response.data is Map || response.data is List ? jsonEncode(respo
       developer.log(responseLog, name: 'RegisterAPI');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = response.data;
-        if (responseData is Map<String, dynamic>) {
-          if (responseData['success'] == false || responseData['status'] == false) {
-            final msg = responseData['message'] ?? 'Registration failed.';
-            print('⚠️ [REGISTER API] Server business error: $msg');
-            throw AuthFailure(msg);
-          }
-          return responseData;
+        final responseData = _parseResponseMap(response.data);
+        if (responseData['success'] == false || responseData['status'] == false) {
+          final msg = responseData['message']?.toString() ?? 'Registration failed.';
+          print('⚠️ [REGISTER API] Server business error: $msg');
+          throw AuthFailure(msg);
         }
-        return {'message': 'Registration successful'};
+        return responseData.isNotEmpty ? responseData : {'message': 'Registration successful'};
       } else {
         throw const AuthFailure('Failed to register. Please try again.');
       }
@@ -289,11 +338,9 @@ Response Data: ${e.response?.data != null ? (e.response!.data is Map || e.respon
       print(errorLog);
       developer.log(errorLog, name: 'RegisterAPI');
 
-      if (e.response?.data is Map<String, dynamic>) {
-        final data = e.response!.data as Map<String, dynamic>;
-        if (data.containsKey('message')) {
-          throw AuthFailure(data['message']);
-        }
+      final serverMessage = _extractErrorMessage(e);
+      if (serverMessage != null && serverMessage.trim().isNotEmpty) {
+        throw AuthFailure(serverMessage.trim());
       }
       throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {

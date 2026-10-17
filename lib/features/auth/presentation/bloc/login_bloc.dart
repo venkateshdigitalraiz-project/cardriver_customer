@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/verify_otp_usecase.dart';
 import 'login_event.dart';
@@ -67,10 +68,42 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           isOtpSent: true,
         ));
       }
-    } catch (e) {
+    } on AuthFailure catch (e) {
       emit(state.copyWith(
         status: LoginStatus.failure,
-        errorMessage: e.toString(),
+        errorMessage: e.message,
+      ));
+    } on Failure catch (e) {
+      emit(state.copyWith(
+        status: LoginStatus.failure,
+        errorMessage: e.message,
+      ));
+    } catch (e) {
+      String msg = 'An unexpected error occurred';
+      try {
+        final dynamic dyn = e;
+        if (dyn.message != null && dyn.message.toString().trim().isNotEmpty) {
+          msg = dyn.message.toString().trim();
+        } else {
+          final s = e.toString().trim();
+          if (s.contains('AuthFailure')) {
+            msg = 'User not registered';
+          } else {
+            msg = s.replaceFirst('Exception: ', '');
+          }
+        }
+      } catch (_) {
+        final s = e.toString().trim();
+        if (s.contains('AuthFailure')) {
+          msg = 'User not registered';
+        } else {
+          msg = s.replaceFirst('Exception: ', '');
+        }
+      }
+
+      emit(state.copyWith(
+        status: LoginStatus.failure,
+        errorMessage: msg,
       ));
     }
   }
@@ -84,10 +117,42 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(state.copyWith(
         status: LoginStatus.success,
       ));
-    } catch (e) {
+    } on AuthFailure catch (e) {
       emit(state.copyWith(
         status: LoginStatus.failure,
-        errorMessage: e.toString(),
+        errorMessage: e.message,
+      ));
+    } on Failure catch (e) {
+      emit(state.copyWith(
+        status: LoginStatus.failure,
+        errorMessage: e.message,
+      ));
+    } catch (e) {
+      String msg = 'An unexpected error occurred';
+      try {
+        final dynamic dyn = e;
+        if (dyn.message != null && dyn.message.toString().trim().isNotEmpty) {
+          msg = dyn.message.toString().trim();
+        } else {
+          final s = e.toString().trim();
+          if (s.contains('AuthFailure')) {
+            msg = 'User not registered';
+          } else {
+            msg = s.replaceFirst('Exception: ', '');
+          }
+        }
+      } catch (_) {
+        final s = e.toString().trim();
+        if (s.contains('AuthFailure')) {
+          msg = 'User not registered';
+        } else {
+          msg = s.replaceFirst('Exception: ', '');
+        }
+      }
+
+      emit(state.copyWith(
+        status: LoginStatus.failure,
+        errorMessage: msg,
       ));
     }
   }

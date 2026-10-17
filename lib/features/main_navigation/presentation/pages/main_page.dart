@@ -4,8 +4,9 @@ import '../bloc/navigation_bloc.dart';
 import '../bloc/navigation_event.dart';
 import '../bloc/navigation_state.dart';
 import '../../../home/presentation/pages/home_page.dart';
-import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../booking/presentation/pages/my_bookings_page.dart';
+import '../../../valet_parking/presentation/pages/valet_parking_page.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../../core/theme/app_typography.dart';
 
 class MainPage extends StatelessWidget {
@@ -33,6 +34,7 @@ class _MainPageView extends StatelessWidget {
             children: [
               const HomePage(),
               const MyBookingsPage(),
+              const ValetParkingPage(),
               const ProfilePage(),
             ],
           ),
@@ -70,6 +72,10 @@ class _MainPageView extends StatelessWidget {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.calendar_month_rounded),
                   label: 'Bookings',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.local_parking_rounded),
+                  label: 'valet parking',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_rounded),

@@ -8,6 +8,7 @@ class ApiEndpoints {
 
   // Booking
   static const String driverBooking = '$baseUrl/user/driver-booking';
+  static const String valetBooking = '$baseUrl/user/valet-booking';
   static const String charges = '$baseUrl/common/charges';
 
   // Profile
