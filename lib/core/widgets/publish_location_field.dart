@@ -209,8 +209,9 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
                         }
                       }
                       if (details['formatted_address'] != null) {
-                        formattedAddress = details['formatted_address']
-                            .toString();
+                        formattedAddress = cleanAddressString(
+                          details['formatted_address'].toString(),
+                        );
                       }
                       components = details['address_components'] ?? [];
                       city = _extractComponent(components, [

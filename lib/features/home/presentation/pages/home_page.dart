@@ -465,12 +465,16 @@ class _HomePageView extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  'Valet Event Booking',
-                                  style: AppTypography.labelLarge.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black87,
-                                    fontSize: 15,
+                                Flexible(
+                                  child: Text(
+                                    'Valet Event Booking',
+                                    style: AppTypography.labelLarge.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 if (hasBooking) ...[

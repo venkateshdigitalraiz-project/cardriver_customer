@@ -200,7 +200,21 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         ),
       );
     } catch (_) {
-      emit(state.copyWith(isLoadingCharges: false));
+      final fallbackCharges = state.charges ?? const ChargesEntity();
+      final fareResult = _calculateFare(
+        request: state.request,
+        charges: fallbackCharges,
+      );
+      emit(
+        state.copyWith(
+          request: state.request.copyWith(
+            estimatedFare: fareResult.customerFare,
+          ),
+          driverEarnings: fareResult.driverEarnings,
+          charges: fallbackCharges,
+          isLoadingCharges: false,
+        ),
+      );
     }
   }
 
@@ -208,6 +222,11 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     SubmitBookingEvent event,
     Emitter<BookingFlowState> emit,
   ) async {
+    // Prevent duplicate processing if already submitting
+    if (state.status == BookingFlowStatus.submitting) {
+      return;
+    }
+
     final request = state.request;
 
     // Validation
@@ -365,8 +384,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       // Switching between One Way and Round Trip within Local
       if (event.tripType.toLowerCase().contains('round') && newDuration < 8) {
         newDuration = 8;
-      } else if (!event.tripType.toLowerCase().contains('round') &&
-          newDuration > 12) {
+      } else if (!event.tripType.toLowerCase().contains('round')) {
         newDuration = 4;
       }
     }

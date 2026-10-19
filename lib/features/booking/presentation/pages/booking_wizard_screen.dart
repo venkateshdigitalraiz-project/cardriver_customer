@@ -20,6 +20,9 @@ class BookingWizardScreen extends StatefulWidget {
 }
 
 class _BookingWizardScreenState extends State<BookingWizardScreen> {
+  bool _isSubmitting = false;
+  DateTime? _lastSubmitTime;
+
   @override
   Widget build(BuildContext context) {
     final bool isOutstation = widget.initialTripType.toLowerCase().contains(
@@ -47,6 +50,15 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
       child: BlocConsumer<BookingFlowBloc, BookingFlowState>(
         listenWhen: (previous, current) => previous.status != current.status,
         listener: (context, state) {
+          if (state.status == BookingFlowStatus.error ||
+              state.status == BookingFlowStatus.success) {
+            if (_isSubmitting) {
+              setState(() {
+                _isSubmitting = false;
+              });
+            }
+          }
+
           if (state.status == BookingFlowStatus.success) {
             final bookingBloc = context.read<BookingFlowBloc>();
             final bookingData = state.bookingResponse?['booking'] ??
@@ -99,6 +111,17 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                   ? responseData!['booking']['price']
                   : null) ??
               baseFare;
+
+          final num fareNum = (displayFare is num)
+              ? displayFare
+              : (num.tryParse(displayFare.toString()) ?? 0);
+          final double tax = fareNum * 0.05;
+          final double totalPrice = fareNum + tax;
+          final formattedTax =
+              tax % 1 == 0 ? tax.toInt().toString() : tax.toStringAsFixed(2);
+          final formattedTotalPrice = totalPrice % 1 == 0
+              ? totalPrice.toInt().toString()
+              : totalPrice.toStringAsFixed(2);
 
           return Scaffold(
             resizeToAvoidBottomInset: false,
@@ -185,13 +208,61 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                                           const Text(
                                             'Estimated Total Price',
                                             style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            '₹ $displayFare',
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Tax (5%)',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                          Text(
+                                            '₹ $formattedTax',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Divider(
+                                        height: 20,
+                                        thickness: 1,
+                                        color: Colors.green.shade200,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Total Price',
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.black87,
                                             ),
                                           ),
                                           Text(
-                                            '₹ $displayFare',
+                                            '₹ $formattedTotalPrice',
                                             style: TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
@@ -296,9 +367,18 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: state.status == BookingFlowStatus.submitting
+                          onPressed: (_isSubmitting ||
+                                  state.status == BookingFlowStatus.submitting)
                               ? null
                               : () {
+                                  final now = DateTime.now();
+                                  if (_lastSubmitTime != null &&
+                                      now.difference(_lastSubmitTime!) <
+                                          const Duration(milliseconds: 1500)) {
+                                    return;
+                                  }
+                                  _lastSubmitTime = now;
+
                                   debugPrint(
                                     '🚗 User clicked: Confirm Booking',
                                   );
@@ -333,6 +413,10 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                                     );
                                     return;
                                   }
+
+                                  setState(() {
+                                    _isSubmitting = true;
+                                  });
 
                                   context.read<BookingFlowBloc>().add(
                                     SubmitBookingEvent(),

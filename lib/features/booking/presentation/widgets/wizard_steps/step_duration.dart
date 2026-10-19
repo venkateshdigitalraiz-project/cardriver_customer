@@ -20,7 +20,7 @@ class StepDuration extends StatelessWidget {
         } else if (state.request.tripType.toLowerCase().contains('round')) {
           durations = [8, 10, 12, 14, 16, 18, 20]; // Hours for local round trip
         } else {
-          durations = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]; // Hours for local one way
+          durations = [2, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20]; // Hours for local one way
         }
             
         final selectedHours = state.request.durationHours;

@@ -31,7 +31,7 @@ class BookingRequestEntity extends Equatable {
     this.scheduleDate,
     this.scheduleHour,
     this.scheduleMinute,
-    this.durationHours = 4, // Default per UI standard
+    this.durationHours = 4, // Default for local one-way package (4 hrs)
     this.isOutstation = false,
     this.tripType = 'One Way',
     this.estimatedFare,

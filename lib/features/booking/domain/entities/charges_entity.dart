@@ -46,9 +46,9 @@ class ChargesEntity extends Equatable {
       final morning = tripCharge.morningHours;
       final night = tripCharge.nightHours;
 
-      final int morningPkgHours = morning.hours > 0
-          ? morning.hours
-          : (isRoundTrip ? 8 : 4);
+      final int morningPkgHours = isRoundTrip
+          ? (morning.hours > 0 ? morning.hours : 8)
+          : (morning.hours == 5 ? 4 : (morning.hours > 0 ? morning.hours : 4));
       final int nightPkgHours = night.hours > 0
           ? night.hours
           : (isRoundTrip ? 8 : 4);
@@ -72,9 +72,15 @@ class ChargesEntity extends Equatable {
       final now = DateTime.now();
       final int sHour = startHour ?? now.hour;
       final int sMinute = startMinute ?? now.minute;
-      final int totalMinutes = durationHours > 0
-          ? (durationHours * 60)
-          : ((isRoundTrip ? 8 : 4) * 60);
+
+      // Determine slot based on start time (06:00 to 18:00 is Morning)
+      final bool startInMorning = sHour >= 6 && sHour < 18;
+      final int basePkgHours =
+          startInMorning ? morningPkgHours : nightPkgHours;
+
+      final int effectiveDuration =
+          durationHours > 0 ? durationHours : basePkgHours;
+      final int totalMinutes = effectiveDuration * 60;
 
       int dayMinutes = 0;
       int nightMinutes = 0;
@@ -139,8 +145,34 @@ class LocalChargesEntity extends Equatable {
   final LocalTripChargesEntity roundTrip;
 
   const LocalChargesEntity({
-    this.oneWay = const LocalTripChargesEntity(),
-    this.roundTrip = const LocalTripChargesEntity(),
+    this.oneWay = const LocalTripChargesEntity(
+      morningHours: TimeSlotChargeEntity(
+        hours: 4,
+        timeRange: '06:00-18:00',
+        customerPrice: 500.0,
+        driverPrice: 400.0,
+      ),
+      nightHours: TimeSlotChargeEntity(
+        hours: 4,
+        timeRange: '18:00-06:00',
+        customerPrice: 650.0,
+        driverPrice: 500.0,
+      ),
+    ),
+    this.roundTrip = const LocalTripChargesEntity(
+      morningHours: TimeSlotChargeEntity(
+        hours: 8,
+        timeRange: '06:00-18:00',
+        customerPrice: 900.0,
+        driverPrice: 750.0,
+      ),
+      nightHours: TimeSlotChargeEntity(
+        hours: 8,
+        timeRange: '18:00-06:00',
+        customerPrice: 1100.0,
+        driverPrice: 900.0,
+      ),
+    ),
   });
 
   @override
@@ -182,8 +214,16 @@ class OutstationChargesEntity extends Equatable {
   final OutstationTripChargeEntity roundTrip;
 
   const OutstationChargesEntity({
-    this.oneWay = const OutstationTripChargeEntity(),
-    this.roundTrip = const OutstationTripChargeEntity(),
+    this.oneWay = const OutstationTripChargeEntity(
+      day: 1,
+      customerPrice: 2500.0,
+      driverPrice: 2000.0,
+    ),
+    this.roundTrip = const OutstationTripChargeEntity(
+      day: 1,
+      customerPrice: 4500.0,
+      driverPrice: 3800.0,
+    ),
   });
 
   @override

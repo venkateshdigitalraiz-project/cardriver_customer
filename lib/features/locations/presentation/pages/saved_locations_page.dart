@@ -109,9 +109,14 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
-          final result = data['results'][0];
-          final formattedAddress =
+          final results = data['results'] as List<dynamic>;
+          final result = results.firstWhere(
+            (r) => !(r['types'] as List<dynamic>? ?? []).contains('plus_code'),
+            orElse: () => results[0],
+          );
+          final rawFormatted =
               result['formatted_address']?.toString() ?? 'Current Location';
+          final formattedAddress = cleanAddressString(rawFormatted);
 
           final newLocation = LocationEntity(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -455,6 +460,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
   LatLng _pickedLocation = const LatLng(20.5937, 78.9629); // India fallback
   bool _mapLoading = true;
   bool _resolving = false;
+  bool _isProgrammaticMove = false;
 
   // â”€â”€ Address resolved from pin position â”€â”€
   PlaceAddressDetails? _resolvedDetails;
@@ -516,10 +522,15 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
-          final result = data['results'][0];
+          final results = data['results'] as List<dynamic>;
+          final result = results.firstWhere(
+            (r) => !(r['types'] as List<dynamic>? ?? []).contains('plus_code'),
+            orElse: () => results[0],
+          );
           final List<dynamic> components = result['address_components'] ?? [];
-          final formattedAddress =
+          final rawFormatted =
               result['formatted_address']?.toString() ?? '';
+          final formattedAddress = cleanAddressString(rawFormatted);
           var shortAddress = buildShortAddress(components);
           if (shortAddress.isEmpty) shortAddress = formattedAddress;
 
@@ -586,6 +597,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
             final lng = double.tryParse(loc['lng'].toString()) ?? 0.0;
             final target = LatLng(lat, lng);
             _pickedLocation = target;
+            _isProgrammaticMove = true;
 
             // Animate map to the selected place
             await _mapController?.animateCamera(
@@ -595,8 +607,9 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
             // Build address details from the place details response
             final List<dynamic> components =
                 details['address_components'] ?? [];
-            final formattedAddress =
+            final rawFormatted =
                 details['formatted_address']?.toString() ?? '';
+            final formattedAddress = cleanAddressString(rawFormatted);
             var shortAddress = buildShortAddress(components);
             if (shortAddress.isEmpty) shortAddress = formattedAddress;
             final city = _extractComponent(components, [
@@ -640,10 +653,15 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
   // â”€â”€ Camera events â€” user drags map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _onCameraMove(CameraPosition position) {
+    _isProgrammaticMove = false;
     _pickedLocation = position.target;
   }
 
   void _onCameraIdle() {
+    if (_isProgrammaticMove) {
+      _isProgrammaticMove = false;
+      return;
+    }
     // Re-resolve address whenever the map stops moving
     _reverseGeocode(_pickedLocation);
   }

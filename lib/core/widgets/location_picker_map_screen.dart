@@ -28,6 +28,7 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   LatLng _pickedLocation = const LatLng(20.5937, 78.9629);
   bool _loading = true;
   bool _resolving = false;
+  bool _isProgrammaticMove = false;
   PlaceAddressDetails? _resolvedDetails;
 
   final TextEditingController _searchController = TextEditingController();
@@ -110,10 +111,15 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
         if (data['status'] == 'OK' &&
             data['results'] != null &&
             (data['results'] as List).isNotEmpty) {
-          final result = data['results'][0];
+          final results = data['results'] as List<dynamic>;
+          // Prefer the first result that is not purely a plus_code
+          final result = results.firstWhere(
+            (r) => !(r['types'] as List<dynamic>? ?? []).contains('plus_code'),
+            orElse: () => results[0],
+          );
           final List<dynamic> components = result['address_components'] ?? [];
-          final formattedAddress =
-              result['formatted_address']?.toString() ?? '';
+          final rawFormatted = result['formatted_address']?.toString() ?? '';
+          final formattedAddress = cleanAddressString(rawFormatted);
           final city = _extractComponent(components, [
             'locality',
             'administrative_area_level_2',
@@ -168,23 +174,59 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/details/json'
         '?place_id=${prediction.placeId!}'
-        '&fields=geometry'
+        '&fields=geometry,address_components,formatted_address'
         '&key=$_googleApiKey',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'OK' && data['result'] != null) {
-          final loc = data['result']['geometry']?['location'];
+          final details = data['result'];
+          final loc = details['geometry']?['location'];
           if (loc != null) {
             final lat = double.tryParse(loc['lat'].toString()) ?? 0.0;
             final lng = double.tryParse(loc['lng'].toString()) ?? 0.0;
             final target = LatLng(lat, lng);
             _pickedLocation = target;
+            _isProgrammaticMove = true;
+
+            final List<dynamic> components =
+                details['address_components'] ?? [];
+            final rawFormatted = details['formatted_address']?.toString() ?? '';
+            final formattedAddress = cleanAddressString(rawFormatted);
+            var shortAddress = buildShortAddress(components);
+            if (shortAddress.isEmpty) shortAddress = formattedAddress;
+
+            final city = _extractComponent(components, [
+              'locality',
+              'administrative_area_level_2',
+              'sublocality',
+              'sublocality_level_1',
+            ]);
+            final state = _extractComponent(components, [
+              'administrative_area_level_1',
+            ]);
+            final pincode = _extractComponent(components, ['postal_code']);
+
+            if (mounted) {
+              setState(() {
+                _resolvedDetails = PlaceAddressDetails(
+                  formattedAddress: formattedAddress,
+                  shortAddress: shortAddress,
+                  city: city,
+                  state: state,
+                  pincode: pincode,
+                  lat: lat,
+                  lng: lng,
+                  googleMapsUrl: PlaceAddressDetails.buildMapsUrl(lat, lng),
+                  cityCandidates: extractCityCandidates(components),
+                );
+              });
+            }
+
             await _mapController?.animateCamera(
               CameraUpdate.newLatLngZoom(target, 17),
             );
-            await _reverseGeocode(target);
           }
         } else {
           debugPrint(
@@ -201,9 +243,16 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
     }
   }
 
-  void _onCameraIdle() => _reverseGeocode(_pickedLocation);
+  void _onCameraIdle() {
+    if (_isProgrammaticMove) {
+      _isProgrammaticMove = false;
+      return;
+    }
+    _reverseGeocode(_pickedLocation);
+  }
 
   void _onCameraMove(CameraPosition position) {
+    _isProgrammaticMove = false;
     _pickedLocation = position.target;
   }
 
@@ -388,16 +437,33 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                         Text(
                           _resolving
                               ? 'Locating...'
-                              : (_resolvedDetails?.formattedAddress ??
-                                    'Move the map to select a location'),
-                          maxLines: 2,
+                              : (_resolvedDetails?.shortAddress.isNotEmpty == true
+                                    ? _resolvedDetails!.shortAddress
+                                    : (_resolvedDetails?.formattedAddress ??
+                                        'Move the map to select a location')),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
-                            fontSize: 13,
+                            fontSize: 14,
                             color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        if (!_resolving &&
+                            _resolvedDetails != null &&
+                            _resolvedDetails!.formattedAddress.isNotEmpty &&
+                            _resolvedDetails!.formattedAddress != _resolvedDetails!.shortAddress) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _resolvedDetails!.formattedAddress,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
