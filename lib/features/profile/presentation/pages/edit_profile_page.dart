@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/profile_bloc.dart';
@@ -64,7 +65,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                 backgroundColor: AppColors.success,
               ),
             );
-            Navigator.pop(context); // Go back after success
+            context.pop(); // Go back after success
           } else if (state is ProfileError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

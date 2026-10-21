@@ -13,8 +13,8 @@ import '../../domain/usecases/get_driver_bookings_usecase.dart';
 import '../bloc/my_bookings/my_bookings_bloc.dart';
 import '../bloc/my_bookings/my_bookings_event.dart';
 import '../bloc/my_bookings/my_bookings_state.dart';
-import 'booking_wizard_screen.dart';
-import 'booking_details_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class MyBookingsPage extends StatelessWidget {
   final GetDriverBookingsUseCase? getDriverBookingsUseCase;
@@ -352,11 +352,7 @@ class _BookingsListState extends State<_BookingsList> {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const BookingWizardScreen(initialTripType: 'Local'),
-                ),
-              );
+              context.push(AppRoutes.bookingWizard, extra: 'Local');
             },
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Book a Driver Partner'),
@@ -1143,14 +1139,11 @@ class _BookingsListState extends State<_BookingsList> {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BookingWizardScreen(
-                      initialTripType: booking.tripType.toLowerCase().contains('outstation')
-                          ? 'Outstation'
-                          : 'Local',
-                    ),
-                  ),
+                context.push(
+                  AppRoutes.bookingWizard,
+                  extra: booking.tripType.toLowerCase().contains('outstation')
+                      ? 'Outstation'
+                      : 'Local',
                 );
               },
               icon: const Icon(Icons.refresh_rounded, size: 15),
@@ -1249,13 +1242,7 @@ class _BookingsListState extends State<_BookingsList> {
 
   void _openBookingDetails(BuildContext context, BookingEntity booking) {
     final bookingIdToUse = booking.dbId.isNotEmpty ? booking.dbId : booking.id;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => BookingDetailsPage(
-          bookingId: bookingIdToUse,
-        ),
-      ),
-    );
+    context.push('${AppRoutes.bookingDetails}/$bookingIdToUse');
   }
 
   Color _getStatusColor(String status) {

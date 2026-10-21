@@ -7,8 +7,9 @@ import '../../../../core/theme/app_typography.dart';
 import '../bloc/login_bloc.dart';
 import '../bloc/login_event.dart';
 import '../bloc/login_state.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../widgets/login_form.dart';
-import '../../../main_navigation/presentation/pages/main_page.dart';
 
 class LoginPage extends StatelessWidget {
   final VoidCallback? onToggleTheme;
@@ -55,10 +56,7 @@ class LoginPage extends StatelessWidget {
           );
         } else if (state.status == LoginStatus.success) {
           context.read<LoginBloc>().add(const ResetLoginState());
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainPage()),
-          );
+          context.go(AppRoutes.main);
         }
       },
       child: Scaffold(

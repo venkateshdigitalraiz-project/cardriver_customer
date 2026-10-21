@@ -12,7 +12,8 @@ import '../../domain/usecases/send_notification_usecase.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
-import 'firebase_setup_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -321,12 +322,7 @@ class _NotificationsViewState extends State<NotificationsView> {
               icon: const Icon(Icons.settings_suggest_rounded),
               tooltip: 'Firebase Setup & Guide',
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const FirebaseSetupPage(),
-                  ),
-                );
+                context.push(AppRoutes.firebaseSetup);
               },
             ),
             IconButton(
@@ -501,12 +497,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FirebaseSetupPage(),
-                    ),
-                  );
+                  context.push(AppRoutes.firebaseSetup);
                 },
               ),
               if (token != null && token.isNotEmpty) ...[

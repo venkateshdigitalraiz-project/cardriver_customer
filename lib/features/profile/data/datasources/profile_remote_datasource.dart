@@ -15,9 +15,18 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
   ProfileRemoteDataSourceImpl({required this.dio});
 
-  Future<String?> _getAuthCookie() async {
+  Future<String> _getAuthCookie() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_cookie');
+    final cookie = prefs.getString('auth_cookie');
+    if (cookie != null && cookie.trim().isNotEmpty) {
+      return cookie.trim();
+    }
+    final token = prefs.getString('token') ?? prefs.getString('auth_token') ?? '';
+    if (token.trim().isNotEmpty) {
+      final clean = token.trim().replaceFirst('Bearer ', '').trim();
+      return 'user_token=$clean';
+    }
+    return '';
   }
 
   @override
@@ -31,10 +40,10 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         ApiEndpoints.profile,
         options: Options(headers: {
           'Content-Type': 'application/json',
-          if (authCookie != null && authCookie.isNotEmpty) 'Cookie': authCookie,
+          if (authCookie.isNotEmpty) 'Cookie': authCookie,
           // Add dummy Bearer token if API specifically requires it, but usually cookie is enough
           // if not handled properly by backend. If the backend needs Bearer token, we extract it.
-          if (authCookie != null && authCookie.contains('user_token='))
+          if (authCookie.contains('user_token='))
             'Authorization': 'Bearer ${authCookie.split('user_token=').last.split(';').first}',
         }),
       );
@@ -82,8 +91,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         ApiEndpoints.profile,
         options: Options(headers: {
           'Content-Type': 'application/json',
-          if (authCookie != null && authCookie.isNotEmpty) 'Cookie': authCookie,
-          if (authCookie != null && authCookie.contains('user_token='))
+          if (authCookie.isNotEmpty) 'Cookie': authCookie,
+          if (authCookie.contains('user_token='))
             'Authorization': 'Bearer ${authCookie.split('user_token=').last.split(';').first}',
         }),
         data: payload,

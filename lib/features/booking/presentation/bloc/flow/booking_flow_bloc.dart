@@ -43,6 +43,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       isOutstation: request.isOutstation,
       tripType: request.tripType,
       durationHours: request.durationHours,
+      startDate: request.scheduleDate,
       startHour: request.scheduleHour ?? now.hour,
       startMinute: request.scheduleMinute ?? now.minute,
     );

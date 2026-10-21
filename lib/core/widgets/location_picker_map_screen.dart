@@ -6,6 +6,7 @@ import 'package:google_places_flutter/model/prediction.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 
 import '../theme/app_colors.dart';
 import '../utils/place_address_utils.dart';
@@ -471,7 +472,7 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                             onPressed: _resolvedDetails == null
                                 ? null
                                 : () =>
-                                      Navigator.pop(context, _resolvedDetails),
+                                      context.pop(_resolvedDetails),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: 14),

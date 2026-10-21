@@ -16,8 +16,8 @@ import '../../../drivers/domain/usecases/get_drivers_usecase.dart';
 import '../../../drivers/presentation/bloc/driver_list_bloc.dart';
 import '../../../drivers/presentation/bloc/driver_list_event.dart';
 import '../../../drivers/presentation/bloc/driver_list_state.dart';
-import '../../../drivers/presentation/pages/driver_list_screen.dart';
-import 'login_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class CustomerDashboardPage extends StatelessWidget {
   final DriverSearchType searchType;
@@ -229,11 +229,7 @@ class _CustomerDashboardPageViewState
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-                (route) => false,
-              );
+              context.go(AppRoutes.login);
             },
           ),
         ],
@@ -372,13 +368,9 @@ class _CustomerDashboardPageViewState
                           context.read<DriverListBloc>().add(
                             FetchDriversEvent(searchType: widget.searchType),
                           );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DriverListScreen(
-                                searchType: widget.searchType,
-                              ),
-                            ),
+                          context.push(
+                            AppRoutes.driverList,
+                            extra: widget.searchType,
                           );
                         },
                         style: ElevatedButton.styleFrom(

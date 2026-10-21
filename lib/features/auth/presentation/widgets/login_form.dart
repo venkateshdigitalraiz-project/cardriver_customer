@@ -11,7 +11,8 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../bloc/login_bloc.dart';
 import '../bloc/login_event.dart';
 import '../bloc/login_state.dart';
-import '../pages/register_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -373,12 +374,7 @@ class _LoginFormState extends State<LoginForm> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterPage(),
-                          ),
-                        );
+                        context.push(AppRoutes.register);
                       },
                       child: Text(
                         'Register',

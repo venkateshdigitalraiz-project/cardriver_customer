@@ -12,7 +12,8 @@ import '../../domain/usecases/get_booking_detail_usecase.dart';
 import '../bloc/booking_detail/booking_detail_bloc.dart';
 import '../bloc/booking_detail/booking_detail_event.dart';
 import '../bloc/booking_detail/booking_detail_state.dart';
-import 'booking_wizard_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class BookingDetailsPage extends StatelessWidget {
   final String bookingId;
@@ -61,7 +62,7 @@ class _BookingDetailsView extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Booking Details',
@@ -1009,14 +1010,11 @@ class _BookingDetailsView extends StatelessWidget {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BookingWizardScreen(
-                      initialTripType: booking.serviceType.toLowerCase() == 'outstation'
-                          ? 'Outstation'
-                          : 'Local',
-                    ),
-                  ),
+                context.push(
+                  AppRoutes.bookingWizard,
+                  extra: booking.serviceType.toLowerCase() == 'outstation'
+                      ? 'Outstation'
+                      : 'Local',
                 );
               },
               icon: const Icon(Icons.refresh_rounded, size: 18),

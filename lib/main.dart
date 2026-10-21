@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -11,7 +13,6 @@ import 'features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'features/auth/domain/usecases/register_usecase.dart';
 import 'features/auth/presentation/bloc/login_bloc.dart';
 import 'features/auth/presentation/bloc/register_bloc.dart';
-import 'features/auth/presentation/pages/login_page.dart';
 import 'features/booking/data/datasources/booking_remote_datasource.dart';
 import 'features/booking/data/repositories/booking_repository_impl.dart';
 import 'features/booking/domain/usecases/submit_booking_usecase.dart';
@@ -19,7 +20,6 @@ import 'features/booking/domain/usecases/get_driver_bookings_usecase.dart';
 import 'features/booking/domain/usecases/get_booking_detail_usecase.dart';
 import 'features/booking/domain/usecases/get_charges_usecase.dart';
 import 'features/booking/domain/usecases/calculate_fare_usecase.dart';
-import 'features/main_navigation/presentation/pages/main_page.dart';
 import 'features/notifications/data/datasources/firebase_notification_service.dart';
 import 'features/notifications/data/repositories/notification_repository_impl.dart';
 import 'features/notifications/domain/usecases/clear_all_notifications_usecase.dart';
@@ -68,6 +68,17 @@ class DriverCustomerApp extends StatefulWidget {
 
 class _DriverCustomerAppState extends State<DriverCustomerApp> {
   ThemeMode _themeMode = ThemeMode.dark;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = AppRouter.createRouter(
+      isLoggedIn: widget.isLoggedIn,
+      onToggleTheme: _toggleTheme,
+      isDarkMode: _themeMode == ThemeMode.dark,
+    );
+  }
 
   void _toggleTheme() {
     setState(() {
@@ -162,18 +173,13 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
             )..add(const InitializeNotifications()),
           ),
         ],
-        child: MaterialApp(
+        child: MaterialApp.router(
           title: 'Car Driver Partner',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: _themeMode,
-          home: widget.isLoggedIn 
-              ? const MainPage() 
-              : LoginPage(
-                  onToggleTheme: _toggleTheme,
-                  isDarkMode: _themeMode == ThemeMode.dark,
-                ),
+          routerConfig: _router,
         ),
       ),
     );

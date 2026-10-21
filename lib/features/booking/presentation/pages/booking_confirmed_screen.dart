@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../domain/entities/booking_request_entity.dart';
 
 class BookingConfirmedScreen extends StatelessWidget {
@@ -150,7 +152,7 @@ class BookingConfirmedScreen extends StatelessWidget {
                     // Buttons
                     OutlinedButton(
                       onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
+                        context.go(AppRoutes.main);
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white, width: 1.5),

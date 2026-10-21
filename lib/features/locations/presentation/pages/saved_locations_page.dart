@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
@@ -74,10 +76,7 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
   }
 
   void _openAddLocationScreen(BuildContext ctx) async {
-    await Navigator.push(
-      ctx,
-      MaterialPageRoute(builder: (_) => AddLocationScreen(parentCtx: ctx)),
-    );
+    await ctx.push(AppRoutes.addLocation, extra: ctx);
   }
 
   Future<void> _saveCurrentLocation() async {
@@ -134,7 +133,7 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
                 content: Text('Current location saved successfully!'),
               ),
             );
-            Navigator.pop(context);
+            context.pop();
           }
         } else {
           if (mounted) {
@@ -693,11 +692,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
     widget.parentCtx.read<LocationBloc>().add(AddLocation(newLocation));
 
     // Pop AddLocationScreen, then SavedLocationsPage â†’ back to Profile
-    final nav = Navigator.of(context);
-    nav.pop(); // close AddLocationScreen
-    if (nav.canPop()) {
-      nav.pop(); // close SavedLocationsPage â†’ profile
-    }
+    context.pop();
   }
 
   // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

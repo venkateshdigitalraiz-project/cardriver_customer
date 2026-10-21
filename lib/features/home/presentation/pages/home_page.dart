@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../booking/presentation/pages/booking_wizard_screen.dart';
-// import '../../../drivers/domain/entities/driver_search_type.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -130,13 +129,7 @@ class _HomePageView extends StatelessWidget {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                  (route) => false,
-                                );
+                                context.go(AppRoutes.login);
                               },
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -303,14 +296,7 @@ class _HomePageView extends StatelessWidget {
                     bgColor: const Color(0xFFF2F8F9),
                     imagePath: 'assets/images/local.png',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const BookingWizardScreen(
-                            initialTripType: 'Local',
-                          ),
-                        ),
-                      );
+                      context.push(AppRoutes.bookingWizard, extra: 'Local');
                     },
                   ),
                 ),
@@ -326,14 +312,7 @@ class _HomePageView extends StatelessWidget {
                     bgColor: const Color(0xFFFFF3E0),
                     imagePath: 'assets/images/outstation.png',
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const BookingWizardScreen(
-                            initialTripType: 'Outstation',
-                          ),
-                        ),
-                      );
+                      context.push(AppRoutes.bookingWizard, extra: 'Outstation');
                     },
                   ),
                 ),

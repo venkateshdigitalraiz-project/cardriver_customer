@@ -5,13 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_state.dart';
-import 'edit_profile_page.dart';
-import '../../../tickets/presentation/pages/tickets_page.dart';
-import '../../../auth/presentation/pages/login_page.dart';
-import '../../../locations/presentation/pages/saved_locations_page.dart';
-import '../../../locations/presentation/bloc/location_bloc.dart';
-import '../../../locations/presentation/bloc/location_event.dart';
-import '../../../notifications/presentation/pages/notifications_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../legal/presentation/pages/legal_page.dart';
 
 import '../../domain/usecases/get_user_profile_usecase.dart';
@@ -100,16 +95,8 @@ class ProfileView extends StatelessWidget {
                                   color: Colors.black87,
                                 ),
                                 onPressed: () {
-                                  final profileBloc = context
-                                      .read<ProfileBloc>();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditProfilePage(
-                                        profileBloc: profileBloc,
-                                      ),
-                                    ),
-                                  );
+                                  final profileBloc = context.read<ProfileBloc>();
+                                  context.push(AppRoutes.editProfile, extra: profileBloc);
                                 },
                               ),
                             ],
@@ -224,17 +211,7 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.blue.shade50,
                                   iconColor: Colors.blue.shade700,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BlocProvider(
-                                          create: (context) =>
-                                              LocationBloc()
-                                                ..add(LoadLocations()),
-                                          child: const SavedLocationsPage(),
-                                        ),
-                                      ),
-                                    );
+                                    context.push(AppRoutes.savedLocations);
                                   },
                                 ),
                                 _buildDivider(),
@@ -244,13 +221,7 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.orange.shade50,
                                   iconColor: Colors.orange.shade700,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const TicketsPage(),
-                                      ),
-                                    );
+                                    context.push(AppRoutes.tickets);
                                   },
                                 ),
                                 _buildDivider(),
@@ -260,13 +231,7 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.purple.shade50,
                                   iconColor: Colors.purple.shade700,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const NotificationsPage(),
-                                      ),
-                                    );
+                                    context.push(AppRoutes.notifications);
                                   },
                                 ),
                               ],
@@ -300,14 +265,7 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.grey.shade100,
                                   iconColor: Colors.grey.shade700,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const LegalPage(
-                                          pageType: LegalPageType.terms,
-                                        ),
-                                      ),
-                                    );
+                                    context.push(AppRoutes.legal, extra: LegalPageType.terms);
                                   },
                                 ),
                                 _buildDivider(),
@@ -317,14 +275,7 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.grey.shade100,
                                   iconColor: Colors.grey.shade700,
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const LegalPage(
-                                          pageType: LegalPageType.privacy,
-                                        ),
-                                      ),
-                                    );
+                                    context.push(AppRoutes.legal, extra: LegalPageType.privacy);
                                   },
                                 ),
                               ],
@@ -335,13 +286,7 @@ class ProfileView extends StatelessWidget {
                             // Logout Button
                             ElevatedButton.icon(
                               onPressed: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                  (route) => false,
-                                );
+                                context.go(AppRoutes.login);
                               },
                               icon: const Icon(
                                 Icons.logout_rounded,

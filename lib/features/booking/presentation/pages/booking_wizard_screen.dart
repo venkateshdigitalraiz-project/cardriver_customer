@@ -9,7 +9,8 @@ import '../widgets/booking_map_preview.dart';
 import '../../domain/usecases/submit_booking_usecase.dart';
 import '../../domain/usecases/get_charges_usecase.dart';
 import '../../domain/usecases/calculate_fare_usecase.dart';
-import 'booking_confirmed_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class BookingWizardScreen extends StatefulWidget {
   final String initialTripType;
@@ -60,7 +61,6 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
           }
 
           if (state.status == BookingFlowStatus.success) {
-            final bookingBloc = context.read<BookingFlowBloc>();
             final bookingData = state.bookingResponse?['booking'] ??
                 state.bookingResponse?['data'];
             String? bookingId;
@@ -69,17 +69,12 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                   bookingData['_id']?.toString();
             }
 
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: bookingBloc,
-                  child: BookingConfirmedScreen(
-                    request: state.request,
-                    bookingId: bookingId,
-                  ),
-                ),
-              ),
+            context.go(
+              AppRoutes.bookingConfirmed,
+              extra: {
+                'request': state.request,
+                'bookingId': bookingId,
+              },
             );
           } else if (state.status == BookingFlowStatus.error &&
               state.errorMessage != null) {
@@ -134,7 +129,7 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
-                  Navigator.pop(context);
+                  context.pop();
                 },
               ),
               title: Text(

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'booking_fare_result.dart';
-import '../../../../features/drivers/domain/entities/driver_search_type.dart';
+import '../usecases/fare_calculator.dart';
 
 class ChargesEntity extends Equatable {
   final String id;
@@ -17,123 +17,38 @@ class ChargesEntity extends Equatable {
     required bool isOutstation,
     required String tripType,
     required int durationHours,
+    DateTime? startDate,
     int? startHour,
     int? startMinute,
   }) {
-    final isRoundTrip = tripType.toLowerCase().contains('round');
-
-    if (isOutstation) {
-      final tripCharge = isRoundTrip ? outstation.roundTrip : outstation.oneWay;
-      final int packageDay = tripCharge.day > 0 ? tripCharge.day : 1;
-      final int days = durationHours > 0 ? durationHours : 1;
-
-      final double customerPrice = tripCharge.customerPrice;
-      final double driverPrice = tripCharge.driverPrice;
-
-      final double customerFare = days * (customerPrice / packageDay);
-      final double driverEarnings = days * (driverPrice / packageDay);
-
-      return BookingFareResult(
-        customerFare: customerFare.roundToDouble(),
-        driverEarnings: driverEarnings.roundToDouble(),
-        totalDays: days,
-        searchType: DriverSearchType.outstation,
-        isCrossedDayNight: false,
-        isLocalRadius: false,
-      );
-    } else {
-      final tripCharge = isRoundTrip ? local.roundTrip : local.oneWay;
-      final morning = tripCharge.morningHours;
-      final night = tripCharge.nightHours;
-
-      final int morningPkgHours = isRoundTrip
-          ? (morning.hours > 0 ? morning.hours : 8)
-          : (morning.hours == 5 ? 4 : (morning.hours > 0 ? morning.hours : 4));
-      final int nightPkgHours = night.hours > 0
-          ? night.hours
-          : (isRoundTrip ? 8 : 4);
-
-      final double morningCustomerPrice = morning.customerPrice;
-      final double morningDriverPrice = morning.driverPrice;
-
-      final double nightCustomerPrice = night.customerPrice;
-      final double nightDriverPrice = night.driverPrice;
-
-      final double morningHourlyCustomer =
-          morningPkgHours > 0 ? (morningCustomerPrice / morningPkgHours) : 0.0;
-      final double morningHourlyDriver =
-          morningPkgHours > 0 ? (morningDriverPrice / morningPkgHours) : 0.0;
-
-      final double nightHourlyCustomer =
-          nightPkgHours > 0 ? (nightCustomerPrice / nightPkgHours) : 0.0;
-      final double nightHourlyDriver =
-          nightPkgHours > 0 ? (nightDriverPrice / nightPkgHours) : 0.0;
-
-      final now = DateTime.now();
-      final int sHour = startHour ?? now.hour;
-      final int sMinute = startMinute ?? now.minute;
-
-      // Determine slot based on start time (06:00 to 18:00 is Morning)
-      final bool startInMorning = sHour >= 6 && sHour < 18;
-      final int basePkgHours =
-          startInMorning ? morningPkgHours : nightPkgHours;
-
-      final int effectiveDuration =
-          durationHours > 0 ? durationHours : basePkgHours;
-      final int totalMinutes = effectiveDuration * 60;
-
-      int dayMinutes = 0;
-      int nightMinutes = 0;
-
-      for (int m = 0; m < totalMinutes; m++) {
-        final int minuteOfDay = (sHour * 60 + sMinute + m) % 1440;
-        // Day hours: 06:00 (360 min) to 18:00 (1080 min)
-        // Night hours: 18:00 (1080 min) to 06:00 (360 min)
-        if (minuteOfDay >= 360 && minuteOfDay < 1080) {
-          dayMinutes++;
-        } else {
-          nightMinutes++;
-        }
-      }
-
-      final double dayHours = dayMinutes / 60.0;
-      final double nightHours = nightMinutes / 60.0;
-
-      final double customerFare =
-          (dayHours * morningHourlyCustomer) +
-          (nightHours * nightHourlyCustomer);
-      final double driverEarnings =
-          (dayHours * morningHourlyDriver) + (nightHours * nightHourlyDriver);
-
-      return BookingFareResult(
-        customerFare: customerFare.roundToDouble(),
-        driverEarnings: driverEarnings.roundToDouble(),
-        dayHours: dayMinutes ~/ 60,
-        nightHours: nightMinutes ~/ 60,
-        dayMinutes: dayMinutes,
-        nightMinutes: nightMinutes,
-        totalDays: 0,
-        searchType: DriverSearchType.local,
-        isCrossedDayNight: dayMinutes > 0 && nightMinutes > 0,
-        isLocalRadius: true,
-      );
-    }
+    return FareCalculator.calculateBookingFareResult(
+      charges: this,
+      isOutstation: isOutstation,
+      tripType: tripType,
+      usageHours: durationHours,
+      pickupDate: startDate,
+      pickupHour: startHour,
+      pickupMinute: startMinute,
+    );
   }
 
   double calculateFare({
     required bool isOutstation,
     required String tripType,
     required int durationHours,
+    DateTime? startDate,
     int? startHour,
     int? startMinute,
   }) {
-    return calculateFareResult(
+    return FareCalculator.calculateFare(
+      charges: this,
       isOutstation: isOutstation,
       tripType: tripType,
-      durationHours: durationHours,
-      startHour: startHour,
-      startMinute: startMinute,
-    ).customerFare;
+      usageHours: durationHours,
+      pickupDate: startDate,
+      pickupHour: startHour,
+      pickupMinute: startMinute,
+    );
   }
 
   @override

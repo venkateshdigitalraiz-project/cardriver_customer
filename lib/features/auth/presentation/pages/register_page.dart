@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -128,7 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           );
-          Navigator.pop(context);
+          context.pop();
         } else if (state.status == RegisterStatus.failure && state.errorMessage != null) {
           print('❌ [REGISTER PAGE] UI Received RegisterStatus.failure: ${state.errorMessage}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -199,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         // Back button
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 44,
                             height: 44,
@@ -425,7 +426,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () => Navigator.pop(context),
+                                      onTap: () => context.pop(),
                                       child: Text(
                                         'Login',
                                         style: AppTypography.labelMedium.copyWith(

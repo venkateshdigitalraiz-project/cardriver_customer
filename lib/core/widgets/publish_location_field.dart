@@ -7,7 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 import '../utils/place_address_utils.dart';
-import 'location_picker_map_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../router/app_router.dart';
 
 class PublishLocationField extends StatefulWidget {
   final String label;
@@ -58,12 +59,9 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
   }
 
   Future<void> _openMapPicker() async {
-    final result = await Navigator.push<PlaceAddressDetails>(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            LocationPickerMapScreen(initialLat: _lastLat, initialLng: _lastLng),
-      ),
+    final result = await context.push<PlaceAddressDetails>(
+      AppRoutes.locationPickerMap,
+      extra: {'initialLat': _lastLat, 'initialLng': _lastLng},
     );
 
     if (result != null) {

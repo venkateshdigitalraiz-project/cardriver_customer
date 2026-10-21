@@ -3,21 +3,51 @@ import '../entities/booking_rate_config_entity.dart';
 import '../entities/charges_entity.dart';
 import '../../../../features/drivers/domain/entities/driver_search_type.dart';
 
+import 'fare_calculator.dart';
+
 class CalculateFareUseCase {
+  /// Pure fare calculation returning customer fare
+  double calculateFare({
+    required ChargesEntity? charges,
+    required bool isOutstation,
+    required String tripType,
+    DateTime? pickupDate,
+    int? pickupHour,
+    int? pickupMinute,
+    DateTime? pickupDateTime,
+    int? usageHours,
+    int? days,
+  }) {
+    return FareCalculator.calculateFare(
+      charges: charges,
+      isOutstation: isOutstation,
+      tripType: tripType,
+      pickupDate: pickupDate,
+      pickupHour: pickupHour,
+      pickupMinute: pickupMinute,
+      pickupDateTime: pickupDateTime,
+      usageHours: usageHours,
+      days: days,
+    );
+  }
+
   BookingFareResult calculateDynamicFare({
-    required ChargesEntity charges,
+    required ChargesEntity? charges,
     required bool isOutstation,
     required String tripType,
     required int durationHours,
+    DateTime? startDate,
     int? startHour,
     int? startMinute,
   }) {
-    return charges.calculateFareResult(
+    return FareCalculator.calculateBookingFareResult(
+      charges: charges,
       isOutstation: isOutstation,
       tripType: tripType,
-      durationHours: durationHours,
-      startHour: startHour,
-      startMinute: startMinute,
+      usageHours: durationHours,
+      pickupDate: startDate,
+      pickupHour: startHour,
+      pickupMinute: startMinute,
     );
   }
   BookingFareResult calculateLocalFare({

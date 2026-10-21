@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/support_bloc.dart';
 import '../bloc/support_event.dart';
 import '../bloc/support_state.dart';
@@ -18,7 +19,7 @@ class SupportPage extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
           centerTitle: true,
           title: const Text(
@@ -198,7 +199,7 @@ class SupportPage extends StatelessWidget {
                           children: [
                             Text(ticket.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 4),
-                            Text('Ticket  · ', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                            Text('Ticket  Â· ', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                           ],
                         ),
                       ),

@@ -209,32 +209,57 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           );
         }
 
-        // --- Extract and save the cookie only upon successful verification ---
+        // --- Extract and save the cookie & token upon successful verification ---
         String tokenCookie = '';
+        String rawJwt = '';
         final cookies = response.headers['set-cookie'];
         if (cookies != null && cookies.isNotEmpty) {
           for (var c in cookies) {
             if (c.contains('user_token=')) {
-              tokenCookie = c.split(';').first; // e.g. user_token=eyJ...
+              tokenCookie = c.split(';').first.trim(); // e.g. user_token=eyJ...
+              rawJwt = tokenCookie.replaceFirst('user_token=', '').trim();
+              break;
+            } else if (c.contains('token=')) {
+              final val = c.split(';').first.trim();
+              rawJwt = val.replaceFirst('token=', '').trim();
+              tokenCookie = 'user_token=$rawJwt';
               break;
             }
           }
         }
         
         // Fallback: If Set-Cookie header is missing, check if token is in the JSON body
-        if (tokenCookie.isEmpty) {
-          String? bodyToken = responseData['token']?.toString();
+        if (rawJwt.isEmpty) {
+          String? bodyToken = responseData['token']?.toString() ??
+              responseData['accessToken']?.toString() ??
+              responseData['jwt']?.toString();
           if (bodyToken == null && responseData['data'] is Map) {
-            bodyToken = (responseData['data'] as Map)['token']?.toString();
+            final dataMap = responseData['data'] as Map;
+            bodyToken = dataMap['token']?.toString() ??
+                dataMap['accessToken']?.toString() ??
+                dataMap['jwt']?.toString();
           }
-          if (bodyToken != null && bodyToken.isNotEmpty) {
-            tokenCookie = 'user_token=$bodyToken';
+          if (bodyToken == null && responseData['user'] is Map) {
+            final userJson = responseData['user'] as Map;
+            bodyToken = userJson['token']?.toString() ??
+                userJson['accessToken']?.toString();
+          }
+          if (bodyToken != null && bodyToken.trim().isNotEmpty) {
+            rawJwt = bodyToken.trim();
+            if (rawJwt.startsWith('Bearer ')) {
+              rawJwt = rawJwt.substring(7).trim();
+            }
+            tokenCookie = 'user_token=$rawJwt';
           }
         }
 
         if (tokenCookie.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_cookie', tokenCookie);
+          if (rawJwt.isNotEmpty) {
+            await prefs.setString('token', rawJwt);
+            await prefs.setString('auth_token', rawJwt);
+          }
           debugPrint('🔑 Saved Auth Cookie: $tokenCookie');
         }
         // -----------------------------------
