@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/usecases/get_intro_banners_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/verify_otp_usecase.dart';
 import 'login_event.dart';
@@ -9,11 +10,13 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginWithEmailUseCase loginWithEmailUseCase;
   final LoginWithPhoneUseCase loginWithPhoneUseCase;
   final VerifyOtpUseCase verifyOtpUseCase;
+  final GetIntroBannersUseCase getIntroBannersUseCase;
 
   LoginBloc({
     required this.loginWithEmailUseCase,
     required this.loginWithPhoneUseCase,
     required this.verifyOtpUseCase,
+    required this.getIntroBannersUseCase,
   }) : super(const LoginState()) {
     on<LoginModeChanged>(_onLoginModeChanged);
     on<TogglePasswordVisibility>(_onTogglePasswordVisibility);
@@ -22,6 +25,31 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<SendOtpRequested>(_onSendOtpRequested);
     on<VerifyOtpSubmitted>(_onVerifyOtpSubmitted);
     on<ResetLoginState>(_onResetLoginState);
+    on<LoadIntroBannersRequested>(_onLoadIntroBannersRequested);
+    on<IntroBannerPageChanged>(_onIntroBannerPageChanged);
+  }
+
+  Future<void> _onLoadIntroBannersRequested(
+    LoadIntroBannersRequested event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingBanners: true));
+    try {
+      final banners = await getIntroBannersUseCase();
+      emit(state.copyWith(
+        introBanners: banners,
+        isLoadingBanners: false,
+      ));
+    } catch (_) {
+      emit(state.copyWith(isLoadingBanners: false));
+    }
+  }
+
+  void _onIntroBannerPageChanged(
+    IntroBannerPageChanged event,
+    Emitter<LoginState> emit,
+  ) {
+    emit(state.copyWith(currentBannerIndex: event.pageIndex));
   }
 
   void _onLoginModeChanged(LoginModeChanged event, Emitter<LoginState> emit) {

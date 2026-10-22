@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../domain/entities/valet_event_booking_item.dart';
 import '../../domain/entities/valet_event_booking_response.dart';
+import '../models/home_data_model.dart';
 
 abstract class HomeRemoteDataSource {
   Future<ValetEventBookingResponse> addValetEventBooking(
       ValetEventBookingItem booking);
+  Future<HomeDataModel> getHomeData();
 }
 
 class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
@@ -121,5 +123,46 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     };
 
     return ValetEventBookingResponse.fromJson(fallbackResponseJson);
+  }
+
+  @override
+  Future<HomeDataModel> getHomeData() async {
+    final client = dio ?? Dio();
+    final cookie = await _resolveAuthCookie();
+
+    final token = cookie.contains('user_token=')
+        ? cookie.split('user_token=').last.split(';').first
+        : cookie;
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Cookie': cookie,
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
+    debugPrint('🚀 API Request -> GET ${ApiEndpoints.userHome}');
+
+    try {
+      final response = await client.get(
+        ApiEndpoints.userHome,
+        options: Options(
+          headers: headers,
+          sendTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
+        ),
+      );
+
+      debugPrint('✅ Home API Response -> ${response.statusCode}');
+      if (response.data is Map<String, dynamic>) {
+        return HomeDataModel.fromJson(response.data as Map<String, dynamic>);
+      } else if (response.data is Map) {
+        return HomeDataModel.fromJson(
+            Map<String, dynamic>.from(response.data as Map));
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error fetching home data ($e).');
+    }
+
+    return const HomeDataModel();
   }
 }

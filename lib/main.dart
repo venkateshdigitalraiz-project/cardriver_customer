@@ -11,7 +11,9 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
 import 'features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'features/auth/domain/usecases/register_usecase.dart';
+import 'features/auth/domain/usecases/get_intro_banners_usecase.dart';
 import 'features/auth/presentation/bloc/login_bloc.dart';
+import 'features/auth/presentation/bloc/login_event.dart';
 import 'features/auth/presentation/bloc/register_bloc.dart';
 import 'features/booking/data/datasources/booking_remote_datasource.dart';
 import 'features/booking/data/repositories/booking_repository_impl.dart';
@@ -40,6 +42,9 @@ import 'features/valet_parking/domain/usecases/get_valet_locations_usecase.dart'
 import 'features/valet_parking/domain/usecases/get_active_valet_tickets_usecase.dart';
 import 'features/valet_parking/domain/usecases/request_valet_booking_usecase.dart';
 import 'features/valet_parking/domain/usecases/request_vehicle_retrieval_usecase.dart';
+import 'features/home/data/datasources/home_remote_datasource.dart';
+import 'features/home/data/repositories/home_repository_impl.dart';
+import 'features/home/domain/usecases/get_home_data_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,6 +101,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final loginWithPhoneUseCase = LoginWithPhoneUseCase(authRepository);
     final verifyOtpUseCase = VerifyOtpUseCase(authRepository);
     final registerUseCase = RegisterUseCase(authRepository);
+    final getIntroBannersUseCase = GetIntroBannersUseCase(authRepository);
     
     final bookingRemoteDataSource = BookingRemoteDataSourceImpl(dio: dio);
     final bookingRepository = BookingRepositoryImpl(remoteDataSource: bookingRemoteDataSource);
@@ -127,9 +133,15 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final requestValetBookingUseCase = RequestValetBookingUseCase(valetParkingRepository);
     final requestVehicleRetrievalUseCase = RequestVehicleRetrievalUseCase(valetParkingRepository);
 
+    // Home dependencies
+    final homeRemoteDataSource = HomeRemoteDataSourceImpl(dio: dio);
+    final homeRepository = HomeRepositoryImpl(remoteDataSource: homeRemoteDataSource);
+    final getHomeDataUseCase = GetHomeDataUseCase(homeRepository);
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: registerUseCase),
+        RepositoryProvider.value(value: getIntroBannersUseCase),
         RepositoryProvider.value(value: submitBookingUseCase),
         RepositoryProvider.value(value: getChargesUseCase),
         RepositoryProvider.value(value: calculateFareUseCase),
@@ -147,6 +159,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
         RepositoryProvider.value(value: getActiveValetTicketsUseCase),
         RepositoryProvider.value(value: requestValetBookingUseCase),
         RepositoryProvider.value(value: requestVehicleRetrievalUseCase),
+        RepositoryProvider.value(value: getHomeDataUseCase),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -155,7 +168,8 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
               loginWithEmailUseCase: loginWithEmailUseCase,
               loginWithPhoneUseCase: loginWithPhoneUseCase,
               verifyOtpUseCase: verifyOtpUseCase,
-            ),
+              getIntroBannersUseCase: getIntroBannersUseCase,
+            )..add(const LoadIntroBannersRequested()),
           ),
           BlocProvider<RegisterBloc>(
             create: (_) => RegisterBloc(

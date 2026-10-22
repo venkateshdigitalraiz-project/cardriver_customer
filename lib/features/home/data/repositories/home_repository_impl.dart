@@ -1,3 +1,4 @@
+import '../../domain/entities/home_data.dart';
 import '../../domain/entities/valet_event_booking_item.dart';
 import '../../domain/entities/valet_event_booking_response.dart';
 import '../../domain/repositories/home_repository.dart';
@@ -12,5 +13,10 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<ValetEventBookingResponse> addValetEventBooking(
       ValetEventBookingItem booking) async {
     return await remoteDataSource.addValetEventBooking(booking);
+  }
+
+  @override
+  Future<HomeData> getHomeData() async {
+    return await remoteDataSource.getHomeData();
   }
 }

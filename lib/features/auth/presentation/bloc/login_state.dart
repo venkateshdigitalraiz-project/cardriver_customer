@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/driver_user.dart';
+import '../../domain/entities/intro_banner.dart';
 import 'login_event.dart';
 
 enum LoginStatus { initial, loading, success, failure }
@@ -14,6 +15,9 @@ class LoginState extends Equatable {
   final CustomerUser? user;
   final String? errorMessage;
   final bool isOtpSent;
+  final List<IntroBanner> introBanners;
+  final bool isLoadingBanners;
+  final int currentBannerIndex;
 
   const LoginState({
     this.status = LoginStatus.initial,
@@ -25,6 +29,9 @@ class LoginState extends Equatable {
     this.user,
     this.errorMessage,
     this.isOtpSent = false,
+    this.introBanners = const [],
+    this.isLoadingBanners = false,
+    this.currentBannerIndex = 0,
   });
 
   LoginState copyWith({
@@ -38,6 +45,9 @@ class LoginState extends Equatable {
     String? errorMessage,
     bool clearError = false,
     bool? isOtpSent,
+    List<IntroBanner>? introBanners,
+    bool? isLoadingBanners,
+    int? currentBannerIndex,
   }) {
     return LoginState(
       status: status ?? this.status,
@@ -49,6 +59,9 @@ class LoginState extends Equatable {
       user: user ?? this.user,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isOtpSent: isOtpSent ?? this.isOtpSent,
+      introBanners: introBanners ?? this.introBanners,
+      isLoadingBanners: isLoadingBanners ?? this.isLoadingBanners,
+      currentBannerIndex: currentBannerIndex ?? this.currentBannerIndex,
     );
   }
 
@@ -63,5 +76,8 @@ class LoginState extends Equatable {
         user,
         errorMessage,
         isOtpSent,
+        introBanners,
+        isLoadingBanners,
+        currentBannerIndex,
       ];
 }

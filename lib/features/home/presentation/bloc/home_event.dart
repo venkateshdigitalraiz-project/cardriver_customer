@@ -13,3 +13,5 @@ class SubmitValetEventBooking extends HomeEvent {
 }
 
 class ResetValetBookingSubmission extends HomeEvent {}
+
+class LoadHomeDataRequested extends HomeEvent {}

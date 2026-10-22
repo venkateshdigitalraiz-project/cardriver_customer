@@ -57,3 +57,15 @@ class VerifyOtpSubmitted extends LoginEvent {
 class ResetLoginState extends LoginEvent {
   const ResetLoginState();
 }
+
+class LoadIntroBannersRequested extends LoginEvent {
+  const LoadIntroBannersRequested();
+}
+
+class IntroBannerPageChanged extends LoginEvent {
+  final int pageIndex;
+  const IntroBannerPageChanged(this.pageIndex);
+
+  @override
+  List<Object?> get props => [pageIndex];
+}

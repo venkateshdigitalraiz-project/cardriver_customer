@@ -2,16 +2,25 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../domain/usecases/add_valet_event_booking_usecase.dart';
+import '../../domain/usecases/get_home_data_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final AddValetEventBookingUseCase addValetEventBookingUseCase;
+  final GetHomeDataUseCase getHomeDataUseCase;
 
   HomeBloc({
     AddValetEventBookingUseCase? addValetEventBookingUseCase,
+    GetHomeDataUseCase? getHomeDataUseCase,
   })  : addValetEventBookingUseCase = addValetEventBookingUseCase ??
             AddValetEventBookingUseCase(
+              HomeRepositoryImpl(
+                remoteDataSource: HomeRemoteDataSourceImpl(),
+              ),
+            ),
+        getHomeDataUseCase = getHomeDataUseCase ??
+            GetHomeDataUseCase(
               HomeRepositoryImpl(
                 remoteDataSource: HomeRemoteDataSourceImpl(),
               ),
@@ -23,6 +32,28 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     on<SubmitValetEventBooking>(_onSubmitValetEventBooking);
     on<ResetValetBookingSubmission>(_onResetValetBookingSubmission);
+    on<LoadHomeDataRequested>(_onLoadHomeDataRequested);
+  }
+
+  Future<void> _onLoadHomeDataRequested(
+    LoadHomeDataRequested event,
+    Emitter<HomeState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingHomeData: true, clearHomeError: true));
+
+    try {
+      final homeData = await getHomeDataUseCase();
+      emit(state.copyWith(
+        isLoadingHomeData: false,
+        heroBanners: homeData.heroBanners,
+        middleBanners: homeData.middleBanners,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoadingHomeData: false,
+        homeDataErrorMessage: e.toString(),
+      ));
+    }
   }
 
   Future<void> _onSubmitValetEventBooking(

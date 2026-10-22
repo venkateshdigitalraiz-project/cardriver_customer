@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/driver_user_model.dart';
+import '../models/intro_banner_model.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_endpoints.dart';
 
@@ -32,6 +33,8 @@ abstract class AuthRemoteDataSource {
     required String phone,
     required String address,
   });
+
+  Future<List<IntroBannerModel>> getIntroBanners();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -378,6 +381,44 @@ Exception: $e
 
       if (e is AuthFailure) rethrow;
       throw const AuthFailure('An unexpected error occurred. Please try again later.');
+    }
+  }
+
+  @override
+  Future<List<IntroBannerModel>> getIntroBanners() async {
+    try {
+      debugPrint('🌍 API Request -> GET ${ApiEndpoints.settings}');
+      final response = await dio.get(
+        ApiEndpoints.settings,
+        options: Options(
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      debugPrint('🌍 API Response [Settings]: ${response.statusCode}');
+
+      final dataMap = _parseResponseMap(response.data);
+      final data = dataMap['data'];
+      if (data is Map) {
+        final banners = data['banners'];
+        if (banners is Map) {
+          final introList = banners['intro_screen'];
+          if (introList is List) {
+            final list = introList
+                .whereType<Map>()
+                .map((item) => IntroBannerModel.fromJson(Map<String, dynamic>.from(item)))
+                .toList();
+            list.sort((a, b) => a.order.compareTo(b.order));
+            debugPrint('✅ Loaded ${list.length} intro banners');
+            return list;
+          }
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('⚠️ Error fetching intro banners: $e');
+      return [];
     }
   }
 }

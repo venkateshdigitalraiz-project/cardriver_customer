@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/home_banner_item.dart';
 import '../../domain/entities/valet_event_booking_response.dart';
 
 abstract class HomeState extends Equatable {
@@ -8,12 +9,22 @@ abstract class HomeState extends Equatable {
   final String? valetErrorMessage;
   final ValetEventBookingResponse? valetBookingResponse;
 
+  // Dynamic Home Banners from /api/user/home
+  final List<HomeBannerItem> heroBanners;
+  final List<HomeBannerItem> middleBanners;
+  final bool isLoadingHomeData;
+  final String? homeDataErrorMessage;
+
   const HomeState({
     required this.currentBannerIndex,
     this.isSubmittingValet = false,
     this.valetSubmitSuccess = false,
     this.valetErrorMessage,
     this.valetBookingResponse,
+    this.heroBanners = const [],
+    this.middleBanners = const [],
+    this.isLoadingHomeData = false,
+    this.homeDataErrorMessage,
   });
 
   HomeState copyWith({
@@ -22,8 +33,13 @@ abstract class HomeState extends Equatable {
     bool? valetSubmitSuccess,
     String? valetErrorMessage,
     ValetEventBookingResponse? valetBookingResponse,
+    List<HomeBannerItem>? heroBanners,
+    List<HomeBannerItem>? middleBanners,
+    bool? isLoadingHomeData,
+    String? homeDataErrorMessage,
     bool clearError = false,
     bool clearResponse = false,
+    bool clearHomeError = false,
   });
 
   @override
@@ -33,6 +49,10 @@ abstract class HomeState extends Equatable {
         valetSubmitSuccess,
         valetErrorMessage,
         valetBookingResponse,
+        heroBanners,
+        middleBanners,
+        isLoadingHomeData,
+        homeDataErrorMessage,
       ];
 }
 
@@ -43,6 +63,10 @@ class HomeInitial extends HomeState {
     super.valetSubmitSuccess = false,
     super.valetErrorMessage,
     super.valetBookingResponse,
+    super.heroBanners = const [],
+    super.middleBanners = const [],
+    super.isLoadingHomeData = false,
+    super.homeDataErrorMessage,
   });
 
   @override
@@ -52,8 +76,13 @@ class HomeInitial extends HomeState {
     bool? valetSubmitSuccess,
     String? valetErrorMessage,
     ValetEventBookingResponse? valetBookingResponse,
+    List<HomeBannerItem>? heroBanners,
+    List<HomeBannerItem>? middleBanners,
+    bool? isLoadingHomeData,
+    String? homeDataErrorMessage,
     bool clearError = false,
     bool clearResponse = false,
+    bool clearHomeError = false,
   }) {
     return HomeInitial(
       currentBannerIndex: currentBannerIndex ?? this.currentBannerIndex,
@@ -64,6 +93,12 @@ class HomeInitial extends HomeState {
       valetBookingResponse: clearResponse
           ? null
           : (valetBookingResponse ?? this.valetBookingResponse),
+      heroBanners: heroBanners ?? this.heroBanners,
+      middleBanners: middleBanners ?? this.middleBanners,
+      isLoadingHomeData: isLoadingHomeData ?? this.isLoadingHomeData,
+      homeDataErrorMessage: clearHomeError
+          ? null
+          : (homeDataErrorMessage ?? this.homeDataErrorMessage),
     );
   }
 }

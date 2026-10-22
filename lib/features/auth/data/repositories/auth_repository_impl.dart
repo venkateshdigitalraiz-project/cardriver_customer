@@ -1,4 +1,5 @@
 import '../../domain/entities/driver_user.dart';
+import '../../domain/entities/intro_banner.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 
@@ -55,5 +56,10 @@ class AuthRepositoryImpl implements AuthRepository {
       phone: phone,
       address: address,
     );
+  }
+
+  @override
+  Future<List<IntroBanner>> getIntroBanners() async {
+    return await remoteDataSource.getIntroBanners();
   }
 }

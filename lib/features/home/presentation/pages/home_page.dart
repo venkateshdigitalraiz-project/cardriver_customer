@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
+import '../../domain/entities/home_banner_item.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -14,7 +16,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => HomeBloc(),
+      create: (_) => HomeBloc()..add(LoadHomeDataRequested()),
       child: const _HomePageView(),
     );
   }
@@ -70,9 +72,18 @@ class _HomePageView extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                'assets/images/highway_cars_upward.gif',
-                fit: BoxFit.cover,
+              BlocBuilder<HomeBloc, HomeState>(
+                buildWhen: (prev, curr) => prev.heroBanners != curr.heroBanners,
+                builder: (context, state) {
+                  if (state.heroBanners.length == 1) {
+                    return _HeroBannerImage(
+                      imageUrl: state.heroBanners.first.imageUrl,
+                    );
+                  } else if (state.heroBanners.length > 1) {
+                    return _HeroBannerCarousel(banners: state.heroBanners);
+                  }
+                  return const _HeroBannerImage();
+                },
               ),
               SafeArea(
                 child: Padding(
@@ -599,146 +610,399 @@ class _HomePageView extends StatelessWidget {
   }
 
   Widget _buildSuggestionsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            'Suggestions',
-            style: AppTypography.titleLarge.copyWith(
-              fontWeight: FontWeight.w900,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 180,
-          child: PageView.builder(
-            onPageChanged: (index) {
-              context.read<HomeBloc>().add(BannerPageChanged(index));
-            },
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFF1F8FF),
-                      Color(0xFFFDE4F2),
-                    ], // Light blue to light pink
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+    return BlocBuilder<HomeBloc, HomeState>(
+      buildWhen: (prev, curr) =>
+          prev.middleBanners != curr.middleBanners ||
+          prev.isLoadingHomeData != curr.isLoadingHomeData ||
+          prev.currentBannerIndex != curr.currentBannerIndex,
+      builder: (context, state) {
+        final middleBanners = state.middleBanners;
+        final count = middleBanners.isNotEmpty ? middleBanners.length : 3;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Suggestions',
+                style: AppTypography.titleLarge.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      // Text Content
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Explore In-city',
-                              style: AppTypography.titleLarge.copyWith(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Across town, around the corner, and everywhere in between.',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: Colors.black54,
-                                height: 1.4,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF266475),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'Book Now',
-                                style: AppTypography.labelMedium.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 180,
+              child: PageView.builder(
+                onPageChanged: (index) {
+                  context.read<HomeBloc>().add(BannerPageChanged(index));
+                },
+                itemCount: count,
+                itemBuilder: (context, index) {
+                  if (middleBanners.isNotEmpty) {
+                    final banner = middleBanners[index];
+                    final fullImageUrl =
+                        ApiEndpoints.resolveImageUrl(banner.imageUrl);
+
+                    final hasText = banner.title.trim().isNotEmpty ||
+                        banner.subtitle.trim().isNotEmpty;
+
+                    // If it's a full promotional banner image without title/subtitle text
+                    if (!hasText && fullImageUrl.isNotEmpty) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
-                      ),
-                      // Illustration Placeholder
-                      Expanded(
-                        flex: 4,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: const Icon(
-                              Icons.location_city,
-                              size: 60,
-                              color: Color(0xFF266475),
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                fullImageUrl,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    color: const Color(0xFFF1F8FF),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Color(0xFF266475),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder:
+                                    (context, error, stackTrace) =>
+                                        _buildDefaultSuggestionCard(
+                                  context: context,
+                                  title: 'Explore In-city',
+                                  subtitle:
+                                      'Across town, around the corner, and everywhere in between.',
+                                ),
+                              ),
+                              if (banner.actionUrl.isNotEmpty)
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      context.push(
+                                        AppRoutes.bookingWizard,
+                                        extra: 'Local',
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
+                      );
+                    }
+
+                      // Split card with text & banner image
+                      return _buildSuggestionCardWithBanner(
+                        context: context,
+                        banner: banner,
+                        fullImageUrl: fullImageUrl,
+                      );
+                    }
+
+                    // Fallback to default card when banners are empty
+                    return _buildDefaultSuggestionCard(
+                      context: context,
+                      title: 'Explore In-city',
+                      subtitle:
+                          'Across town, around the corner, and everywhere in between.',
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 16),
+            // Pagination Dots
+            if (count > 1)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(count, (dotIndex) {
+                  final isActive = dotIndex == state.currentBannerIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 20 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: isActive
+                          ? const Color(0xFFFBE74D)
+                          : Colors.grey.shade300,
+                    ),
+                  );
+                }),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSuggestionCardWithBanner({
+    required BuildContext context,
+    required HomeBannerItem banner,
+    required String fullImageUrl,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFF1F8FF),
+            Color(0xFFFDE4F2),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            // Text Content
+            Expanded(
+              flex: 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    banner.title.isNotEmpty ? banner.title : 'Explore In-city',
+                    style: AppTypography.titleLarge.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    banner.subtitle.isNotEmpty
+                        ? banner.subtitle
+                        : 'Across town, around the corner, and everywhere in between.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.black54,
+                      height: 1.4,
+                      fontSize: 11,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const Spacer(),
+                  InkWell(
+                    onTap: () {
+                      context.push(AppRoutes.bookingWizard, extra: 'Local');
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
                       ),
-                    ],
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF266475),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Book Now',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Illustration / Banner Image
+            Expanded(
+              flex: 4,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: fullImageUrl.isNotEmpty
+                    ? Image.network(
+                        fullImageUrl,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.medium,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF266475),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: const Icon(
+                            Icons.location_city,
+                            size: 60,
+                            color: Color(0xFF266475),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: const Icon(
+                          Icons.location_city,
+                          size: 60,
+                          color: Color(0xFF266475),
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultSuggestionCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFF1F8FF),
+            Color(0xFFFDE4F2),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.titleLarge.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    subtitle,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.black54,
+                      height: 1.4,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const Spacer(),
+                  InkWell(
+                    onTap: () {
+                      context.push(AppRoutes.bookingWizard, extra: 'Local');
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF266475),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Book Now',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.location_city,
+                    size: 60,
+                    color: Color(0xFF266475),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        // Pagination Dots
-        BlocBuilder<HomeBloc, HomeState>(
-          builder: (context, state) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (dotIndex) {
-                final isActive = dotIndex == state.currentBannerIndex;
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: isActive ? 20 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: isActive
-                        ? const Color(0xFFFBE74D)
-                        : Colors.grey.shade300,
-                  ),
-                );
-              }),
-            );
-          },
-        ),
-      ],
+      ),
     );
   }
 
@@ -929,6 +1193,155 @@ class _HomePageView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontal scrolling hero banner carousel with infinite circular manual scrolling.
+class _HeroBannerCarousel extends StatefulWidget {
+  final List<HomeBannerItem> banners;
+
+  const _HeroBannerCarousel({required this.banners});
+
+  @override
+  State<_HeroBannerCarousel> createState() => _HeroBannerCarouselState();
+}
+
+class _HeroBannerCarouselState extends State<_HeroBannerCarousel> {
+  late final PageController _controller;
+  static const int _kLoopFactor = 1000;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialPage = widget.banners.isEmpty
+        ? 0
+        : widget.banners.length * _kLoopFactor;
+    _controller = PageController(initialPage: initialPage);
+  }
+
+  @override
+  void didUpdateWidget(covariant _HeroBannerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.banners.length != widget.banners.length &&
+        widget.banners.isNotEmpty) {
+      final initialPage = widget.banners.length * _kLoopFactor;
+      if (_controller.hasClients) {
+        _controller.jumpToPage(initialPage);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.banners.isEmpty) return const SizedBox.shrink();
+
+    return PageView.builder(
+      controller: _controller,
+      physics: const BouncingScrollPhysics(),
+      scrollDirection: Axis.horizontal,
+      // Infinite circular scrolling: loops smoothly back to index 0 when reaching the end
+      itemBuilder: (context, index) {
+        final actualIndex = index % widget.banners.length;
+        final banner = widget.banners[actualIndex];
+        return _HeroBannerImage(imageUrl: banner.imageUrl);
+      },
+    );
+  }
+}
+
+/// Renders hero banner images supporting any format (.png, .gif, .jpg, .jpeg, .webp)
+/// smoothly with zero crashes, gapless playback, and graceful fallback.
+class _HeroBannerImage extends StatelessWidget {
+  final String? imageUrl;
+  static const double _heroHeight = 260.0;
+
+  const _HeroBannerImage({
+    this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rawUrl = imageUrl?.trim() ?? '';
+    final resolvedUrl = ApiEndpoints.resolveImageUrl(rawUrl).trim();
+    final uri = Uri.tryParse(resolvedUrl);
+    final isValidUrl = resolvedUrl.isNotEmpty &&
+        uri != null &&
+        (uri.isScheme('http') || uri.isScheme('https'));
+
+    if (!isValidUrl) {
+      return _buildFallback();
+    }
+
+    return Container(
+      width: double.infinity,
+      height: _heroHeight,
+      color: const Color(0xFF1B2838),
+      child: Image.network(
+        resolvedUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: _heroHeight,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.medium,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) {
+            return child;
+          }
+          return Container(
+            width: double.infinity,
+            height: _heroHeight,
+            color: const Color(0xFF1B2838),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: double.infinity,
+            height: _heroHeight,
+            color: const Color(0xFF1B2838),
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Colors.white54,
+                ),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return Container(
+      width: double.infinity,
+      height: _heroHeight,
+      color: const Color(0xFF1B2838),
+      child: Image.asset(
+        'assets/images/highway_cars_upward.gif',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: _heroHeight,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: double.infinity,
+          height: _heroHeight,
+          color: const Color(0xFF1B2838),
+        ),
       ),
     );
   }

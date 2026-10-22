@@ -1,4 +1,5 @@
 import '../entities/driver_user.dart';
+import '../entities/intro_banner.dart';
 
 /// Authentication repository contract in Domain layer for Customer App.
 abstract class AuthRepository {
@@ -25,4 +26,7 @@ abstract class AuthRepository {
     required String phone,
     required String address,
   });
+
+  /// Fetch intro/welcome banners from user settings
+  Future<List<IntroBanner>> getIntroBanners();
 }
