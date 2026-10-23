@@ -17,20 +17,24 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   HomeRemoteDataSourceImpl({this.dio});
 
-  static const String _defaultCookieToken =
-      'user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MjA0MjQ2NSwiZXhwIjoxNzkyNjQ3MjY1fQ.gXQJOlL0gs16AYu5f3toIDJ3-V5tuzYmlnE1VVgvzmA';
-
   Future<String> _resolveAuthCookie() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cookie = prefs.getString('auth_cookie');
       if (cookie != null && cookie.trim().isNotEmpty) {
-        return cookie;
+        return cookie.trim();
+      }
+      final rawToken = prefs.getString('token') ??
+          prefs.getString('auth_token') ??
+          prefs.getString('jwt_token');
+      if (rawToken != null && rawToken.trim().isNotEmpty) {
+        final clean = rawToken.trim().replaceAll('Bearer ', '');
+        return 'user_token=$clean';
       }
     } catch (e) {
-      debugPrint('Error reading auth cookie: $e');
+      debugPrint('⚠️ Error reading auth credentials from SharedPreferences: $e');
     }
-    return _defaultCookieToken;
+    return '';
   }
 
   @override
@@ -136,31 +140,56 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
     final headers = {
       'Content-Type': 'application/json',
-      'Cookie': cookie,
+      if (cookie.isNotEmpty) 'Cookie': cookie,
       if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    debugPrint('🚀 API Request -> GET ${ApiEndpoints.userHome}');
+    debugPrint('════════════════════════════════════════════════════════════════════');
+    debugPrint('🚀 [CUSTOMER HOME API] Initiating GET Request');
+    debugPrint('🌐 URL: ${ApiEndpoints.userHome}');
+    debugPrint('🔑 Headers: $headers');
+    debugPrint('════════════════════════════════════════════════════════════════════');
 
     try {
       final response = await client.get(
         ApiEndpoints.userHome,
         options: Options(
           headers: headers,
-          sendTimeout: const Duration(seconds: 8),
-          receiveTimeout: const Duration(seconds: 8),
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
         ),
       );
 
-      debugPrint('✅ Home API Response -> ${response.statusCode}');
+      debugPrint('════════════════════════════════════════════════════════════════════');
+      debugPrint('✅ [CUSTOMER HOME API] Response Received');
+      debugPrint('📊 Status Code: ${response.statusCode}');
+      debugPrint('📄 Response Body: ${response.data}');
+      debugPrint('════════════════════════════════════════════════════════════════════');
+
+      HomeDataModel model;
       if (response.data is Map<String, dynamic>) {
-        return HomeDataModel.fromJson(response.data as Map<String, dynamic>);
+        model = HomeDataModel.fromJson(response.data as Map<String, dynamic>);
       } else if (response.data is Map) {
-        return HomeDataModel.fromJson(
+        model = HomeDataModel.fromJson(
             Map<String, dynamic>.from(response.data as Map));
+      } else {
+        model = const HomeDataModel();
       }
+
+      debugPrint('🎉 [CUSTOMER HOME API] Parsed dynamic banners:');
+      debugPrint('   • Hero Banners: ${model.heroBanners.length}');
+      debugPrint('   • Middle / Suggestions Banners: ${model.middleBanners.length}');
+      return model;
     } catch (e) {
-      debugPrint('⚠️ Error fetching home data ($e).');
+      debugPrint('════════════════════════════════════════════════════════════════════');
+      debugPrint('❌ [CUSTOMER HOME API] Error fetching home data: $e');
+      if (e is DioException) {
+        debugPrint('   • DioException Type: ${e.type}');
+        debugPrint('   • Message: ${e.message}');
+        debugPrint('   • Response Status: ${e.response?.statusCode}');
+        debugPrint('   • Response Data: ${e.response?.data}');
+      }
+      debugPrint('════════════════════════════════════════════════════════════════════');
     }
 
     return const HomeDataModel();

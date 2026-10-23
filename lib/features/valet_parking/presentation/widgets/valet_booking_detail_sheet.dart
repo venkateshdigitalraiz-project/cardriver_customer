@@ -468,47 +468,48 @@ class ValetBookingDetailSheet extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (booking.coordinates != null &&
-                            booking.coordinates!.length >= 2) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(
-                                  0xFF10B981,
-                                ).withValues(alpha: 0.25),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.gps_fixed_rounded,
-                                  size: 13,
-                                  color: Color(0xFF047857),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'GPS: ${booking.coordinates![0].toStringAsFixed(4)}, ${booking.coordinates![1].toStringAsFixed(4)}',
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF047857),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        // if (booking.coordinates != null &&
+                        //     booking.coordinates!.length >= 2) ...[
+                        //   const SizedBox(height: 10),
+                        //   Container(
+                        //     padding: const EdgeInsets.symmetric(
+                        //       horizontal: 10,
+                        //       vertical: 6,
+                        //     ),
+                        //     decoration: BoxDecoration(
+                        //       color: const Color(
+                        //         0xFF10B981,
+                        //       ).withValues(alpha: 0.08),
+                        //       borderRadius: BorderRadius.circular(8),
+                        //       border: Border.all(
+                        //         color: const Color(
+                        //           0xFF10B981,
+                        //         ).withValues(alpha: 0.25),
+                        //       ),
+                        //     ),
+                        //     child: Row(
+                        //       mainAxisSize: MainAxisSize.min,
+                        //       children: [
+                        //         const Icon(
+                        //           Icons.gps_fixed_rounded,
+                        //           size: 13,
+                        //           color: Color(0xFF047857),
+                        //         ),
+                        //         const SizedBox(width: 6),
+                        //         Text(
+                        //           'GPS: ${booking.coordinates![0].toStringAsFixed(4)}, ${booking.coordinates![1].toStringAsFixed(4)}',
+                        //           style: const TextStyle(
+                        //             fontFamily: 'monospace',
+                        //             fontSize: 11,
+                        //             fontWeight: FontWeight.w700,
+                        //             color: Color(0xFF047857),
+                        //           ),
+                        //         ),
+                        //       ],
+                        //     ),
+                        //   ),
+
+                        // ],
                       ],
                     ),
                   ),

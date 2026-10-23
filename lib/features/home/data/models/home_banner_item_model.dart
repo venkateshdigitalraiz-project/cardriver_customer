@@ -17,9 +17,20 @@ class HomeBannerItemModel extends HomeBannerItem {
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       section: json['section']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      subtitle: json['subtitle']?.toString() ?? '',
-      imageUrl: json['imageUrl']?.toString() ?? '',
-      actionUrl: json['actionUrl']?.toString() ?? '',
+      subtitle: json['subtitle']?.toString() ??
+          json['description']?.toString() ??
+          '',
+      imageUrl: json['imageUrl']?.toString() ??
+          json['image']?.toString() ??
+          json['image_url']?.toString() ??
+          json['banner']?.toString() ??
+          json['bannerImage']?.toString() ??
+          '',
+      actionUrl: json['actionUrl']?.toString() ??
+          json['action_url']?.toString() ??
+          json['url']?.toString() ??
+          json['link']?.toString() ??
+          '',
       order: (json['order'] is num) ? (json['order'] as num).toInt() : 0,
     );
   }

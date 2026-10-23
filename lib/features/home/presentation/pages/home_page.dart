@@ -4,6 +4,7 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
+import '../../domain/usecases/get_home_data_usecase.dart';
 import '../../domain/entities/home_banner_item.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -15,8 +16,17 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🏠 [HomePage] Initializing HomePage & setting up HomeBloc...');
     return BlocProvider(
-      create: (_) => HomeBloc()..add(LoadHomeDataRequested()),
+      create: (ctx) {
+        GetHomeDataUseCase? useCase;
+        try {
+          useCase = ctx.read<GetHomeDataUseCase>();
+        } catch (_) {}
+        debugPrint('🚀 [HomePage] Dispatching LoadHomeDataRequested to fetch /api/user/home data');
+        return HomeBloc(getHomeDataUseCase: useCase)
+          ..add(LoadHomeDataRequested());
+      },
       child: const _HomePageView(),
     );
   }
@@ -29,32 +39,41 @@ class _HomePageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Top Hero Section with integrated App Bar & overlay Location Card
-            _buildHeroSection(context),
-            const SizedBox(height: 52), // Space for the bottom half of the overlay card + gap
+      body: RefreshIndicator(
+        color: const Color(0xFFFFB800),
+        onRefresh: () async {
+          debugPrint('🔄 [HomePage] User triggered pull-to-refresh -> Reloading home data from API...');
+          context.read<HomeBloc>().add(LoadHomeDataRequested());
+          await Future.delayed(const Duration(milliseconds: 600));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Top Hero Section with integrated App Bar & overlay Location Card
+              _buildHeroSection(context),
+              const SizedBox(height: 52), // Space for the bottom half of the overlay card + gap
 
-            // "For You" Staggered Grid
-            // _buildStaggeredGrid(context),
-            // const SizedBox(height: 24),
-            _buildLocalOutstationSection(context),
-            const SizedBox(height: 32),
+              // "For You" Staggered Grid
+              // _buildStaggeredGrid(context),
+              // const SizedBox(height: 24),
+              _buildLocalOutstationSection(context),
+              const SizedBox(height: 32),
 
-            // Valet Event Booking Card with labeled sample fields & Add button
-            _buildValetEventBookingSection(context),
-            const SizedBox(height: 32),
+              // Valet Event Booking Card with labeled sample fields & Add button
+              _buildValetEventBookingSection(context),
+              const SizedBox(height: 32),
 
-            // "Suggestions" Carousel
-            _buildSuggestionsSection(context),
-            const SizedBox(height: 32),
+              // "Suggestions" Carousel
+              _buildSuggestionsSection(context),
+              const SizedBox(height: 32),
 
-            // Ongoing Rides Section
-            _buildOngoingRides(context),
-            const SizedBox(height: 40),
-          ],
+              // Ongoing Rides Section
+              _buildOngoingRides(context),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

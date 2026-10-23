@@ -40,9 +40,9 @@ class BookingDetailsPage extends StatelessWidget {
     }
 
     return BlocProvider(
-      create: (context) => BookingDetailBloc(
-        getBookingDetailUseCase: useCase!,
-      )..add(FetchBookingDetail(bookingId)),
+      create: (context) =>
+          BookingDetailBloc(getBookingDetailUseCase: useCase!)
+            ..add(FetchBookingDetail(bookingId)),
       child: _BookingDetailsView(bookingId: bookingId),
     );
   }
@@ -61,7 +61,11 @@ class _BookingDetailsView extends StatelessWidget {
         backgroundColor: const Color(0xFF1E1E24),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => context.pop(),
         ),
         title: const Text(
@@ -78,7 +82,9 @@ class _BookingDetailsView extends StatelessWidget {
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             tooltip: 'Refresh',
             onPressed: () {
-              context.read<BookingDetailBloc>().add(RefreshBookingDetail(bookingId));
+              context.read<BookingDetailBloc>().add(
+                RefreshBookingDetail(bookingId),
+              );
             },
           ),
         ],
@@ -111,7 +117,11 @@ class _BookingDetailsView extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline_rounded, size: 64, color: Colors.red.shade400),
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: Colors.red.shade400,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'Failed to Load Details',
@@ -134,14 +144,18 @@ class _BookingDetailsView extends StatelessWidget {
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: () {
-                        context.read<BookingDetailBloc>().add(FetchBookingDetail(bookingId));
+                        context.read<BookingDetailBloc>().add(
+                          FetchBookingDetail(bookingId),
+                        );
                       },
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ],
@@ -155,7 +169,9 @@ class _BookingDetailsView extends StatelessWidget {
             return RefreshIndicator(
               color: AppColors.primary,
               onRefresh: () async {
-                context.read<BookingDetailBloc>().add(RefreshBookingDetail(bookingId));
+                context.read<BookingDetailBloc>().add(
+                  RefreshBookingDetail(bookingId),
+                );
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -168,7 +184,8 @@ class _BookingDetailsView extends StatelessWidget {
                     const SizedBox(height: 14),
 
                     // OTP Verification Ticket (if present)
-                    if (booking.startOtp.isNotEmpty && booking.statusGroup != 'Cancelled') ...[
+                    if (booking.startOtp.isNotEmpty &&
+                        booking.statusGroup != 'Cancelled') ...[
                       _buildOtpTicket(context, booking.startOtp),
                       const SizedBox(height: 14),
                     ],
@@ -239,7 +256,11 @@ class _BookingDetailsView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.confirmation_number_outlined, size: 16, color: Color(0xFF64748B)),
+                    const Icon(
+                      Icons.confirmation_number_outlined,
+                      size: 16,
+                      color: Color(0xFF64748B),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '#${booking.displayBookingId}',
@@ -256,22 +277,33 @@ class _BookingDetailsView extends StatelessWidget {
                         Clipboard.setData(ClipboardData(text: booking.id));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Booking ID ${booking.displayBookingId} copied'),
+                            content: Text(
+                              'Booking ID ${booking.displayBookingId} copied',
+                            ),
                             duration: const Duration(seconds: 2),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
                       },
-                      child: const Icon(Icons.copy_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      child: const Icon(
+                        Icons.copy_rounded,
+                        size: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -301,11 +333,17 @@ class _BookingDetailsView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF64748B)),
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      size: 16,
+                      color: Color(0xFF64748B),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        DateFormat('EEEE, dd MMMM yyyy • hh:mm a').format(booking.scheduledStartTime),
+                        DateFormat(
+                          'EEEE, dd MMMM yyyy • hh:mm a',
+                        ).format(booking.scheduledStartTime),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -376,7 +414,11 @@ class _BookingDetailsView extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFFCD34D)),
                   ),
-                  child: const Icon(Icons.lock_open_rounded, color: Color(0xFFB45309), size: 22),
+                  child: const Icon(
+                    Icons.lock_open_rounded,
+                    color: Color(0xFFB45309),
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -437,7 +479,9 @@ class _BookingDetailsView extends StatelessWidget {
   }
 
   Widget _buildRouteSection(BuildContext context, BookingDetailEntity booking) {
-    final dropTime = booking.scheduledStartTime.add(Duration(hours: booking.durationHours));
+    final dropTime = booking.scheduledStartTime.add(
+      Duration(hours: booking.durationHours),
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -516,7 +560,9 @@ class _BookingDetailsView extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          DateFormat('hh:mm a').format(booking.scheduledStartTime),
+                          DateFormat(
+                            'hh:mm a',
+                          ).format(booking.scheduledStartTime),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -539,7 +585,10 @@ class _BookingDetailsView extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '📍 Coordinates: ${booking.pickupLocation.latitude!.toStringAsFixed(4)}, ${booking.pickupLocation.longitude!.toStringAsFixed(4)}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ],
@@ -619,8 +668,8 @@ class _BookingDetailsView extends StatelessWidget {
                       booking.dropLocation.address.isNotEmpty
                           ? booking.dropLocation.address
                           : (booking.tripType.toLowerCase().contains('round')
-                              ? 'Return to pickup location (${booking.durationHours} Hours Rental)'
-                              : 'As directed by customer'),
+                                ? 'Return to pickup location (${booking.durationHours} Hours Rental)'
+                                : 'As directed by customer'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -632,7 +681,10 @@ class _BookingDetailsView extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '📍 Coordinates: ${booking.dropLocation.latitude!.toStringAsFixed(4)}, ${booking.dropLocation.longitude!.toStringAsFixed(4)}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ],
@@ -645,7 +697,10 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildDriverSection(BuildContext context, BookingDetailEntity booking) {
+  Widget _buildDriverSection(
+    BuildContext context,
+    BookingDetailEntity booking,
+  ) {
     final isDriverAssigned = booking.isDriverAssigned;
     final isCancelled = booking.statusGroup == 'Cancelled';
 
@@ -692,7 +747,11 @@ class _BookingDetailsView extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.cancel_outlined, color: Color(0xFFDC2626), size: 20),
+                  const Icon(
+                    Icons.cancel_outlined,
+                    color: Color(0xFFDC2626),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -715,7 +774,11 @@ class _BookingDetailsView extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                  child: const Icon(Icons.person, size: 28, color: Color(0xFF9E6E00)),
+                  child: const Icon(
+                    Icons.person,
+                    size: 28,
+                    color: Color(0xFF9E6E00),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -737,18 +800,29 @@ class _BookingDetailsView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF3B82F6)),
+                          const Icon(
+                            Icons.verified_rounded,
+                            size: 16,
+                            color: Color(0xFF3B82F6),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Phone: ${booking.driverMobile}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                       if (booking.driverRating != null)
                         Text(
                           '★ ${booking.driverRating!.toStringAsFixed(1)} Rating',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFD97706)),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFD97706),
+                          ),
                         ),
                     ],
                   ),
@@ -761,8 +835,13 @@ class _BookingDetailsView extends StatelessWidget {
                     backgroundColor: const Color(0xFF16A34A),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
               ],
@@ -777,7 +856,11 @@ class _BookingDetailsView extends StatelessWidget {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.schedule_send_rounded, size: 20, color: Color(0xFFD97706)),
+                  Icon(
+                    Icons.schedule_send_rounded,
+                    size: 20,
+                    color: Color(0xFFD97706),
+                  ),
                   SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -794,7 +877,11 @@ class _BookingDetailsView extends StatelessWidget {
                         SizedBox(height: 2),
                         Text(
                           'A top-rated verified driver partner will be assigned shortly before your pickup time.',
-                          style: TextStyle(fontSize: 11, color: Color(0xFFB45309), height: 1.3),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFB45309),
+                            height: 1.3,
+                          ),
                         ),
                       ],
                     ),
@@ -808,7 +895,10 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildVehicleSection(BuildContext context, BookingDetailEntity booking) {
+  Widget _buildVehicleSection(
+    BuildContext context,
+    BookingDetailEntity booking,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -828,7 +918,11 @@ class _BookingDetailsView extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.directions_car_filled_outlined, size: 18, color: AppColors.primary),
+              Icon(
+                Icons.directions_car_filled_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               SizedBox(width: 8),
               Text(
                 'Vehicle Specifications',
@@ -843,16 +937,22 @@ class _BookingDetailsView extends StatelessWidget {
           const SizedBox(height: 14),
           _buildItemRow('Vehicle Type', booking.vehicleType.toUpperCase()),
           _buildItemRow('Transmission', booking.transmission.toUpperCase()),
-          _buildItemRow('Ownership', booking.vehicleOwnership.replaceAll('_', ' ').toUpperCase()),
+          _buildItemRow(
+            'Ownership',
+            booking.vehicleOwnership.replaceAll('_', ' ').toUpperCase(),
+          ),
           if (booking.vehicleNumber.isNotEmpty)
             _buildItemRow('Vehicle Number', booking.vehicleNumber),
-          _buildItemRow('Passengers', '${booking.numberOfPassengers} Passenger(s)'),
+          //   _buildItemRow('Passengers', '${booking.numberOfPassengers} Passenger(s)'),
         ],
       ),
     );
   }
 
-  Widget _buildFareBreakdownSection(BuildContext context, BookingDetailEntity booking) {
+  Widget _buildFareBreakdownSection(
+    BuildContext context,
+    BookingDetailEntity booking,
+  ) {
     final isPaid = booking.paymentStatus.toLowerCase() == 'paid';
 
     return Container(
@@ -877,7 +977,11 @@ class _BookingDetailsView extends StatelessWidget {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.primary),
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     'Fare Breakdown',
@@ -894,14 +998,20 @@ class _BookingDetailsView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isPaid ? Colors.green.shade50 : Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: isPaid ? Colors.green.shade300 : Colors.amber.shade300),
+                  border: Border.all(
+                    color: isPaid
+                        ? Colors.green.shade300
+                        : Colors.amber.shade300,
+                  ),
                 ),
                 child: Text(
                   isPaid ? 'PAID' : 'PAYMENT PENDING',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: isPaid ? Colors.green.shade700 : Colors.amber.shade900,
+                    color: isPaid
+                        ? Colors.green.shade700
+                        : Colors.amber.shade900,
                   ),
                 ),
               ),
@@ -909,17 +1019,20 @@ class _BookingDetailsView extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _buildFareRow('Base Rental Amount', '₹${booking.baseAmount.round()}'),
-          if (booking.driverFee > 0)
-            _buildFareRow('Driver Fee', '₹${booking.driverFee.round()}'),
+          // if (booking.driverFee > 0)
+          //   _buildFareRow('Driver Fee', '₹${booking.driverFee.round()}'),
           if (booking.extraKmAmount > 0)
-            _buildFareRow('Extra Km Charges', '₹${booking.extraKmAmount.round()}'),
-          if (booking.driverAllowance > 0)
-            _buildFareRow('Driver Allowance', '₹${booking.driverAllowance.round()}'),
-          if (booking.platformFee > 0)
-            _buildFareRow('Platform Convenience Fee', '₹${booking.platformFee.round()}'),
+            _buildFareRow(
+              'Extra Km Charges',
+              '₹${booking.extraKmAmount.round()}',
+            ),
+          // if (booking.driverAllowance > 0)
+          //   _buildFareRow('Driver Allowance', '₹${booking.driverAllowance.round()}'),
+          // if (booking.platformFee > 0)
+          //   _buildFareRow('Platform Convenience Fee', '₹${booking.platformFee.round()}'),
           _buildFareRow('Taxes & GST (5%)', '₹${booking.taxAmount.round()}'),
-          if (booking.discountAmount > 0)
-            _buildFareRow('Special Discount', '-₹${booking.discountAmount.round()}', isDiscount: true),
+          // if (booking.discountAmount > 0)
+          //   _buildFareRow('Special Discount', '-₹${booking.discountAmount.round()}', isDiscount: true),
           const SizedBox(height: 6),
           const Divider(height: 1),
           const SizedBox(height: 10),
@@ -947,11 +1060,19 @@ class _BookingDetailsView extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.payment_rounded, size: 14, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.payment_rounded,
+                size: 14,
+                color: Color(0xFF64748B),
+              ),
               const SizedBox(width: 6),
               Text(
                 'Payment Mode: ${booking.paymentMethod.toUpperCase()}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -960,7 +1081,10 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildMetaInfoSection(BuildContext context, BookingDetailEntity booking) {
+  Widget _buildMetaInfoSection(
+    BuildContext context,
+    BookingDetailEntity booking,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -973,10 +1097,17 @@ class _BookingDetailsView extends StatelessWidget {
         children: [
           const Text(
             'Trip Information & Notes',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF334155),
+            ),
           ),
           const SizedBox(height: 10),
-          _buildItemRow('Booked At', DateFormat('MMM dd, yyyy • hh:mm a').format(booking.createdAt)),
+          _buildItemRow(
+            'Booked At',
+            DateFormat('MMM dd, yyyy • hh:mm a').format(booking.createdAt),
+          ),
           _buildItemRow('Service Mode', booking.bookingMode.toUpperCase()),
           if (booking.userNotes.isNotEmpty)
             _buildItemRow('Special Instructions', booking.userNotes),
@@ -985,9 +1116,14 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, BookingDetailEntity booking) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    BookingDetailEntity booking,
+  ) {
     final isDriverAssigned = booking.isDriverAssigned;
-    final isFinished = booking.statusGroup == 'Completed' || booking.statusGroup == 'Cancelled';
+    final isFinished =
+        booking.statusGroup == 'Completed' ||
+        booking.statusGroup == 'Cancelled';
 
     return Row(
       children: [
@@ -1001,8 +1137,13 @@ class _BookingDetailsView extends StatelessWidget {
                 backgroundColor: const Color(0xFF16A34A),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -1023,8 +1164,13 @@ class _BookingDetailsView extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           )
@@ -1038,8 +1184,13 @@ class _BookingDetailsView extends StatelessWidget {
                 foregroundColor: const Color(0xFF1E293B),
                 side: const BorderSide(color: Color(0xFFCBD5E1)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -1062,7 +1213,9 @@ class _BookingDetailsView extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isDiscount ? const Color(0xFF16A34A) : const Color(0xFF1E293B),
+              color: isDiscount
+                  ? const Color(0xFF16A34A)
+                  : const Color(0xFF1E293B),
             ),
           ),
         ],
@@ -1076,8 +1229,18 @@ class _BookingDetailsView extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+            ),
+          ),
         ],
       ),
     );

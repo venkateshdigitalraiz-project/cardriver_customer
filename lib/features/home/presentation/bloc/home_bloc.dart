@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/repositories/home_repository_impl.dart';
@@ -39,16 +40,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     LoadHomeDataRequested event,
     Emitter<HomeState> emit,
   ) async {
+    debugPrint('🚀 [HomeBloc] LoadHomeDataRequested received -> Fetching home banners...');
     emit(state.copyWith(isLoadingHomeData: true, clearHomeError: true));
 
     try {
       final homeData = await getHomeDataUseCase();
+      debugPrint('✅ [HomeBloc] Home data loaded: ${homeData.heroBanners.length} hero, ${homeData.middleBanners.length} middle banners');
       emit(state.copyWith(
         isLoadingHomeData: false,
         heroBanners: homeData.heroBanners,
         middleBanners: homeData.middleBanners,
       ));
     } catch (e) {
+      debugPrint('❌ [HomeBloc] Error loading home data: $e');
       emit(state.copyWith(
         isLoadingHomeData: false,
         homeDataErrorMessage: e.toString(),

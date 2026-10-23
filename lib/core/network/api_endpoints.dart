@@ -1,5 +1,8 @@
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.0.115:3000/api';
+  // current Live Host  http://194.238.19.189:2200
+  static const String _host = 'http://192.168.0.115:3000';
+  //static const String _host = 'http://194.238.19.189:2200';
+  static const String baseUrl = '$_host/api';
 
   // User Authentication
   static const String login = '$baseUrl/user/login';
@@ -17,7 +20,7 @@ class ApiEndpoints {
 
   // Settings & Banners
   static const String settings = '$baseUrl/user/settings';
-  static const String serverBaseUrl = 'http://192.168.0.115:3000';
+  static const String serverBaseUrl = _host;
 
   /// Helper to convert relative server paths (like /uploads/xyz.jpg) to full URLs
   static String resolveImageUrl(String? path) {
