@@ -43,7 +43,14 @@ class CustomerDashboardPage extends StatelessWidget {
         BlocProvider<BookingBloc>(
           create: (_) => BookingBloc(
             repository: BookingRepositoryImpl(
-              remoteDataSource: BookingRemoteDataSourceImpl(dio: Dio()),
+              remoteDataSource: BookingRemoteDataSourceImpl(
+                dio: Dio(
+                  BaseOptions(
+                    connectTimeout: const Duration(seconds: 25),
+                    receiveTimeout: const Duration(seconds: 25),
+                  ),
+                ),
+              ),
             ),
             calculateFareUseCase: CalculateFareUseCase(),
             checkBookingRadiusUseCase: CheckBookingRadiusUseCase(),

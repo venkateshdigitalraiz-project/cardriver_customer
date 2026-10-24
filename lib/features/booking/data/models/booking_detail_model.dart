@@ -83,34 +83,37 @@ class BookingDetailModel extends BookingDetailEntity {
     DateTime scheduledStartTime = DateTime.now();
     if (bMap['scheduledStartTime'] != null) {
       final parsed = DateTime.tryParse(bMap['scheduledStartTime'].toString());
-      if (parsed != null) scheduledStartTime = parsed;
+      if (parsed != null) scheduledStartTime = parsed.toLocal();
     }
 
     DateTime? returnDate;
     if (bMap['returnDate'] != null) {
-      returnDate = DateTime.tryParse(bMap['returnDate'].toString());
+      final parsed = DateTime.tryParse(bMap['returnDate'].toString());
+      if (parsed != null) returnDate = parsed.toLocal();
     }
 
     DateTime createdAt = DateTime.now();
     if (bMap['createdAt'] != null) {
       final parsed = DateTime.tryParse(bMap['createdAt'].toString());
-      if (parsed != null) createdAt = parsed;
+      if (parsed != null) createdAt = parsed.toLocal();
     }
 
     DateTime updatedAt = DateTime.now();
     if (bMap['updatedAt'] != null) {
       final parsed = DateTime.tryParse(bMap['updatedAt'].toString());
-      if (parsed != null) updatedAt = parsed;
+      if (parsed != null) updatedAt = parsed.toLocal();
     }
 
     DateTime? tripStartedAt;
     if (bMap['tripStartedAt'] != null) {
-      tripStartedAt = DateTime.tryParse(bMap['tripStartedAt'].toString());
+      final parsed = DateTime.tryParse(bMap['tripStartedAt'].toString());
+      if (parsed != null) tripStartedAt = parsed.toLocal();
     }
 
     DateTime? tripCompletedAt;
     if (bMap['tripCompletedAt'] != null) {
-      tripCompletedAt = DateTime.tryParse(bMap['tripCompletedAt'].toString());
+      final parsed = DateTime.tryParse(bMap['tripCompletedAt'].toString());
+      if (parsed != null) tripCompletedAt = parsed.toLocal();
     }
 
     DateTime? cancelledAt;

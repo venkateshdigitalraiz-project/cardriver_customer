@@ -61,10 +61,10 @@ class BookingModel extends BookingEntity {
     DateTime schedule = DateTime.now();
     if (json['scheduledStartTime'] != null) {
       final parsed = DateTime.tryParse(json['scheduledStartTime'].toString());
-      if (parsed != null) schedule = parsed;
+      if (parsed != null) schedule = parsed.toLocal();
     } else if (json['createdAt'] != null) {
       final parsed = DateTime.tryParse(json['createdAt'].toString());
-      if (parsed != null) schedule = parsed;
+      if (parsed != null) schedule = parsed.toLocal();
     }
 
     // Duration (in hours or days)

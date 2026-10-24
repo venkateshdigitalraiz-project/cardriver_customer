@@ -13,7 +13,7 @@ import '../bloc/booking_detail/booking_detail_bloc.dart';
 import '../bloc/booking_detail/booking_detail_event.dart';
 import '../bloc/booking_detail/booking_detail_state.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/router/app_router.dart';
+// import '../../../../core/router/app_router.dart';
 
 class BookingDetailsPage extends StatelessWidget {
   final String bookingId;
@@ -32,7 +32,12 @@ class BookingDetailsPage extends StatelessWidget {
       try {
         useCase = context.read<GetBookingDetailUseCase>();
       } catch (_) {
-        final dio = Dio();
+        final dio = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 25),
+            receiveTimeout: const Duration(seconds: 25),
+          ),
+        );
         final ds = BookingRemoteDataSourceImpl(dio: dio);
         final repo = BookingRepositoryImpl(remoteDataSource: ds);
         useCase = GetBookingDetailUseCase(repo);
@@ -198,9 +203,9 @@ class _BookingDetailsView extends StatelessWidget {
                     _buildDriverSection(context, booking),
                     const SizedBox(height: 14),
 
-                    // Vehicle & Service Specifications
-                    _buildVehicleSection(context, booking),
-                    const SizedBox(height: 14),
+                    // // Vehicle & Service Specifications
+                    // _buildVehicleSection(context, booking),
+                    // const SizedBox(height: 14),
 
                     // Itemized Fare Breakdown
                     _buildFareBreakdownSection(context, booking),
@@ -210,8 +215,8 @@ class _BookingDetailsView extends StatelessWidget {
                     _buildMetaInfoSection(context, booking),
                     const SizedBox(height: 20),
 
-                    // Contextual Action Buttons
-                    _buildActionButtons(context, booking),
+                    // // Contextual Action Buttons
+                    // _buildActionButtons(context, booking),
                   ],
                 ),
               ),
@@ -345,7 +350,7 @@ class _BookingDetailsView extends StatelessWidget {
                           'EEEE, dd MMMM yyyy • hh:mm a',
                         ).format(booking.scheduledStartTime),
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A),
                         ),
@@ -895,59 +900,59 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildVehicleSection(
-    BuildContext context,
-    BookingDetailEntity booking,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.directions_car_filled_outlined,
-                size: 18,
-                color: AppColors.primary,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Vehicle Specifications',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _buildItemRow('Vehicle Type', booking.vehicleType.toUpperCase()),
-          _buildItemRow('Transmission', booking.transmission.toUpperCase()),
-          _buildItemRow(
-            'Ownership',
-            booking.vehicleOwnership.replaceAll('_', ' ').toUpperCase(),
-          ),
-          if (booking.vehicleNumber.isNotEmpty)
-            _buildItemRow('Vehicle Number', booking.vehicleNumber),
-          //   _buildItemRow('Passengers', '${booking.numberOfPassengers} Passenger(s)'),
-        ],
-      ),
-    );
-  }
+  // Widget _buildVehicleSection(
+  //   BuildContext context,
+  //   BookingDetailEntity booking,
+  // ) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(color: const Color(0xFFE2E8F0)),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+  //           blurRadius: 8,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Row(
+  //           children: [
+  //             Icon(
+  //               Icons.directions_car_filled_outlined,
+  //               size: 18,
+  //               color: AppColors.primary,
+  //             ),
+  //             SizedBox(width: 8),
+  //             Text(
+  //               'Vehicle Specifications',
+  //               style: TextStyle(
+  //                 fontSize: 15,
+  //                 fontWeight: FontWeight.w800,
+  //                 color: Color(0xFF0F172A),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 14),
+  //         _buildItemRow('Vehicle Type', booking.vehicleType.toUpperCase()),
+  //         _buildItemRow('Transmission', booking.transmission.toUpperCase()),
+  //         _buildItemRow(
+  //           'Ownership',
+  //           booking.vehicleOwnership.replaceAll('_', ' ').toUpperCase(),
+  //         ),
+  //         if (booking.vehicleNumber.isNotEmpty)
+  //           _buildItemRow('Vehicle Number', booking.vehicleNumber),
+  //         //   _buildItemRow('Passengers', '${booking.numberOfPassengers} Passenger(s)'),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildFareBreakdownSection(
     BuildContext context,
@@ -1116,87 +1121,87 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(
-    BuildContext context,
-    BookingDetailEntity booking,
-  ) {
-    final isDriverAssigned = booking.isDriverAssigned;
-    final isFinished =
-        booking.statusGroup == 'Completed' ||
-        booking.statusGroup == 'Cancelled';
+  // Widget _buildActionButtons(
+  //   BuildContext context,
+  //   BookingDetailEntity booking,
+  // ) {
+  //   final isDriverAssigned = booking.isDriverAssigned;
+  //   final isFinished =
+  //       booking.statusGroup == 'Completed' ||
+  //       booking.statusGroup == 'Cancelled';
 
-    return Row(
-      children: [
-        if (isDriverAssigned)
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _callNumber(context, booking.driverMobile),
-              icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
-              label: const Text('Call Driver'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16A34A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          )
-        else if (isFinished)
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                context.push(
-                  AppRoutes.bookingWizard,
-                  extra: booking.serviceType.toLowerCase() == 'outstation'
-                      ? 'Outstation'
-                      : 'Local',
-                );
-              },
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Book Again'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showSupportDialog(context),
-              icon: const Icon(Icons.headset_mic_rounded, size: 18),
-              label: const Text('Need Help?'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1E293B),
-                side: const BorderSide(color: Color(0xFFCBD5E1)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+  //   return Row(
+  //     children: [
+  //       if (isDriverAssigned)
+  //         Expanded(
+  //           child: ElevatedButton.icon(
+  //             onPressed: () => _callNumber(context, booking.driverMobile),
+  //             icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+  //             label: const Text('Call Driver'),
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: const Color(0xFF16A34A),
+  //               foregroundColor: Colors.white,
+  //               padding: const EdgeInsets.symmetric(vertical: 14),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               textStyle: const TextStyle(
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         )
+  //       else if (isFinished)
+  //         Expanded(
+  //           child: ElevatedButton.icon(
+  //             onPressed: () {
+  //               context.push(
+  //                 AppRoutes.bookingWizard,
+  //                 extra: booking.serviceType.toLowerCase() == 'outstation'
+  //                     ? 'Outstation'
+  //                     : 'Local',
+  //               );
+  //             },
+  //             icon: const Icon(Icons.refresh_rounded, size: 18),
+  //             label: const Text('Book Again'),
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: AppColors.primary,
+  //               foregroundColor: Colors.black,
+  //               padding: const EdgeInsets.symmetric(vertical: 14),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               textStyle: const TextStyle(
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         )
+  //       else
+  //         Expanded(
+  //           child: OutlinedButton.icon(
+  //             onPressed: () => _showSupportDialog(context),
+  //             icon: const Icon(Icons.headset_mic_rounded, size: 18),
+  //             label: const Text('Need Help?'),
+  //             style: OutlinedButton.styleFrom(
+  //               foregroundColor: const Color(0xFF1E293B),
+  //               side: const BorderSide(color: Color(0xFFCBD5E1)),
+  //               padding: const EdgeInsets.symmetric(vertical: 14),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               textStyle: const TextStyle(
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildFareRow(String title, String amount, {bool isDiscount = false}) {
     return Padding(
@@ -1350,40 +1355,40 @@ class _BookingDetailsView extends StatelessWidget {
     }
   }
 
-  void _showSupportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.headset_mic_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('Trip Support'),
-          ],
-        ),
-        content: const Text(
-          'Need help or have questions regarding this booking? Our 24/7 dedicated support team is here to help you.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _callNumber(context, '1800-123-4567');
-            },
-            icon: const Icon(Icons.call, size: 16),
-            label: const Text('Call Helpline'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showSupportDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (ctx) => AlertDialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //       title: const Row(
+  //         children: [
+  //           Icon(Icons.headset_mic_rounded, color: AppColors.primary),
+  //           SizedBox(width: 8),
+  //           Text('Trip Support'),
+  //         ],
+  //       ),
+  //       content: const Text(
+  //         'Need help or have questions regarding this booking? Our 24/7 dedicated support team is here to help you.',
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.of(ctx).pop(),
+  //           child: const Text('Close'),
+  //         ),
+  //         ElevatedButton.icon(
+  //           onPressed: () {
+  //             Navigator.of(ctx).pop();
+  //             _callNumber(context, '1800-123-4567');
+  //           },
+  //           icon: const Icon(Icons.call, size: 16),
+  //           label: const Text('Call Helpline'),
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: AppColors.primary,
+  //             foregroundColor: Colors.black,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

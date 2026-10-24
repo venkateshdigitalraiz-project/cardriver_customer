@@ -94,7 +94,13 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
   @override
   Widget build(BuildContext context) {
     // Setup Clean Architecture dependencies
-    final dio = Dio();
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 25),
+        receiveTimeout: const Duration(seconds: 25),
+        sendTimeout: const Duration(seconds: 25),
+      ),
+    );
     final authRemoteDataSource = AuthRemoteDataSourceImpl(dio: dio);
     final authRepository = AuthRepositoryImpl(remoteDataSource: authRemoteDataSource);
     final loginWithEmailUseCase = LoginWithEmailUseCase(authRepository);

@@ -276,23 +276,24 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
           ? 'round_trip'
           : 'one_way';
 
-      // Construct ISO timestamp string
-      // Example: 2026-09-26T10:00:00.000Z
+      // Construct UTC ISO timestamp string ending with 'Z'
+      // Converts user's selected local date and time (IST) to UTC ISO 8601 representation
       final dt = request.scheduleDate!;
-      final date = DateTime(
+      final localScheduledTime = DateTime(
         dt.year,
         dt.month,
         dt.day,
         request.scheduleHour ?? 0,
         request.scheduleMinute ?? 0,
-      ).toUtc().toIso8601String();
+      );
+      final String scheduledStartTimeUtc = localScheduledTime.toUtc().toIso8601String();
 
       final int duration = request.durationHours > 0 ? request.durationHours : 1;
 
       final Map<String, dynamic> payload = {
         "serviceType": serviceType,
         "tripType": tripType,
-        "scheduledStartTime": date,
+        "scheduledStartTime": scheduledStartTimeUtc,
         if (isOutstation) ...{
           "durationDays": duration,
           "durationHours": duration * 24,

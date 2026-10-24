@@ -13,6 +13,8 @@ import '../../domain/usecases/get_driver_bookings_usecase.dart';
 import '../bloc/my_bookings/my_bookings_bloc.dart';
 import '../bloc/my_bookings/my_bookings_event.dart';
 import '../bloc/my_bookings/my_bookings_state.dart';
+import '../../../main_navigation/presentation/bloc/navigation_bloc.dart';
+import '../../../main_navigation/presentation/bloc/navigation_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 
@@ -28,7 +30,12 @@ class MyBookingsPage extends StatelessWidget {
       try {
         useCase = context.read<GetDriverBookingsUseCase>();
       } catch (_) {
-        final dio = Dio();
+        final dio = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 25),
+            receiveTimeout: const Duration(seconds: 25),
+          ),
+        );
         final ds = BookingRemoteDataSourceImpl(dio: dio);
         final repo = BookingRepositoryImpl(remoteDataSource: ds);
         useCase = GetDriverBookingsUseCase(repo);
@@ -36,9 +43,17 @@ class MyBookingsPage extends StatelessWidget {
     }
 
     return BlocProvider(
-      create: (context) => MyBookingsBloc(
-        getDriverBookingsUseCase: useCase!,
-      )..add(const LoadMyBookings(page: 1, limit: 5, status: '', startDate: '', endDate: '', search: '')),
+      create: (context) =>
+          MyBookingsBloc(getDriverBookingsUseCase: useCase!)..add(
+            const LoadMyBookings(
+              page: 1,
+              limit: 5,
+              status: '',
+              startDate: '',
+              endDate: '',
+              search: '',
+            ),
+          ),
       child: const _MyBookingsPageView(),
     );
   }
@@ -49,77 +64,62 @@ class _MyBookingsPageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF1E1E24),
-          elevation: 0,
-          title: const Text(
-            'My Bookings',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              tooltip: 'Refresh',
-              onPressed: () {
-                context.read<MyBookingsBloc>().add(
-                  const RefreshMyBookings(status: '', startDate: '', endDate: '', search: ''),
-                );
-              },
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: BlocBuilder<MyBookingsBloc, MyBookingsState>(
-              builder: (context, state) {
-                int? allCount;
-                int? upcomingCount;
-                int? completedCount;
-                int? cancelledCount;
-
-                if (state is MyBookingsLoaded) {
-                  allCount = state.getCountForType('all');
-                  upcomingCount = state.getCountForType('upcoming');
-                  completedCount = state.getCountForType('completed');
-                  cancelledCount = state.getCountForType('cancelled');
-                }
-
-                return TabBar(
-                  indicatorColor: AppColors.primary,
-                  indicatorWeight: 3,
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: Colors.white60,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                  tabs: [
-                    Tab(text: allCount != null ? 'All ($allCount)' : 'All'),
-                    Tab(text: upcomingCount != null ? 'Upcoming ($upcomingCount)' : 'Upcoming'),
-                    Tab(text: completedCount != null ? 'Completed ($completedCount)' : 'Completed'),
-                    Tab(text: cancelledCount != null ? 'Cancelled ($cancelledCount)' : 'Cancelled'),
-                  ],
-                );
-              },
-            ),
+    final scaffold = Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E1E24),
+        elevation: 0,
+        title: const Text(
+          'My Bookings',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _BookingsList(type: 'All'),
-            _BookingsList(type: 'Upcoming'),
-            _BookingsList(type: 'Completed'),
-            _BookingsList(type: 'Cancelled'),
-          ],
-        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            tooltip: 'Refresh',
+            onPressed: () {
+              context.read<MyBookingsBloc>().add(
+                const RefreshMyBookings(
+                  status: '',
+                  startDate: '',
+                  endDate: '',
+                  search: '',
+                ),
+              );
+            },
+          ),
+        ],
       ),
+      body: const _BookingsList(type: 'All'),
     );
+
+    try {
+      final navBloc = context.read<NavigationBloc>();
+      return BlocListener<NavigationBloc, NavigationState>(
+        bloc: navBloc,
+        listenWhen: (previous, current) => current.tabIndex == 1,
+        listener: (context, navState) {
+          if (navState.tabIndex == 1) {
+            context.read<MyBookingsBloc>().add(
+              const RefreshMyBookings(
+                status: '',
+                startDate: '',
+                endDate: '',
+                search: '',
+              ),
+            );
+          }
+        },
+        child: scaffold,
+      );
+    } catch (_) {
+      return scaffold;
+    }
   }
 }
 
@@ -178,7 +178,11 @@ class _BookingsListState extends State<_BookingsList> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline_rounded, size: 60, color: Colors.red.shade400),
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 60,
+                    color: Colors.red.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load bookings',
@@ -191,13 +195,22 @@ class _BookingsListState extends State<_BookingsList> {
                   Text(
                     state.message,
                     textAlign: TextAlign.center,
-                    style: AppTypography.bodySmall.copyWith(color: Colors.grey.shade600),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () {
                       context.read<MyBookingsBloc>().add(
-                        const LoadMyBookings(page: 1, limit: 5, status: '', startDate: '', endDate: '', search: ''),
+                        const LoadMyBookings(
+                          page: 1,
+                          limit: 5,
+                          status: '',
+                          startDate: '',
+                          endDate: '',
+                          search: '',
+                        ),
                       );
                     },
                     icon: const Icon(Icons.refresh, size: 18),
@@ -224,15 +237,21 @@ class _BookingsListState extends State<_BookingsList> {
               color: AppColors.primary,
               onRefresh: () async {
                 context.read<MyBookingsBloc>().add(
-                  const RefreshMyBookings(status: '', startDate: '', endDate: '', search: ''),
+                  const RefreshMyBookings(
+                    status: '',
+                    startDate: '',
+                    endDate: '',
+                    search: '',
+                  ),
                 );
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-                children: [
-                  _buildEmptyState(context, widget.type),
-                ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 48,
+                ),
+                children: [_buildEmptyState(context, widget.type)],
               ),
             );
           }
@@ -241,18 +260,27 @@ class _BookingsListState extends State<_BookingsList> {
             color: AppColors.primary,
             onRefresh: () async {
               context.read<MyBookingsBloc>().add(
-                const RefreshMyBookings(status: '', startDate: '', endDate: '', search: ''),
+                const RefreshMyBookings(
+                  status: '',
+                  startDate: '',
+                  endDate: '',
+                  search: '',
+                ),
               );
             },
             child: ListView.separated(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              itemCount: filteredBookings.length + (state.isLoadingMore ? 1 : 0) + 1,
+              itemCount:
+                  filteredBookings.length + (state.isLoadingMore ? 1 : 0) + 1,
               separatorBuilder: (context, index) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 if (index == 0) {
-                  return _buildHeaderSummary(filteredBookings.length, state.bookings.length);
+                  return _buildHeaderSummary(
+                    filteredBookings.length,
+                    state.bookings.length,
+                  );
                 }
 
                 final itemIndex = index - 1;
@@ -260,7 +288,9 @@ class _BookingsListState extends State<_BookingsList> {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.0),
                     child: Center(
-                      child: CircularProgressIndicator(color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
                     ),
                   );
                 }
@@ -289,15 +319,18 @@ class _BookingsListState extends State<_BookingsList> {
     if (isAll) {
       emptyIcon = Icons.calendar_month_outlined;
       title = 'No Bookings Found';
-      subtitle = 'You haven\'t made any driver bookings yet. Need a professional driver? Book in seconds!';
+      subtitle =
+          'You haven\'t made any driver bookings yet. Need a professional driver? Book in seconds!';
     } else if (isUpcoming) {
       emptyIcon = Icons.schedule_outlined;
       title = 'No Upcoming Trips';
-      subtitle = 'You don\'t have any rides scheduled right now. Plan your next trip with a trusted driver!';
+      subtitle =
+          'You don\'t have any rides scheduled right now. Plan your next trip with a trusted driver!';
     } else if (isCompleted) {
       emptyIcon = Icons.task_alt_rounded;
       title = 'No Completed Rides';
-      subtitle = 'Your finished trips and trip invoices will appear here once your journeys conclude.';
+      subtitle =
+          'Your finished trips and trip invoices will appear here once your journeys conclude.';
     } else {
       emptyIcon = Icons.cancel_outlined;
       title = 'No Cancelled Rides';
@@ -321,11 +354,7 @@ class _BookingsListState extends State<_BookingsList> {
                 ),
               ],
             ),
-            child: Icon(
-              emptyIcon,
-              size: 54,
-              color: const Color(0xFF94A3B8),
-            ),
+            child: Icon(emptyIcon, size: 54, color: const Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 20),
           Text(
@@ -403,7 +432,9 @@ class _BookingsListState extends State<_BookingsList> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isAll ? Icons.format_list_bulleted_rounded : Icons.filter_list_rounded,
+                  isAll
+                      ? Icons.format_list_bulleted_rounded
+                      : Icons.filter_list_rounded,
                   size: 16,
                   color: const Color(0xFF9E6E00),
                 ),
@@ -441,16 +472,21 @@ class _BookingsListState extends State<_BookingsList> {
   Widget _buildBookingCard(BuildContext context, BookingEntity booking) {
     final statusColor = _getStatusColor(booking.status);
     final statusIcon = _getStatusIcon(booking.status);
-    final isDriverAssigned = booking.driverName.isNotEmpty &&
+    final isDriverAssigned =
+        booking.driverName.isNotEmpty &&
         booking.driverName.toLowerCase() != 'unassigned' &&
         booking.driverMobile != 'N/A' &&
         booking.driverMobile.isNotEmpty;
     final isCancelled = booking.statusGroup.toLowerCase() == 'cancelled';
     final isCompleted = booking.statusGroup.toLowerCase() == 'completed';
-    final isOutstation = booking.tripType.toLowerCase().contains('outstation') ||
+    final isOutstation =
+        booking.tripType.toLowerCase().contains('outstation') ||
         booking.serviceType.toLowerCase().contains('outstation');
 
-    final displayTripType = _formatTripType(booking.tripType, booking.serviceType);
+    final displayTripType = _formatTripType(
+      booking.tripType,
+      booking.serviceType,
+    );
     final shortBookingId = booking.id.length > 8
         ? booking.id.substring(booking.id.length - 8).toUpperCase()
         : booking.id.toUpperCase();
@@ -479,7 +515,10 @@ class _BookingsListState extends State<_BookingsList> {
             children: [
               // Top Header Strip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8FAFC),
                   border: Border(
@@ -503,7 +542,10 @@ class _BookingsListState extends State<_BookingsList> {
                       },
                       borderRadius: BorderRadius.circular(6),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -535,7 +577,10 @@ class _BookingsListState extends State<_BookingsList> {
 
                     // Status Pill with Icon
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -589,7 +634,9 @@ class _BookingsListState extends State<_BookingsList> {
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
-                                      DateFormat('EEE, dd MMM yyyy • hh:mm a').format(booking.scheduleDate),
+                                      DateFormat(
+                                        'EEE, dd MMM yyyy • hh:mm a',
+                                      ).format(booking.scheduleDate),
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
@@ -605,14 +652,17 @@ class _BookingsListState extends State<_BookingsList> {
                                 runSpacing: 4,
                                 children: [
                                   _buildTagChip(
-                                    icon: isOutstation ? Icons.explore_outlined : Icons.near_me_outlined,
+                                    icon: isOutstation
+                                        ? Icons.explore_outlined
+                                        : Icons.near_me_outlined,
                                     label: displayTripType,
                                     color: const Color(0xFF475569),
                                     bgColor: const Color(0xFFF1F5F9),
                                   ),
                                   _buildTagChip(
                                     icon: Icons.access_time_rounded,
-                                    label: '${booking.duration} ${isOutstation ? 'Days' : 'Hrs'}',
+                                    label:
+                                        '${booking.duration} ${isOutstation ? 'Days' : 'Hrs'}',
                                     color: const Color(0xFF475569),
                                     bgColor: const Color(0xFFF1F5F9),
                                   ),
@@ -631,10 +681,15 @@ class _BookingsListState extends State<_BookingsList> {
                         ),
 
                         // Right: START OTP Badge (if upcoming/pending and has OTP)
-                        if (booking.startOtp.isNotEmpty && !isCancelled && !isCompleted) ...[
+                        if (booking.startOtp.isNotEmpty &&
+                            !isCancelled &&
+                            !isCompleted) ...[
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFFBEB),
                               borderRadius: BorderRadius.circular(10),
@@ -649,7 +704,11 @@ class _BookingsListState extends State<_BookingsList> {
                                 const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.lock_outline_rounded, size: 11, color: Color(0xFFB45309)),
+                                    Icon(
+                                      Icons.lock_outline_rounded,
+                                      size: 11,
+                                      color: Color(0xFFB45309),
+                                    ),
                                     SizedBox(width: 2),
                                     Text(
                                       'START OTP',
@@ -688,7 +747,10 @@ class _BookingsListState extends State<_BookingsList> {
 
                     // Fare & Payment Info Row
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(10),
@@ -704,7 +766,9 @@ class _BookingsListState extends State<_BookingsList> {
                                     ? Icons.check_circle_outline_rounded
                                     : Icons.account_balance_wallet_outlined,
                                 size: 16,
-                                color: booking.paymentStatus.toLowerCase() == 'paid'
+                                color:
+                                    booking.paymentStatus.toLowerCase() ==
+                                        'paid'
                                     ? Colors.green.shade700
                                     : const Color(0xFF64748B),
                               ),
@@ -713,13 +777,16 @@ class _BookingsListState extends State<_BookingsList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    booking.paymentStatus.toLowerCase() == 'paid'
+                                    booking.paymentStatus.toLowerCase() ==
+                                            'paid'
                                         ? 'Paid • ${booking.paymentMethod.toUpperCase()}'
                                         : 'Payment ${booking.paymentStatus.toUpperCase()}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: booking.paymentStatus.toLowerCase() == 'paid'
+                                      color:
+                                          booking.paymentStatus.toLowerCase() ==
+                                              'paid'
                                           ? Colors.green.shade700
                                           : const Color(0xFF64748B),
                                     ),
@@ -752,12 +819,24 @@ class _BookingsListState extends State<_BookingsList> {
                     const SizedBox(height: 12),
 
                     // Driver Section (Assigned vs Assigning Soon vs Completed/Cancelled)
-                    _buildDriverSection(context, booking, isDriverAssigned, isCancelled, isCompleted),
+                    _buildDriverSection(
+                      context,
+                      booking,
+                      isDriverAssigned,
+                      isCancelled,
+                      isCompleted,
+                    ),
 
                     const SizedBox(height: 12),
 
                     // Action Buttons Row
-                    _buildCardActionButtons(context, booking, isDriverAssigned, isCancelled, isCompleted),
+                    _buildCardActionButtons(
+                      context,
+                      booking,
+                      isDriverAssigned,
+                      isCancelled,
+                      isCompleted,
+                    ),
                   ],
                 ),
               ),
@@ -769,7 +848,8 @@ class _BookingsListState extends State<_BookingsList> {
   }
 
   Widget _buildRouteTimeline(BookingEntity booking, bool isOutstation) {
-    final hasDrop = booking.dropAddress != null && booking.dropAddress!.trim().isNotEmpty;
+    final hasDrop =
+        booking.dropAddress != null && booking.dropAddress!.trim().isNotEmpty;
     final dropTime = isOutstation
         ? booking.scheduleDate.add(Duration(days: booking.duration))
         : booking.scheduleDate.add(Duration(hours: booking.duration));
@@ -839,7 +919,9 @@ class _BookingsListState extends State<_BookingsList> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      booking.pickupAddress.isNotEmpty ? booking.pickupAddress : 'Pickup location not specified',
+                      booking.pickupAddress.isNotEmpty
+                          ? booking.pickupAddress
+                          : 'Pickup location not specified',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -926,13 +1008,17 @@ class _BookingsListState extends State<_BookingsList> {
                       hasDrop
                           ? booking.dropAddress!
                           : (booking.tripType.toLowerCase().contains('round')
-                              ? 'Return to pickup location (${booking.duration} ${isOutstation ? 'Days' : 'Hours'} rental)'
-                              : 'As directed by customer'),
+                                ? 'Return to pickup location (${booking.duration} ${isOutstation ? 'Days' : 'Hours'} rental)'
+                                : 'As directed by customer'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: hasDrop ? const Color(0xFF1E293B) : const Color(0xFF64748B),
-                        fontStyle: hasDrop ? FontStyle.normal : FontStyle.italic,
+                        color: hasDrop
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF64748B),
+                        fontStyle: hasDrop
+                            ? FontStyle.normal
+                            : FontStyle.italic,
                         height: 1.3,
                       ),
                       maxLines: 2,
@@ -992,11 +1078,17 @@ class _BookingsListState extends State<_BookingsList> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_outline_rounded, size: 16, color: Color(0xFF16A34A)),
+            const Icon(
+              Icons.check_circle_outline_rounded,
+              size: 16,
+              color: Color(0xFF16A34A),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                isDriverAssigned ? 'Completed by ${booking.driverName}' : 'Ride completed successfully',
+                isDriverAssigned
+                    ? 'Completed by ${booking.driverName}'
+                    : 'Ride completed successfully',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1037,7 +1129,11 @@ class _BookingsListState extends State<_BookingsList> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF3B82F6)),
+                    const Icon(
+                      Icons.verified_rounded,
+                      size: 14,
+                      color: Color(0xFF3B82F6),
+                    ),
                   ],
                 ),
                 Text(
@@ -1090,10 +1186,7 @@ class _BookingsListState extends State<_BookingsList> {
                 ),
                 Text(
                   'Driver contact & vehicle details will appear before pickup.',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFFB45309),
-                  ),
+                  style: TextStyle(fontSize: 10, color: Color(0xFFB45309)),
                 ),
               ],
             ),
@@ -1300,10 +1393,13 @@ class _BookingsListState extends State<_BookingsList> {
     if (raw.isEmpty) return 'Local Ride';
 
     final cleaned = raw.replaceAll('_', ' ').trim();
-    return cleaned.split(' ').map((word) {
-      if (word.isEmpty) return '';
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return cleaned
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   void _callNumber(BuildContext context, String phone) async {
