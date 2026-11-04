@@ -34,6 +34,7 @@ import 'features/notifications/presentation/bloc/notification_event.dart';
 import 'features/profile/data/datasources/profile_remote_datasource.dart';
 import 'features/profile/data/repositories/profile_repository_impl.dart';
 import 'features/profile/domain/usecases/get_user_profile_usecase.dart';
+import 'features/profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'features/profile/domain/usecases/update_user_profile_usecase.dart';
 import 'features/valet_parking/data/datasources/valet_parking_remote_datasource.dart';
 import 'features/valet_parking/data/repositories/valet_parking_repository_impl.dart';
@@ -45,6 +46,11 @@ import 'features/valet_parking/domain/usecases/request_vehicle_retrieval_usecase
 import 'features/home/data/datasources/home_remote_datasource.dart';
 import 'features/home/data/repositories/home_repository_impl.dart';
 import 'features/home/domain/usecases/get_home_data_usecase.dart';
+import 'features/wallet/data/datasources/wallet_local_datasource.dart';
+import 'features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'features/wallet/domain/usecases/add_money_usecase.dart';
+import 'features/wallet/domain/usecases/get_wallet_transactions_usecase.dart';
+import 'features/wallet/domain/usecases/get_wallet_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,6 +127,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final profileRepository = ProfileRepositoryImpl(remoteDataSource: profileRemoteDataSource);
     final getUserProfileUseCase = GetUserProfileUseCase(profileRepository);
     final updateUserProfileUseCase = UpdateUserProfileUseCase(profileRepository);
+    final openWhatsAppHelplineUseCase = OpenWhatsAppHelplineUseCase();
 
     // Notification dependencies
     final notificationRepository = NotificationRepositoryImpl();
@@ -144,6 +151,13 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final homeRepository = HomeRepositoryImpl(remoteDataSource: homeRemoteDataSource);
     final getHomeDataUseCase = GetHomeDataUseCase(homeRepository);
 
+    // Wallet dependencies
+    final walletLocalDataSource = WalletLocalDataSourceImpl();
+    final walletRepository = WalletRepositoryImpl(localDataSource: walletLocalDataSource);
+    final getWalletUseCase = GetWalletUseCase(walletRepository);
+    final addMoneyUseCase = AddMoneyUseCase(walletRepository);
+    final getWalletTransactionsUseCase = GetWalletTransactionsUseCase(walletRepository);
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: registerUseCase),
@@ -155,6 +169,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
         RepositoryProvider.value(value: getBookingDetailUseCase),
         RepositoryProvider.value(value: getUserProfileUseCase),
         RepositoryProvider.value(value: updateUserProfileUseCase),
+        RepositoryProvider.value(value: openWhatsAppHelplineUseCase),
         RepositoryProvider.value(value: getNotificationsUseCase),
         RepositoryProvider.value(value: sendNotificationUseCase),
         RepositoryProvider.value(value: markNotificationAsReadUseCase),
@@ -166,6 +181,9 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
         RepositoryProvider.value(value: requestValetBookingUseCase),
         RepositoryProvider.value(value: requestVehicleRetrievalUseCase),
         RepositoryProvider.value(value: getHomeDataUseCase),
+        RepositoryProvider.value(value: getWalletUseCase),
+        RepositoryProvider.value(value: addMoneyUseCase),
+        RepositoryProvider.value(value: getWalletTransactionsUseCase),
       ],
       child: MultiBlocProvider(
         providers: [

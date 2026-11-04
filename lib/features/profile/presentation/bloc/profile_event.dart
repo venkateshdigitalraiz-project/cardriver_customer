@@ -56,3 +56,14 @@ class UpdateProfileFieldEvent extends ProfileEvent {
 }
 
 class SubmitProfileEvent extends ProfileEvent {}
+
+/// Triggers opening WhatsApp helpline
+class OpenWhatsAppHelplineEvent extends ProfileEvent {
+  final String? customMessage;
+
+  const OpenWhatsAppHelplineEvent({this.customMessage});
+
+  @override
+  List<Object?> get props => [customMessage];
+}
+

@@ -3,7 +3,11 @@ import '../entities/valet_parking_location.dart';
 import '../entities/valet_parking_ticket.dart';
 
 abstract class ValetParkingRepository {
-  Future<List<ValetBookingEntity>> getValetBookings({int page = 1, int limit = 10});
+  Future<List<ValetBookingEntity>> getValetBookings({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  });
 
   Future<List<ValetParkingLocation>> getValetLocations({String query = ''});
   

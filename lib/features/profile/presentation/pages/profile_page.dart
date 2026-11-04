@@ -10,6 +10,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../legal/presentation/pages/legal_page.dart';
 
 import '../../domain/usecases/get_user_profile_usecase.dart';
+import '../../domain/usecases/open_whatsapp_helpline_usecase.dart';
 import '../../domain/usecases/update_user_profile_usecase.dart';
 import '../bloc/profile_event.dart';
 
@@ -24,6 +25,8 @@ class ProfilePage extends StatelessWidget {
         create: (context) => ProfileBloc(
           getUserProfileUseCase: context.read<GetUserProfileUseCase>(),
           updateUserProfileUseCase: context.read<UpdateUserProfileUseCase>(),
+          openWhatsAppHelplineUseCase:
+              context.read<OpenWhatsAppHelplineUseCase>(),
         )..add(LoadProfileEvent()),
         child: const ProfileView(),
       ),
@@ -182,7 +185,13 @@ class ProfileView extends StatelessWidget {
                                 _buildStatDivider(color: Colors.black12),
                                 _buildStatItem('Rating', '4.9 ★'),
                                 _buildStatDivider(color: Colors.black12),
-                                _buildStatItem('Wallet', '₹450'),
+                                _buildStatItem(
+                                  'Wallet',
+                                  '₹450',
+                                  onTap: () {
+                                    context.push(AppRoutes.wallet);
+                                  },
+                                ),
                               ],
                             ),
                           ),
@@ -205,6 +214,17 @@ class ProfileView extends StatelessWidget {
                             _buildSectionHeader('Account Settings'),
                             _buildCardGroup(
                               children: [
+                                _buildPremiumMenuItem(
+                                  title: 'Wallet',
+                                  subtitle: '₹450 • Add money, refunds & history',
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  iconBgColor: const Color(0xFFFEF3C7),
+                                  iconColor: const Color(0xFFD97706),
+                                  onTap: () {
+                                    context.push(AppRoutes.wallet);
+                                  },
+                                ),
+                                _buildDivider(),
                                 _buildPremiumMenuItem(
                                   title: 'Saved Locations',
                                   icon: Icons.location_on_rounded,
@@ -243,22 +263,6 @@ class ProfileView extends StatelessWidget {
                             _buildSectionHeader('Support & About'),
                             _buildCardGroup(
                               children: [
-                                // _buildPremiumMenuItem(
-                                //   title: 'Help & Support',
-                                //   icon: Icons.help_rounded,
-                                //   iconBgColor: Colors.green.shade50,
-                                //   iconColor: Colors.green.shade700,
-                                //   onTap: () {
-                                //     Navigator.push(
-                                //       context,
-                                //       MaterialPageRoute(
-                                //         builder: (context) =>
-                                //             const SupportPage(),
-                                //       ),
-                                //     );
-                                //   },
-                                // ),
-                                // _buildDivider(),
                                 _buildPremiumMenuItem(
                                   title: 'Terms & Conditions',
                                   icon: Icons.description_rounded,
@@ -324,29 +328,40 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(String label, String value, {VoidCallback? onTap}) {
+    final content = Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+      child: onTap != null
+          ? InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: content,
+              ),
+            )
+          : content,
     );
   }
 
@@ -406,6 +421,7 @@ class ProfileView extends StatelessWidget {
 
   Widget _buildPremiumMenuItem({
     required String title,
+    String? subtitle,
     required IconData icon,
     required Color iconBgColor,
     required Color iconColor,
@@ -431,13 +447,29 @@ class ProfileView extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (showTrailingArrow)

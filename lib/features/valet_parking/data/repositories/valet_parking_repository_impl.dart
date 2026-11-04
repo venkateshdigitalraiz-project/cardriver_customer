@@ -10,12 +10,22 @@ class ValetParkingRepositoryImpl implements ValetParkingRepository {
   ValetParkingRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<ValetBookingEntity>> getValetBookings({int page = 1, int limit = 10}) async {
-    return await remoteDataSource.getValetBookings(page: page, limit: limit);
+  Future<List<ValetBookingEntity>> getValetBookings({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  }) async {
+    return await remoteDataSource.getValetBookings(
+      page: page,
+      limit: limit,
+      status: status,
+    );
   }
 
   @override
-  Future<List<ValetParkingLocation>> getValetLocations({String query = ''}) async {
+  Future<List<ValetParkingLocation>> getValetLocations({
+    String query = '',
+  }) async {
     return await remoteDataSource.getValetLocations(query: query);
   }
 

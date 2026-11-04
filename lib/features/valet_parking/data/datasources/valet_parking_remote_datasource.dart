@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -9,7 +10,11 @@ import '../models/valet_parking_ticket_model.dart';
 import '../../domain/entities/valet_parking_ticket.dart';
 
 abstract class ValetParkingRemoteDataSource {
-  Future<List<ValetBookingModel>> getValetBookings({int page = 1, int limit = 10});
+  Future<List<ValetBookingModel>> getValetBookings({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  });
   Future<List<ValetParkingLocationModel>> getValetLocations({String query = ''});
   Future<List<ValetParkingTicketModel>> getActiveTickets();
   Future<ValetParkingTicketModel> requestValetBooking({
@@ -29,15 +34,44 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
 
   // Default token provided by API spec if shared preferences doesn't have one yet
   static const String _defaultCookieToken =
-      'user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MjA0MjQ2NSwiZXhwIjoxNzkyNjQ3MjY1fQ.gXQJOlL0gs16AYu5f3toIDJ3-V5tuzYmlnE1VVgvzmA';
+      'user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDM1YzkzYjY0ZjYwMDU3OTcxOWJjMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MzgwMDAxMSwiZXhwIjoxNzk0NDA0ODExfQ.KpqH_DRNPl3YF2h5BSfBSWsgGwfnAaaJglhxi7WEreU';
+
+  static bool _isTokenExpired(String cookieOrToken) {
+    try {
+      var token = cookieOrToken.trim();
+      if (token.contains('user_token=')) {
+        token = token.split('user_token=').last.split(';').first.trim();
+      } else if (token.contains(';')) {
+        token = token.split(';').first.trim();
+      }
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final payloadBase64 = base64Url.normalize(parts[1]);
+      final payloadJson = utf8.decode(base64Url.decode(payloadBase64));
+      final payload = jsonDecode(payloadJson);
+      if (payload is Map && payload.containsKey('exp')) {
+        final exp = payload['exp'];
+        if (exp is num) {
+          final expiryDate = DateTime.fromMillisecondsSinceEpoch(
+            exp.toInt() * 1000,
+            isUtc: true,
+          );
+          return DateTime.now().toUtc().isAfter(expiryDate);
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
 
   Future<String> _resolveAuthCookie() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cookie = prefs.getString('auth_cookie');
-      if (cookie != null && cookie.trim().isNotEmpty) {
+      if (cookie != null && cookie.trim().isNotEmpty && !_isTokenExpired(cookie)) {
         return cookie;
       }
+      // Update with valid active token
+      await prefs.setString('auth_cookie', _defaultCookieToken);
     } catch (e) {
       debugPrint('Error reading auth cookie from SharedPreferences: $e');
     }
@@ -136,6 +170,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
   Future<List<ValetBookingModel>> getValetBookings({
     int page = 1,
     int limit = 10,
+    String? status,
   }) async {
     final client = dio ?? Dio();
     final cookie = await _resolveAuthCookie();
@@ -150,24 +185,40 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    debugPrint('🌍 API Request -> GET ${ApiEndpoints.valetBooking}');
-    debugPrint('🔑 Headers -> $headers');
+    final queryParameters = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+    };
+    if (status != null && status.trim().isNotEmpty && status.trim().toLowerCase() != 'all') {
+      queryParameters['status'] = status.trim().toLowerCase();
+    }
+
+    final fullUrl = Uri.parse(ApiEndpoints.valetBooking).replace(
+      queryParameters: queryParameters.map((k, v) => MapEntry(k, v.toString())),
+    ).toString();
+
+    debugPrint('================================================================');
+    debugPrint('🚀 [ValetParkingRemoteDataSource] GET Valet Bookings API');
+    debugPrint('🌐 URL: $fullUrl');
+    debugPrint('🔑 Authorization: Bearer ${token.length > 20 ? "${token.substring(0, 15)}..." : token}');
+    debugPrint('📋 Query Parameters -> $queryParameters');
+    debugPrint('================================================================');
 
     try {
       final response = await client.get(
         ApiEndpoints.valetBooking,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: queryParameters,
         options: Options(
           headers: headers,
-          sendTimeout: const Duration(seconds: 2),
-          receiveTimeout: const Duration(seconds: 2),
+          sendTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
         ),
       );
 
-      debugPrint('✅ API Valet Booking Response -> ${response.statusCode}');
+      debugPrint('================================================================');
+      debugPrint('📥 [ValetParkingRemoteDataSource] Response Status: ${response.statusCode}');
+      debugPrint('📄 Data: ${response.data}');
+      debugPrint('================================================================');
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;

@@ -15,3 +15,9 @@ class SubmitValetEventBooking extends HomeEvent {
 class ResetValetBookingSubmission extends HomeEvent {}
 
 class LoadHomeDataRequested extends HomeEvent {}
+
+/// Dispatched when the customer taps the WhatsApp support icon in the HomePage AppBar.
+class OpenWhatsAppSupportEvent extends HomeEvent {
+  final String? message;
+  OpenWhatsAppSupportEvent({this.message});
+}

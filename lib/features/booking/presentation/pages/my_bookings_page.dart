@@ -10,6 +10,7 @@ import '../../data/datasources/booking_remote_datasource.dart';
 import '../../data/repositories/booking_repository_impl.dart';
 import '../../domain/entities/booking_entity.dart';
 import '../../domain/usecases/get_driver_bookings_usecase.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import '../bloc/my_bookings/my_bookings_bloc.dart';
 import '../bloc/my_bookings/my_bookings_event.dart';
 import '../bloc/my_bookings/my_bookings_state.dart';
@@ -1439,7 +1440,7 @@ class _BookingsListState extends State<_BookingsList> {
           ],
         ),
         content: const Text(
-          'Need assistance with your booking? Our 24/7 dedicated customer care team is available to help.',
+          'Need assistance with your booking? Our dedicated customer care team is available on WhatsApp (8686234434).',
         ),
         actions: [
           TextButton(
@@ -1449,13 +1450,13 @@ class _BookingsListState extends State<_BookingsList> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(ctx).pop();
-              _callNumber(context, '1800-123-4567');
+              OpenWhatsAppHelplineUseCase().execute();
             },
-            icon: const Icon(Icons.call, size: 16),
-            label: const Text('Call Helpline'),
+            icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+            label: const Text('WhatsApp Helpline'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.black,
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
             ),
           ),
         ],

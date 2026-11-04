@@ -6,7 +6,15 @@ class GetValetBookingsUseCase {
 
   GetValetBookingsUseCase(this.repository);
 
-  Future<List<ValetBookingEntity>> call({int page = 1, int limit = 10}) async {
-    return await repository.getValetBookings(page: page, limit: limit);
+  Future<List<ValetBookingEntity>> call({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  }) async {
+    return await repository.getValetBookings(
+      page: page,
+      limit: limit,
+      status: status,
+    );
   }
 }

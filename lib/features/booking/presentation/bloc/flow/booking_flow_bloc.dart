@@ -30,6 +30,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     on<SubmitBookingEvent>(_onSubmitBooking);
     on<UpdateTripTypeEvent>(_onUpdateTripType);
     on<ClearLocationEvent>(_onClearLocation);
+    on<UpdateRapidoChargesEvent>(_onUpdateRapidoCharges);
+    on<UpdateOutstationReturnModeEvent>(_onUpdateOutstationReturnMode);
   }
 
   BookingFareResult _calculateFare({
@@ -54,6 +56,30 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     Emitter<BookingFlowState> emit,
   ) {
     emit(state.copyWith(request: state.request.clearLocations()));
+  }
+
+  void _onUpdateRapidoCharges(
+    UpdateRapidoChargesEvent event,
+    Emitter<BookingFlowState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        request: state.request.copyWith(
+          includeRapidoCharges: event.includeRapidoCharges,
+        ),
+      ),
+    );
+  }
+
+  void _onUpdateOutstationReturnMode(
+    UpdateOutstationReturnModeEvent event,
+    Emitter<BookingFlowState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        request: state.request.copyWith(outstationReturnMode: event.mode),
+      ),
+    );
   }
 
   void _onNextStep(NextStepEvent event, Emitter<BookingFlowState> emit) {
@@ -286,9 +312,13 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         request.scheduleHour ?? 0,
         request.scheduleMinute ?? 0,
       );
-      final String scheduledStartTimeUtc = localScheduledTime.toUtc().toIso8601String();
+      final String scheduledStartTimeUtc = localScheduledTime
+          .toUtc()
+          .toIso8601String();
 
-      final int duration = request.durationHours > 0 ? request.durationHours : 1;
+      final int duration = request.durationHours > 0
+          ? request.durationHours
+          : 1;
 
       final Map<String, dynamic> payload = {
         "serviceType": serviceType,
@@ -330,6 +360,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
             },
           },
         "vehicleType": request.vehicleCategory.toLowerCase(),
+        if (request.includeRapidoCharges)
+          "rapidoCharges": true,
       };
 
       final response = await submitBookingUseCase(payload);
@@ -358,12 +390,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
           .replaceFirst('Exception: ', '')
           .replaceFirst('ServerFailure: ', '')
           .replaceFirst('Failure: ', '');
-      emit(
-        state.copyWith(
-          status: BookingFlowStatus.error,
-          errorMessage: msg,
-        ),
-      );
+      emit(state.copyWith(status: BookingFlowStatus.error, errorMessage: msg));
     }
   }
 
@@ -380,21 +407,41 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       if (event.isOutstation) {
         newDuration = 1; // 1 Day default for outstation
       } else {
-        newDuration = event.tripType.toLowerCase().contains('round') ? 8 : 4;
+        newDuration = event.tripType.toLowerCase().contains('round') ? 4 : 3;
       }
     } else if (isSwitchingJourney && !event.isOutstation) {
       // Switching between One Way and Round Trip within Local
-      if (event.tripType.toLowerCase().contains('round') && newDuration < 8) {
-        newDuration = 8;
-      } else if (!event.tripType.toLowerCase().contains('round')) {
-        newDuration = 4;
+      if (event.tripType.toLowerCase().contains('round')) {
+        if (newDuration < 4) {
+          newDuration = 4;
+        }
+      } else {
+        if (newDuration == 4 || newDuration < 3) {
+          newDuration = 3;
+        }
+      }
+    } else if (!event.isOutstation) {
+      if (event.tripType.toLowerCase().contains('round')) {
+        if (newDuration < 4) {
+          newDuration = 4;
+        }
+      } else {
+        if (newDuration < 3) {
+          newDuration = 3;
+        }
       }
     }
+
+    final bool willBeLocalOneWay =
+        !event.isOutstation &&
+        (event.tripType.toLowerCase().contains('one') ||
+            !event.tripType.toLowerCase().contains('round'));
 
     var updatedRequest = state.request.copyWith(
       isOutstation: event.isOutstation,
       tripType: event.tripType,
       durationHours: newDuration,
+      includeRapidoCharges: willBeLocalOneWay && state.request.includeRapidoCharges,
     );
 
     final fareResult = _calculateFare(

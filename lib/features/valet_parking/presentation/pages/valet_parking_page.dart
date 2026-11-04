@@ -211,7 +211,7 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
                                         'VIP',
                                         style: AppTypography.labelSmall
                                             .copyWith(
-                                              color: AppColors.primary,
+                                              color: AppColors.secondaryDark,
                                               fontWeight: FontWeight.w800,
                                             ),
                                       ),
@@ -228,14 +228,11 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
                               ],
                             ),
                             IconButton(
-                              onPressed: () {
-                                context.read<ValetParkingBloc>().add(
-                                  const LoadValetParkingData(refresh: true),
-                                );
-                              },
-                              icon: const Icon(Icons.refresh_rounded),
-                              color: AppColors.primary,
-                              tooltip: 'Refresh Valet Bookings',
+                              onPressed: () =>
+                                  _showValetFilterBottomSheet(context),
+                              icon: const Icon(Icons.tune_rounded),
+                              color: AppColors.info,
+                              tooltip: 'Filter Valet Bookings',
                               style: IconButton.styleFrom(
                                 backgroundColor: const Color(0xFFF1F5F9),
                               ),
@@ -571,7 +568,7 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
     bool showDot = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
@@ -585,19 +582,32 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
-              Icon(icon, size: 16, color: accentColor),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 16, color: accentColor),
+              ),
               if (showDot)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
+                Positioned(
+                  top: 0,
+                  right: -1,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
             ],
@@ -605,15 +615,22 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
           const SizedBox(height: 8),
           Text(
             value,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF0F172A),
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             title,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -659,6 +676,378 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
               },
         );
       },
+    );
+  }
+
+  void _showValetFilterBottomSheet(BuildContext context) {
+    final bloc = context.read<ValetParkingBloc>();
+    final currentStatusFilter = bloc.state.selectedStatusFilter;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _ValetFilterBottomSheet(
+        initialStatus: currentStatusFilter,
+        onApply: (selectedStatus) {
+          Navigator.of(sheetContext).pop();
+          // Map dropdown value to backend API query param:
+          // 'pending' -> 'new_request'
+          // 'confirmed' -> 'confirmed'
+          // 'inprogress' -> 'in_progress'
+          // 'complected' -> 'completed'
+          String apiStatus = selectedStatus;
+          if (selectedStatus.toLowerCase() == 'pending') {
+            apiStatus = 'new_request';
+          } else if (selectedStatus.toLowerCase() == 'inprogress') {
+            apiStatus = 'in_progress';
+          } else if (selectedStatus.toLowerCase() == 'complected') {
+            apiStatus = 'completed';
+          }
+
+          bloc.add(LoadValetParkingData(refresh: true, status: apiStatus));
+        },
+      ),
+    );
+  }
+}
+
+/// Bottom Sheet containing Status Dropdown and Cancel / OK buttons
+class _ValetFilterBottomSheet extends StatefulWidget {
+  final String initialStatus;
+  final ValueChanged<String> onApply;
+
+  const _ValetFilterBottomSheet({
+    required this.initialStatus,
+    required this.onApply,
+  });
+
+  @override
+  State<_ValetFilterBottomSheet> createState() =>
+      _ValetFilterBottomSheetState();
+}
+
+class _ValetFilterBottomSheetState extends State<_ValetFilterBottomSheet> {
+  late String _selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialStatus.toLowerCase().trim();
+    if (init == 'new_request' || init == 'pending') {
+      _selectedStatus = 'pending';
+    } else if (init == 'in_progress' || init == 'inprogress') {
+      _selectedStatus = 'inprogress';
+    } else if (init == 'completed' || init == 'complected') {
+      _selectedStatus = 'complected';
+    } else if (init == 'confirmed') {
+      _selectedStatus = 'confirmed';
+    } else {
+      _selectedStatus = 'pending';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        canvasColor: Colors.white,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          surface: Colors.white,
+          onSurface: const Color(0xFF0F172A),
+        ),
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor: const Color(0xFF0F172A),
+          displayColor: const Color(0xFF0F172A),
+        ),
+      ),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Header Title & Close button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.tune_rounded,
+                          size: 20,
+                          color: Color(0xFF0F172A),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Filter Valet Bookings',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: Color(0xFF64748B),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 16),
+
+                const Text(
+                  'Booking Status',
+                  style: TextStyle(
+                    color: Color(0xFF334155),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Dropdown with "pending,confirmed,inprogress,complected"
+                DropdownButtonFormField<String>(
+                  value: _selectedStatus,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  icon: const Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: Color(0xFF0F172A),
+                  ),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(
+                      Icons.flag_rounded,
+                      size: 18,
+                      color: Color(0xFF64748B),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF0F172A),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  dropdownColor: Colors.white,
+                  selectedItemBuilder: (BuildContext context) {
+                    return const [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Pending (new_request)',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Confirmed',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'In Progress',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Completed',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ];
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'pending',
+                      child: Text(
+                        'Pending (new_request)',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'confirmed',
+                      child: Text(
+                        'Confirmed',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'inprogress',
+                      child: Text(
+                        'In Progress',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'complected',
+                      child: Text(
+                        'Completed',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedStatus = val);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Buttons: Cancel & OK
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF475569),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => widget.onApply(_selectedStatus),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F172A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'OK',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.check_rounded, size: 18),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

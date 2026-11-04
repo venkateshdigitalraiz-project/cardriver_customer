@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/social_auth_button.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 
 class LoginFooter extends StatelessWidget {
   const LoginFooter({super.key});
@@ -178,24 +179,33 @@ class LoginFooter extends StatelessWidget {
 
         const SizedBox(height: AppDimens.p20),
 
-        // 24/7 Customer Support Helpline
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.support_agent_rounded,
-              size: 16,
-              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+        // 24/7 Customer Support Helpline (WhatsApp Only)
+        InkWell(
+          onTap: () {
+            OpenWhatsAppHelplineUseCase().execute();
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.chat_bubble_rounded,
+                  size: 16,
+                  color: Color(0xFF25D366),
+                ),
+                const SizedBox(width: AppDimens.p6),
+                Text(
+                  '24/7 Helpline (WhatsApp Only): 8686234434',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppDimens.p6),
-            Text(
-              '24/7 Customer Booking Helpline: 1-800-CAR-DRIV',
-              style: AppTypography.bodySmall.copyWith(
-                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );

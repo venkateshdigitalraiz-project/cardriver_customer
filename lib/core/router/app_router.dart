@@ -20,6 +20,7 @@ import '../../features/main_navigation/presentation/pages/main_page.dart';
 import '../../features/notifications/presentation/pages/firebase_setup_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/profile/domain/usecases/get_user_profile_usecase.dart';
+import '../../features/profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import '../../features/profile/domain/usecases/update_user_profile_usecase.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_event.dart';
@@ -29,6 +30,7 @@ import '../../features/rates/presentation/pages/rates_page.dart';
 import '../../features/support/presentation/pages/support_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/valet_parking/presentation/pages/valet_parking_page.dart';
+import '../../features/wallet/presentation/pages/wallet_page.dart';
 
 /// Centralized route paths for the customer application
 class AppRoutes {
@@ -53,6 +55,7 @@ class AppRoutes {
   static const String firebaseSetup = '/firebase-setup';
   static const String valetParking = '/valet-parking';
   static const String locationPickerMap = '/location-picker-map';
+  static const String wallet = '/wallet';
 }
 
 /// Centralized route names for named navigation
@@ -77,6 +80,7 @@ class AppRouteNames {
   static const String firebaseSetup = 'firebaseSetup';
   static const String valetParking = 'valetParking';
   static const String locationPickerMap = 'locationPickerMap';
+  static const String wallet = 'wallet';
 }
 
 /// Centralized Router Configuration using go_router
@@ -192,6 +196,8 @@ class AppRouter {
                   getUserProfileUseCase: context.read<GetUserProfileUseCase>(),
                   updateUserProfileUseCase:
                       context.read<UpdateUserProfileUseCase>(),
+                  openWhatsAppHelplineUseCase:
+                      context.read<OpenWhatsAppHelplineUseCase>(),
                 )..add(LoadProfileEvent());
             return EditProfilePage(profileBloc: profileBloc);
           },
@@ -276,6 +282,11 @@ class AppRouter {
               initialLng: initialLng,
             );
           },
+        ),
+        GoRoute(
+          path: AppRoutes.wallet,
+          name: AppRouteNames.wallet,
+          builder: (context, state) => const WalletPage(),
         ),
       ],
     );

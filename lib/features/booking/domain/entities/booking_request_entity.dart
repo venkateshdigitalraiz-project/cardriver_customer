@@ -17,6 +17,8 @@ class BookingRequestEntity extends Equatable {
   final bool isOutstation;
   final String tripType;
   final double? estimatedFare;
+  final bool includeRapidoCharges;
+  final String outstationReturnMode; // 'bus' or 'train'
 
   const BookingRequestEntity({
     this.pickupAddress,
@@ -25,16 +27,18 @@ class BookingRequestEntity extends Equatable {
     this.dropAddress,
     this.dropLat,
     this.dropLng,
-    this.carType = 'Honda City', 
+    this.carType = 'Honda City',
     this.transmission = 'Manual',
     this.vehicleCategory = 'Hatchback',
     this.scheduleDate,
     this.scheduleHour,
     this.scheduleMinute,
-    this.durationHours = 4, // Default for local one-way package (4 hrs)
+    this.durationHours = 3, // Default for local one-way package (3 hrs)
     this.isOutstation = false,
     this.tripType = 'One Way',
     this.estimatedFare,
+    this.includeRapidoCharges = false,
+    this.outstationReturnMode = 'bus',
   });
 
   BookingRequestEntity copyWith({
@@ -54,6 +58,8 @@ class BookingRequestEntity extends Equatable {
     bool? isOutstation,
     String? tripType,
     double? estimatedFare,
+    bool? includeRapidoCharges,
+    String? outstationReturnMode,
   }) {
     return BookingRequestEntity(
       pickupAddress: pickupAddress ?? this.pickupAddress,
@@ -72,6 +78,8 @@ class BookingRequestEntity extends Equatable {
       isOutstation: isOutstation ?? this.isOutstation,
       tripType: tripType ?? this.tripType,
       estimatedFare: estimatedFare ?? this.estimatedFare,
+      includeRapidoCharges: includeRapidoCharges ?? this.includeRapidoCharges,
+      outstationReturnMode: outstationReturnMode ?? this.outstationReturnMode,
     );
   }
 
@@ -91,24 +99,28 @@ class BookingRequestEntity extends Equatable {
       isOutstation: isOutstation,
       tripType: tripType,
       estimatedFare: estimatedFare,
+      includeRapidoCharges: includeRapidoCharges,
+      outstationReturnMode: outstationReturnMode,
     );
   }
 
   @override
   List<Object?> get props => [
-        pickupAddress,
-        pickupLat,
-        pickupLng,
-        dropAddress,
-        dropLat,
-        dropLng,
-        carType,
-        scheduleDate,
-        scheduleHour,
-        scheduleMinute,
-        durationHours,
-        isOutstation,
-        tripType,
-        estimatedFare,
-      ];
+    pickupAddress,
+    pickupLat,
+    pickupLng,
+    dropAddress,
+    dropLat,
+    dropLng,
+    carType,
+    scheduleDate,
+    scheduleHour,
+    scheduleMinute,
+    durationHours,
+    isOutstation,
+    tripType,
+    estimatedFare,
+    includeRapidoCharges,
+    outstationReturnMode,
+  ];
 }

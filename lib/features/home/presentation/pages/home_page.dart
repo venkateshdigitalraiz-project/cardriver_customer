@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
@@ -153,16 +154,44 @@ class _HomePageView extends StatelessWidget {
                           ),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.logout,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                context.go(AppRoutes.login);
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'WhatsApp Helpline',
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF25D366),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const FaIcon(
+                                      FontAwesomeIcons.whatsapp,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    context
+                                        .read<HomeBloc>()
+                                        .add(OpenWhatsAppSupportEvent());
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 14),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.logout,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    context.go(AppRoutes.login);
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
                             ),
                           ),
                         ],

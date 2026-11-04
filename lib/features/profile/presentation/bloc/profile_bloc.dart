@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../../domain/usecases/get_user_profile_usecase.dart';
+import '../../domain/usecases/open_whatsapp_helpline_usecase.dart';
 import '../../domain/usecases/update_user_profile_usecase.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
@@ -12,17 +13,22 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ImagePicker _picker = ImagePicker();
   final GetUserProfileUseCase getUserProfileUseCase;
   final UpdateUserProfileUseCase updateUserProfileUseCase;
+  final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
   
   ProfileEntity _currentProfile = ProfileEntity();
 
   ProfileBloc({
     required this.getUserProfileUseCase,
     required this.updateUserProfileUseCase,
-  }) : super(ProfileInitial()) {
+    OpenWhatsAppHelplineUseCase? openWhatsAppHelplineUseCase,
+  })  : openWhatsAppHelplineUseCase =
+            openWhatsAppHelplineUseCase ?? OpenWhatsAppHelplineUseCase(),
+        super(ProfileInitial()) {
     on<LoadProfileEvent>(_onLoadProfile);
     on<PickProfileImageEvent>(_onPickProfileImage);
     on<UpdateProfileFieldEvent>(_onUpdateProfileField);
     on<SubmitProfileEvent>(_onSubmitProfile);
+    on<OpenWhatsAppHelplineEvent>(_onOpenWhatsAppHelpline);
   }
 
   Future<void> _onLoadProfile(
@@ -92,4 +98,24 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(ProfileLoaded(profile: _currentProfile));
     }
   }
+
+  Future<void> _onOpenWhatsAppHelpline(
+    OpenWhatsAppHelplineEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    try {
+      final success = await openWhatsAppHelplineUseCase.execute(
+        message: event.customMessage ??
+            'Hello, I am a Customer on the Car Driver app and need support with my booking.',
+      );
+      if (!success) {
+        emit(ProfileError('Could not open WhatsApp', _currentProfile));
+        emit(ProfileLoaded(profile: _currentProfile));
+      }
+    } catch (e) {
+      emit(ProfileError('Could not open WhatsApp: $e', _currentProfile));
+      emit(ProfileLoaded(profile: _currentProfile));
+    }
+  }
 }
+

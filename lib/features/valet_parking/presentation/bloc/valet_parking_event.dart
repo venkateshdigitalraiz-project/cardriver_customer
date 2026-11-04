@@ -11,10 +11,15 @@ abstract class ValetParkingEvent extends Equatable {
 
 class LoadValetParkingData extends ValetParkingEvent {
   final bool refresh;
-  const LoadValetParkingData({this.refresh = false});
+  final String? status;
+
+  const LoadValetParkingData({
+    this.refresh = false,
+    this.status,
+  });
 
   @override
-  List<Object?> get props => [refresh];
+  List<Object?> get props => [refresh, status];
 }
 
 class FilterValetBookingsByStatus extends ValetParkingEvent {

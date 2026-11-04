@@ -4,16 +4,19 @@ import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../domain/usecases/add_valet_event_booking_usecase.dart';
 import '../../domain/usecases/get_home_data_usecase.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final AddValetEventBookingUseCase addValetEventBookingUseCase;
   final GetHomeDataUseCase getHomeDataUseCase;
+  final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
 
   HomeBloc({
     AddValetEventBookingUseCase? addValetEventBookingUseCase,
     GetHomeDataUseCase? getHomeDataUseCase,
+    OpenWhatsAppHelplineUseCase? openWhatsAppHelplineUseCase,
   })  : addValetEventBookingUseCase = addValetEventBookingUseCase ??
             AddValetEventBookingUseCase(
               HomeRepositoryImpl(
@@ -26,6 +29,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
                 remoteDataSource: HomeRemoteDataSourceImpl(),
               ),
             ),
+        openWhatsAppHelplineUseCase =
+            openWhatsAppHelplineUseCase ?? OpenWhatsAppHelplineUseCase(),
         super(const HomeInitial(currentBannerIndex: 0)) {
     on<BannerPageChanged>((event, emit) {
       emit(state.copyWith(currentBannerIndex: event.index));
@@ -34,6 +39,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<SubmitValetEventBooking>(_onSubmitValetEventBooking);
     on<ResetValetBookingSubmission>(_onResetValetBookingSubmission);
     on<LoadHomeDataRequested>(_onLoadHomeDataRequested);
+    on<OpenWhatsAppSupportEvent>(_onOpenWhatsAppSupport);
+  }
+
+  Future<void> _onOpenWhatsAppSupport(
+    OpenWhatsAppSupportEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    try {
+      await openWhatsAppHelplineUseCase.execute(message: event.message);
+    } catch (e) {
+      debugPrint('❌ [HomeBloc] Error opening WhatsApp helpline: $e');
+    }
   }
 
   Future<void> _onLoadHomeDataRequested(

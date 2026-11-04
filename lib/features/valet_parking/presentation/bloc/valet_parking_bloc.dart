@@ -37,21 +37,25 @@ class ValetParkingBloc extends Bloc<ValetParkingEvent, ValetParkingState> {
     LoadValetParkingData event,
     Emitter<ValetParkingState> emit,
   ) async {
+    final statusFilter = event.status ?? (event.refresh ? state.selectedStatusFilter : 'all');
+
     emit(state.copyWith(
       status: ValetParkingStatus.loading,
+      selectedStatusFilter: statusFilter,
       clearError: true,
       clearSuccess: true,
     ));
 
     try {
-      final bookings = await getValetBookingsUseCase();
+      final effectiveStatus = (statusFilter != 'all' && statusFilter.isNotEmpty) ? statusFilter : null;
+      final bookings = await getValetBookingsUseCase(status: effectiveStatus);
       final locations = await getValetLocationsUseCase(query: state.searchQuery);
       final activeTickets = await getActiveValetTicketsUseCase();
 
       emit(state.copyWith(
         status: ValetParkingStatus.loaded,
         bookings: bookings,
-        filteredBookings: _filterBookings(bookings, state.selectedStatusFilter),
+        filteredBookings: _filterBookings(bookings, statusFilter),
         locations: locations,
         filteredLocations: locations,
         activeTickets: activeTickets,
@@ -115,9 +119,20 @@ class ValetParkingBloc extends Bloc<ValetParkingEvent, ValetParkingState> {
     if (status == 'all' || status.isEmpty) {
       return list;
     }
-    return list
-        .where((b) => b.status.toLowerCase() == status.toLowerCase())
-        .toList();
+    final normalized = status.toLowerCase();
+    return list.where((b) {
+      final s = b.status.toLowerCase();
+      if (normalized == 'new_request' || normalized == 'pending') {
+        return s == 'new_request' || s == 'pending';
+      }
+      if (normalized == 'in_progress' || normalized == 'inprogress') {
+        return s == 'in_progress' || s == 'inprogress';
+      }
+      if (normalized == 'completed' || normalized == 'complected') {
+        return s == 'completed' || s == 'complected';
+      }
+      return s == normalized;
+    }).toList();
   }
 
   Future<void> _onSearchValetLocations(

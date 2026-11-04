@@ -36,16 +36,16 @@ class UpdateLocationVehicleEvent extends BookingFlowEvent {
 
   @override
   List<Object?> get props => [
-        pickupAddress,
-        pickupLat,
-        pickupLng,
-        dropAddress,
-        dropLat,
-        dropLng,
-        carType,
-        transmission,
-        vehicleCategory,
-      ];
+    pickupAddress,
+    pickupLat,
+    pickupLng,
+    dropAddress,
+    dropLat,
+    dropLng,
+    carType,
+    transmission,
+    vehicleCategory,
+  ];
 }
 
 class ClearLocationEvent extends BookingFlowEvent {
@@ -84,7 +84,10 @@ class UpdateTripTypeEvent extends BookingFlowEvent {
   final bool isOutstation;
   final String tripType;
 
-  const UpdateTripTypeEvent({required this.isOutstation, required this.tripType});
+  const UpdateTripTypeEvent({
+    required this.isOutstation,
+    required this.tripType,
+  });
 
   @override
   List<Object?> get props => [isOutstation, tripType];
@@ -92,4 +95,22 @@ class UpdateTripTypeEvent extends BookingFlowEvent {
 
 class FetchChargesEvent extends BookingFlowEvent {
   const FetchChargesEvent();
+}
+
+class UpdateRapidoChargesEvent extends BookingFlowEvent {
+  final bool includeRapidoCharges;
+
+  const UpdateRapidoChargesEvent(this.includeRapidoCharges);
+
+  @override
+  List<Object?> get props => [includeRapidoCharges];
+}
+
+class UpdateOutstationReturnModeEvent extends BookingFlowEvent {
+  final String mode; // 'bus' or 'train'
+
+  const UpdateOutstationReturnModeEvent(this.mode);
+
+  @override
+  List<Object?> get props => [mode];
 }

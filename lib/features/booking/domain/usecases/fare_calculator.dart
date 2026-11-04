@@ -53,7 +53,7 @@ class FareCalculator {
 
     final int duration = (usageHours != null && usageHours > 0)
         ? usageHours
-        : (isRound ? 8 : 4);
+        : (isRound ? 4 : 3);
     final int totalMinutes = duration * 60;
 
     // Resolve trip start DateTime
@@ -158,7 +158,7 @@ class FareCalculator {
 
       final int duration = (usageHours != null && usageHours > 0)
           ? usageHours
-          : (isRound ? 8 : 4);
+          : (isRound ? 4 : 3);
       final int totalMinutes = duration * 60;
 
       final now = DateTime.now();

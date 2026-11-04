@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/support_bloc.dart';
+import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import '../bloc/support_event.dart';
 import '../bloc/support_state.dart';
 
@@ -59,7 +60,7 @@ class SupportPage extends StatelessWidget {
               const SizedBox(height: 24),
               Center(
                 child: Text(
-                  'Support is available 24 hours a day, in English, Hindi, and Telugu',
+                  'Support is available 24 hours a day on WhatsApp: 8686234434 (WhatsApp only)',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
@@ -235,25 +236,18 @@ class SupportPage extends StatelessWidget {
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            label: const Text('Chat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2B78E4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onPressed: () {
+              OpenWhatsAppHelplineUseCase().execute();
+            },
+            icon: const Icon(Icons.chat_bubble_rounded, color: Colors.white),
+            label: const Text(
+              'WhatsApp Helpline: 8686234434',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.phone_outlined, color: Colors.black),
-            label: const Text('Call us', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: Colors.grey.shade300),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
