@@ -4,21 +4,30 @@ import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../domain/usecases/add_valet_event_booking_usecase.dart';
 import '../../domain/usecases/get_home_data_usecase.dart';
+import '../../domain/usecases/post_driver_job_usecase.dart';
 import '../../../profile/domain/usecases/open_whatsapp_helpline_usecase.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final AddValetEventBookingUseCase addValetEventBookingUseCase;
+  final PostDriverJobUseCase postDriverJobUseCase;
   final GetHomeDataUseCase getHomeDataUseCase;
   final OpenWhatsAppHelplineUseCase openWhatsAppHelplineUseCase;
 
   HomeBloc({
     AddValetEventBookingUseCase? addValetEventBookingUseCase,
+    PostDriverJobUseCase? postDriverJobUseCase,
     GetHomeDataUseCase? getHomeDataUseCase,
     OpenWhatsAppHelplineUseCase? openWhatsAppHelplineUseCase,
   })  : addValetEventBookingUseCase = addValetEventBookingUseCase ??
             AddValetEventBookingUseCase(
+              HomeRepositoryImpl(
+                remoteDataSource: HomeRemoteDataSourceImpl(),
+              ),
+            ),
+        postDriverJobUseCase = postDriverJobUseCase ??
+            PostDriverJobUseCase(
               HomeRepositoryImpl(
                 remoteDataSource: HomeRemoteDataSourceImpl(),
               ),
@@ -38,6 +47,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     on<SubmitValetEventBooking>(_onSubmitValetEventBooking);
     on<ResetValetBookingSubmission>(_onResetValetBookingSubmission);
+    on<SubmitDriverJobEvent>(_onSubmitDriverJob);
+    on<ResetDriverJobSubmissionEvent>(_onResetDriverJobSubmission);
     on<LoadHomeDataRequested>(_onLoadHomeDataRequested);
     on<OpenWhatsAppSupportEvent>(_onOpenWhatsAppSupport);
   }
@@ -111,6 +122,46 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       valetSubmitSuccess: false,
       clearError: true,
       clearResponse: true,
+    ));
+  }
+
+  Future<void> _onSubmitDriverJob(
+    SubmitDriverJobEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    debugPrint('💼 [HomeBloc] SubmitDriverJobEvent received -> Submitting job requirement...');
+    emit(state.copyWith(
+      isSubmittingDriverJob: true,
+      driverJobSubmitSuccess: false,
+      clearDriverJobError: true,
+    ));
+
+    try {
+      final result = await postDriverJobUseCase(event.job);
+      debugPrint('✅ [HomeBloc] Driver job submitted successfully: ${result.data?.jobId}');
+      emit(state.copyWith(
+        isSubmittingDriverJob: false,
+        driverJobSubmitSuccess: true,
+        driverJobResponse: result,
+      ));
+    } catch (e) {
+      debugPrint('❌ [HomeBloc] Error submitting driver job: $e');
+      emit(state.copyWith(
+        isSubmittingDriverJob: false,
+        driverJobSubmitSuccess: false,
+        driverJobErrorMessage: e.toString(),
+      ));
+    }
+  }
+
+  void _onResetDriverJobSubmission(
+    ResetDriverJobSubmissionEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    emit(state.copyWith(
+      driverJobSubmitSuccess: false,
+      clearDriverJobError: true,
+      clearDriverJobResponse: true,
     ));
   }
 }

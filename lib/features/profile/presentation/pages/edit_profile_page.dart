@@ -620,13 +620,13 @@ fill edit fields:
 curl --request GET \
   --url http://192.168.0.161:3000/api/user/profile \
   --header 'Authorization: Bearer <YOUR_JWT_TOKEN>' \
-  --header 'Cookie: user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MDMzMzQ1MywiZXhwIjoxNzkwOTM4MjUzfQ.ugnKPgJx9ljeNuVjELPfVE6HnAsSnHimDrQsesox02o'
+  --header 'Cookie: user_token=<USER_TOKEN>'
 
 
  curl --request PUT \
   --url http://192.168.0.161:3000/api/user/profile \
   --header 'Authorization: Bearer <YOUR_JWT_TOKEN>' \
-  --header 'Cookie: user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjY0MjdiNDQwZGE0N2UzYWM4M2RhMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MDMzMzQ1MywiZXhwIjoxNzkwOTM4MjUzfQ.ugnKPgJx9ljeNuVjELPfVE6HnAsSnHimDrQsesox02o' \
+  --header 'Cookie: user_token=<USER_TOKEN>' \
   --header 'content-type: application/json' \
   --data '{"firstName":"Johns","lastName":"Does","email":"john.newemail@example.com","address":"123 New Street"}' 
  */

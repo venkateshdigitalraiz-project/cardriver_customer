@@ -25,8 +25,8 @@ class ProfilePage extends StatelessWidget {
         create: (context) => ProfileBloc(
           getUserProfileUseCase: context.read<GetUserProfileUseCase>(),
           updateUserProfileUseCase: context.read<UpdateUserProfileUseCase>(),
-          openWhatsAppHelplineUseCase:
-              context.read<OpenWhatsAppHelplineUseCase>(),
+          openWhatsAppHelplineUseCase: context
+              .read<OpenWhatsAppHelplineUseCase>(),
         )..add(LoadProfileEvent()),
         child: const ProfileView(),
       ),
@@ -98,8 +98,12 @@ class ProfileView extends StatelessWidget {
                                   color: Colors.black87,
                                 ),
                                 onPressed: () {
-                                  final profileBloc = context.read<ProfileBloc>();
-                                  context.push(AppRoutes.editProfile, extra: profileBloc);
+                                  final profileBloc = context
+                                      .read<ProfileBloc>();
+                                  context.push(
+                                    AppRoutes.editProfile,
+                                    extra: profileBloc,
+                                  );
                                 },
                               ),
                             ],
@@ -215,8 +219,21 @@ class ProfileView extends StatelessWidget {
                             _buildCardGroup(
                               children: [
                                 _buildPremiumMenuItem(
+                                  title: 'My Job Posts',
+                                  subtitle:
+                                      'View, track & manage your posted driver jobs',
+                                  icon: Icons.work_history_rounded,
+                                  iconBgColor: const Color(0xFFEEF2FF),
+                                  iconColor: const Color(0xFF4F46E5),
+                                  onTap: () {
+                                    context.push(AppRoutes.myJobPosts);
+                                  },
+                                ),
+                                _buildDivider(),
+                                _buildPremiumMenuItem(
                                   title: 'Wallet',
-                                  subtitle: '₹450 • Add money, refunds & history',
+                                  subtitle:
+                                      '₹450 • Add money, refunds & history',
                                   icon: Icons.account_balance_wallet_rounded,
                                   iconBgColor: const Color(0xFFFEF3C7),
                                   iconColor: const Color(0xFFD97706),
@@ -269,7 +286,10 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.grey.shade100,
                                   iconColor: Colors.grey.shade700,
                                   onTap: () {
-                                    context.push(AppRoutes.legal, extra: LegalPageType.terms);
+                                    context.push(
+                                      AppRoutes.legal,
+                                      extra: LegalPageType.terms,
+                                    );
                                   },
                                 ),
                                 _buildDivider(),
@@ -279,7 +299,10 @@ class ProfileView extends StatelessWidget {
                                   iconBgColor: Colors.grey.shade100,
                                   iconColor: Colors.grey.shade700,
                                   onTap: () {
-                                    context.push(AppRoutes.legal, extra: LegalPageType.privacy);
+                                    context.push(
+                                      AppRoutes.legal,
+                                      extra: LegalPageType.privacy,
+                                    );
                                   },
                                 ),
                               ],

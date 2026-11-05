@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/storage/app_auth_storage.dart';
 import '../models/driver_user_model.dart';
 import '../models/intro_banner_model.dart';
 import '../../../../core/error/failures.dart';
@@ -219,7 +220,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         if (cookies != null && cookies.isNotEmpty) {
           for (var c in cookies) {
             if (c.contains('user_token=')) {
-              tokenCookie = c.split(';').first.trim(); // e.g. user_token=eyJ...
+              tokenCookie = c.split(';').first.trim(); // e.g. user_token=<JWT_TOKEN>
               rawJwt = tokenCookie.replaceFirst('user_token=', '').trim();
               break;
             } else if (c.contains('token=')) {
@@ -262,6 +263,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           if (rawJwt.isNotEmpty) {
             await prefs.setString('token', rawJwt);
             await prefs.setString('auth_token', rawJwt);
+            AppAuthStorage.setStaticToken(rawJwt);
+          } else {
+            AppAuthStorage.setStaticToken(tokenCookie);
           }
           debugPrint('🔑 Saved Auth Cookie: $tokenCookie');
         }

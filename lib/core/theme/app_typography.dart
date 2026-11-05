@@ -31,6 +31,11 @@ class AppTypography {
         letterSpacing: -0.2,
       );
 
+  // Aliases for compatibility
+  static TextStyle get headingLarge => displayMedium;
+  static TextStyle get headingMedium => titleLarge;
+  static TextStyle get headingSmall => titleMedium;
+
   static TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
         fontSize: 16,
         fontWeight: FontWeight.w500,

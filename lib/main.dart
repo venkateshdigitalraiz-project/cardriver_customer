@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/storage/app_auth_storage.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
@@ -54,8 +55,9 @@ import 'features/wallet/domain/usecases/get_wallet_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final bool isLoggedIn = prefs.getString('auth_cookie')?.isNotEmpty ?? false;
+  // Collect token from SharedPreferences and initialize static data cache
+  final token = await AppAuthStorage.getOrCollectToken();
+  final bool isLoggedIn = token.isNotEmpty;
 
   // Initialize Firebase and local push notification engine safely
   await FirebaseNotificationService.instance.initialize();

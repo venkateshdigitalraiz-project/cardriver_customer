@@ -1,3 +1,4 @@
+import '../../domain/entities/driver_job_item.dart';
 import '../../domain/entities/valet_event_booking_item.dart';
 
 abstract class HomeEvent {}
@@ -13,6 +14,13 @@ class SubmitValetEventBooking extends HomeEvent {
 }
 
 class ResetValetBookingSubmission extends HomeEvent {}
+
+class SubmitDriverJobEvent extends HomeEvent {
+  final DriverJobItem job;
+  SubmitDriverJobEvent(this.job);
+}
+
+class ResetDriverJobSubmissionEvent extends HomeEvent {}
 
 class LoadHomeDataRequested extends HomeEvent {}
 

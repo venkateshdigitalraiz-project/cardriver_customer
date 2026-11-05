@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/storage/app_auth_storage.dart';
 import '../models/valet_booking_model.dart';
 import '../models/valet_parking_location_model.dart';
 import '../models/valet_parking_ticket_model.dart';
@@ -32,50 +33,8 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
 
   ValetParkingRemoteDataSourceImpl({this.dio});
 
-  // Default token provided by API spec if shared preferences doesn't have one yet
-  static const String _defaultCookieToken =
-      'user_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDM1YzkzYjY0ZjYwMDU3OTcxOWJjMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MzgwMDAxMSwiZXhwIjoxNzk0NDA0ODExfQ.KpqH_DRNPl3YF2h5BSfBSWsgGwfnAaaJglhxi7WEreU';
-
-  static bool _isTokenExpired(String cookieOrToken) {
-    try {
-      var token = cookieOrToken.trim();
-      if (token.contains('user_token=')) {
-        token = token.split('user_token=').last.split(';').first.trim();
-      } else if (token.contains(';')) {
-        token = token.split(';').first.trim();
-      }
-      final parts = token.split('.');
-      if (parts.length != 3) return false;
-      final payloadBase64 = base64Url.normalize(parts[1]);
-      final payloadJson = utf8.decode(base64Url.decode(payloadBase64));
-      final payload = jsonDecode(payloadJson);
-      if (payload is Map && payload.containsKey('exp')) {
-        final exp = payload['exp'];
-        if (exp is num) {
-          final expiryDate = DateTime.fromMillisecondsSinceEpoch(
-            exp.toInt() * 1000,
-            isUtc: true,
-          );
-          return DateTime.now().toUtc().isAfter(expiryDate);
-        }
-      }
-    } catch (_) {}
-    return false;
-  }
-
   Future<String> _resolveAuthCookie() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cookie = prefs.getString('auth_cookie');
-      if (cookie != null && cookie.trim().isNotEmpty && !_isTokenExpired(cookie)) {
-        return cookie;
-      }
-      // Update with valid active token
-      await prefs.setString('auth_cookie', _defaultCookieToken);
-    } catch (e) {
-      debugPrint('Error reading auth cookie from SharedPreferences: $e');
-    }
-    return _defaultCookieToken;
+    return await AppAuthStorage.getOrCollectCookie();
   }
 
   // Pre-cached verified response data according to API spec

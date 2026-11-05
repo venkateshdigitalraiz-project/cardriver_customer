@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/storage/app_auth_storage.dart';
 import '../models/booking_rate_config_model.dart';
 import '../models/booking_model.dart';
 import '../models/booking_detail_model.dart';
@@ -29,142 +30,15 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   BookingRemoteDataSourceImpl({required this.dio});
 
-  // Default customer token fallback (active verified token)
-  static const String _defaultUserToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDM1YzkzYjY0ZjYwMDU3OTcxOWJjMyIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc5MzgwMDAxMSwiZXhwIjoxNzk0NDA0ODExfQ.KpqH_DRNPl3YF2h5BSfBSWsgGwfnAaaJglhxi7WEreU';
-
-  /// Helper to extract clean raw JWT without cookies prefixes, Bearer prefixes, or quotes
-  static String _extractCleanToken(String? raw) {
-    if (raw == null) return '';
-    var token = raw.trim();
-    if (token.contains('user_token=')) {
-      token = token.split('user_token=').last.split(';').first.trim();
-    } else if (token.contains('token=')) {
-      token = token.split('token=').last.split(';').first.trim();
-    } else if (token.contains(';')) {
-      token = token.split(';').first.trim();
-    }
-    if (token.startsWith('Bearer ')) {
-      token = token.substring(7).trim();
-    }
-    if ((token.startsWith('"') && token.endsWith('"')) ||
-        (token.startsWith("'") && token.endsWith("'"))) {
-      token = token.substring(1, token.length - 1).trim();
-    }
-    return token;
-  }
-
-  /// Checks if a JWT string is expired
-  static bool _isTokenExpired(String token) {
-    try {
-      final clean = _extractCleanToken(token);
-      final parts = clean.split('.');
-      if (parts.length != 3) return false;
-      final payloadBase64 = base64Url.normalize(parts[1]);
-      final payloadJson = utf8.decode(base64Url.decode(payloadBase64));
-      final payload = jsonDecode(payloadJson);
-      if (payload is Map && payload.containsKey('exp')) {
-        final exp = payload['exp'];
-        if (exp is num) {
-          final expiryDate = DateTime.fromMillisecondsSinceEpoch(
-            exp.toInt() * 1000,
-            isUtc: true,
-          );
-          return DateTime.now().toUtc().isAfter(expiryDate);
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error checking token expiration: $e');
-    }
-    return false;
-  }
-
-  /// Collects the authenticated user token purely from SharedPreferences
-  Future<String?> _getTokenFromPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // 1. Try auth_cookie
-    final authCookie = prefs.getString('auth_cookie');
-    if (authCookie != null && authCookie.trim().isNotEmpty) {
-      final candidate = _extractCleanToken(authCookie);
-      if (candidate.isNotEmpty && candidate.contains('eyJ')) {
-        return candidate;
-      }
-    }
-
-    // 2. Try raw token key
-    final token = prefs.getString('token');
-    if (token != null && token.trim().isNotEmpty) {
-      final candidate = _extractCleanToken(token);
-      if (candidate.isNotEmpty && candidate.contains('eyJ')) {
-        return candidate;
-      }
-    }
-
-    // 3. Try auth_token key
-    final authToken = prefs.getString('auth_token');
-    if (authToken != null && authToken.trim().isNotEmpty) {
-      final candidate = _extractCleanToken(authToken);
-      if (candidate.isNotEmpty && candidate.contains('eyJ')) {
-        return candidate;
-      }
-    }
-
-    // 4. Try jwt_token key
-    final jwtToken = prefs.getString('jwt_token');
-    if (jwtToken != null && jwtToken.trim().isNotEmpty) {
-      final candidate = _extractCleanToken(jwtToken);
-      if (candidate.isNotEmpty && candidate.contains('eyJ')) {
-        return candidate;
-      }
-    }
-
-    // 5. Try user_data JSON
-    final userData = prefs.getString('user_data');
-    if (userData != null && userData.trim().isNotEmpty) {
-      try {
-        final userMap = jsonDecode(userData);
-        if (userMap is Map) {
-          final raw = userMap['token'] ??
-              userMap['accessToken'] ??
-              userMap['jwt'] ??
-              userMap['authToken'];
-          if (raw != null) {
-            final candidate = _extractCleanToken(raw.toString());
-            if (candidate.isNotEmpty && candidate.contains('eyJ')) {
-              return candidate;
-            }
-          }
-        }
-      } catch (_) {}
-    }
-
-    return null;
-  }
-
-  /// Resolves the authenticated headers dynamically from SharedPreferences
+  /// Resolves the authenticated headers dynamically from SharedPreferences and static cache
   Future<Map<String, String>> _resolveAuthHeaders({bool requireAuth = true}) async {
-    var token = await _getTokenFromPreferences();
-
-    // If no token or the stored token in preferences is expired, fallback to active token and persist it
-    if (token == null || token.trim().isEmpty || _isTokenExpired(token)) {
-      debugPrint('🔄 Stored token missing or expired. Updating with active verified token...');
-      token = _defaultUserToken;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_cookie', 'user_token=$_defaultUserToken');
-        await prefs.setString('token', _defaultUserToken);
-        await prefs.setString('auth_token', _defaultUserToken);
-      } catch (e) {
-        debugPrint('⚠️ Error persisting active token: $e');
-      }
-    }
+    final token = await AppAuthStorage.getOrCollectToken();
 
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Cookie': 'user_token=$token',
-      'Authorization': 'Bearer $token',
+      if (token.isNotEmpty) 'Cookie': 'user_token=$token',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -360,43 +234,6 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
           message.contains('invalid or missing token');
 
       if (isUnauthorized) {
-        // Fallback retry with default valid token if the request failed with an old stored token
-        final currentToken = await _getTokenFromPreferences();
-        if (currentToken != _defaultUserToken) {
-          debugPrint('🔄 Auth failed with stored token. Retrying once with active valid token...');
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('auth_cookie', 'user_token=$_defaultUserToken');
-            await prefs.setString('token', _defaultUserToken);
-            await prefs.setString('auth_token', _defaultUserToken);
-
-            final retryHeaders = {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Cookie': 'user_token=$_defaultUserToken',
-              'Authorization': 'Bearer $_defaultUserToken',
-            };
-
-            final retryRes = await dio.get(
-              ApiEndpoints.driverBooking,
-              queryParameters: queryParams,
-              options: Options(headers: retryHeaders),
-            );
-
-            debugPrint('✅ API Retry Response -> Status: ${retryRes.statusCode}');
-            if (retryRes.statusCode == 200 || retryRes.statusCode == 201) {
-              var data = retryRes.data;
-              if (data is String) {
-                try {
-                  data = json.decode(data);
-                } catch (_) {}
-              }
-              return BookingListResponseModel.fromAny(data);
-            }
-          } catch (retryErr) {
-            debugPrint('❌ Retry with default token also failed: $retryErr');
-          }
-        }
         throw const ServerFailure('Unauthorized: Please log in again to view your bookings.');
       }
       if (responseMap != null && responseMap.containsKey('message')) {

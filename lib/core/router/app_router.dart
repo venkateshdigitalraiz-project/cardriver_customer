@@ -10,8 +10,13 @@ import '../../features/booking/domain/entities/booking_request_entity.dart';
 import '../../features/booking/presentation/pages/booking_confirmed_screen.dart';
 import '../../features/booking/presentation/pages/booking_details_page.dart';
 import '../../features/booking/presentation/pages/booking_wizard_screen.dart';
+import '../../features/booking/presentation/pages/my_bookings_page.dart';
 import '../../features/drivers/domain/entities/driver_search_type.dart';
 import '../../features/drivers/presentation/pages/driver_list_screen.dart';
+import '../../features/jobs/domain/entities/user_job_entity.dart';
+import '../../features/jobs/presentation/pages/job_post_details_screen.dart';
+import '../../features/jobs/presentation/pages/my_job_posts_screen.dart';
+import '../../features/jobs/presentation/pages/post_driver_job_screen.dart';
 import '../../features/legal/presentation/pages/legal_page.dart';
 import '../../features/locations/presentation/bloc/location_bloc.dart';
 import '../../features/locations/presentation/bloc/location_event.dart';
@@ -56,6 +61,11 @@ class AppRoutes {
   static const String valetParking = '/valet-parking';
   static const String locationPickerMap = '/location-picker-map';
   static const String wallet = '/wallet';
+  static const String myBookings = '/my-bookings';
+  static const String postJob = '/post-job';
+  static const String myJobPosts = '/my-job-posts';
+  static const String jobDetails = '/job-details';
+  static const String jobDetailsWithParam = '/job-details/:jobId';
 }
 
 /// Centralized route names for named navigation
@@ -81,6 +91,10 @@ class AppRouteNames {
   static const String valetParking = 'valetParking';
   static const String locationPickerMap = 'locationPickerMap';
   static const String wallet = 'wallet';
+  static const String myBookings = 'myBookings';
+  static const String postJob = 'postJob';
+  static const String myJobPosts = 'myJobPosts';
+  static const String jobDetails = 'jobDetails';
 }
 
 /// Centralized Router Configuration using go_router
@@ -188,6 +202,11 @@ class AppRouter {
           builder: (context, state) => const ProfilePage(),
         ),
         GoRoute(
+          path: AppRoutes.myBookings,
+          name: AppRouteNames.myBookings,
+          builder: (context, state) => const MyBookingsPage(),
+        ),
+        GoRoute(
           path: AppRoutes.editProfile,
           name: AppRouteNames.editProfile,
           builder: (context, state) {
@@ -287,6 +306,30 @@ class AppRouter {
           path: AppRoutes.wallet,
           name: AppRouteNames.wallet,
           builder: (context, state) => const WalletPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.postJob,
+          name: AppRouteNames.postJob,
+          builder: (context, state) => const PostDriverJobScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.myJobPosts,
+          name: AppRouteNames.myJobPosts,
+          builder: (context, state) => const MyJobPostsScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.jobDetailsWithParam,
+          name: AppRouteNames.jobDetails,
+          builder: (context, state) {
+            final jobId = state.pathParameters['jobId'] ?? '';
+            final initialJob = state.extra is UserJobEntity
+                ? state.extra as UserJobEntity
+                : null;
+            return JobPostDetailsScreen(
+              jobId: jobId,
+              initialJob: initialJob,
+            );
+          },
         ),
       ],
     );

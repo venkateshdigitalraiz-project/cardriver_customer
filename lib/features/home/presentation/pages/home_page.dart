@@ -24,7 +24,9 @@ class HomePage extends StatelessWidget {
         try {
           useCase = ctx.read<GetHomeDataUseCase>();
         } catch (_) {}
-        debugPrint('🚀 [HomePage] Dispatching LoadHomeDataRequested to fetch /api/user/home data');
+        debugPrint(
+          '🚀 [HomePage] Dispatching LoadHomeDataRequested to fetch /api/user/home data',
+        );
         return HomeBloc(getHomeDataUseCase: useCase)
           ..add(LoadHomeDataRequested());
       },
@@ -43,7 +45,9 @@ class _HomePageView extends StatelessWidget {
       body: RefreshIndicator(
         color: const Color(0xFFFFB800),
         onRefresh: () async {
-          debugPrint('🔄 [HomePage] User triggered pull-to-refresh -> Reloading home data from API...');
+          debugPrint(
+            '🔄 [HomePage] User triggered pull-to-refresh -> Reloading home data from API...',
+          );
           context.read<HomeBloc>().add(LoadHomeDataRequested());
           await Future.delayed(const Duration(milliseconds: 600));
         },
@@ -54,8 +58,9 @@ class _HomePageView extends StatelessWidget {
             children: [
               // Top Hero Section with integrated App Bar & overlay Location Card
               _buildHeroSection(context),
-              const SizedBox(height: 52), // Space for the bottom half of the overlay card + gap
-
+              const SizedBox(
+                height: 52,
+              ), // Space for the bottom half of the overlay card + gap
               // "For You" Staggered Grid
               // _buildStaggeredGrid(context),
               // const SizedBox(height: 24),
@@ -64,6 +69,10 @@ class _HomePageView extends StatelessWidget {
 
               // Valet Event Booking Card with labeled sample fields & Add button
               _buildValetEventBookingSection(context),
+              const SizedBox(height: 16),
+
+              // Post for Driver Job Section (in the same modern style)
+              _buildPostDriverJobSection(context),
               const SizedBox(height: 32),
 
               // "Suggestions" Carousel
@@ -172,9 +181,9 @@ class _HomePageView extends StatelessWidget {
                                     ),
                                   ),
                                   onPressed: () {
-                                    context
-                                        .read<HomeBloc>()
-                                        .add(OpenWhatsAppSupportEvent());
+                                    context.read<HomeBloc>().add(
+                                      OpenWhatsAppSupportEvent(),
+                                    );
                                   },
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
@@ -371,7 +380,10 @@ class _HomePageView extends StatelessWidget {
                     bgColor: const Color(0xFFFFF3E0),
                     imagePath: 'assets/images/outstation.png',
                     onTap: () {
-                      context.push(AppRoutes.bookingWizard, extra: 'Outstation');
+                      context.push(
+                        AppRoutes.bookingWizard,
+                        extra: 'Outstation',
+                      );
                     },
                   ),
                 ),
@@ -485,7 +497,9 @@ class _HomePageView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(11),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFBE74D).withValues(alpha: 0.22),
+                          color: const Color(
+                            0xFFFBE74D,
+                          ).withValues(alpha: 0.22),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -523,8 +537,9 @@ class _HomePageView extends StatelessWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981)
-                                          .withValues(alpha: 0.15),
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -657,6 +672,165 @@ class _HomePageView extends StatelessWidget {
     );
   }
 
+  Widget _buildPostDriverJobSection(BuildContext context) {
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        final hasJob = state.driverJobResponse != null;
+        final jobData = state.driverJobResponse?.data;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                onTap: () => context.push(AppRoutes.postJob),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      // Indigo/navy circular icon badge matching Valet card styling
+                      Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.badge_rounded,
+                          color: Color(0xFF1E3A8A),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+
+                      // Clean Title and Subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'Post for Driver Job',
+                                    style: AppTypography.labelLarge.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (hasJob) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      jobData?.jobId ?? 'POSTED',
+                                      style: const TextStyle(
+                                        color: Color(0xFF047857),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              hasJob
+                                  ? '${jobData?.jobTitle ?? "Job Requirement"} • Active'
+                                  : 'Permanent or monthly driver • From ₹18,000/mo',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: Colors.black54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Professional action button
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              hasJob ? 'View' : 'Post',
+                              style: AppTypography.labelSmall.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSuggestionsSection(BuildContext context) {
     return BlocBuilder<HomeBloc, HomeState>(
       buildWhen: (prev, curr) =>
@@ -691,10 +865,12 @@ class _HomePageView extends StatelessWidget {
                 itemBuilder: (context, index) {
                   if (middleBanners.isNotEmpty) {
                     final banner = middleBanners[index];
-                    final fullImageUrl =
-                        ApiEndpoints.resolveImageUrl(banner.imageUrl);
+                    final fullImageUrl = ApiEndpoints.resolveImageUrl(
+                      banner.imageUrl,
+                    );
 
-                    final hasText = banner.title.trim().isNotEmpty ||
+                    final hasText =
+                        banner.title.trim().isNotEmpty ||
                         banner.subtitle.trim().isNotEmpty;
 
                     // If it's a full promotional banner image without title/subtitle text
@@ -726,21 +902,21 @@ class _HomePageView extends StatelessWidget {
                                     child: const Center(
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color(0xFF266475),
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF266475),
+                                            ),
                                       ),
                                     ),
                                   );
                                 },
-                                errorBuilder:
-                                    (context, error, stackTrace) =>
-                                        _buildDefaultSuggestionCard(
-                                  context: context,
-                                  title: 'Explore In-city',
-                                  subtitle:
-                                      'Across town, around the corner, and everywhere in between.',
-                                ),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildDefaultSuggestionCard(
+                                      context: context,
+                                      title: 'Explore In-city',
+                                      subtitle:
+                                          'Across town, around the corner, and everywhere in between.',
+                                    ),
                               ),
                               if (banner.actionUrl.isNotEmpty)
                                 Material(
@@ -761,24 +937,24 @@ class _HomePageView extends StatelessWidget {
                       );
                     }
 
-                      // Split card with text & banner image
-                      return _buildSuggestionCardWithBanner(
-                        context: context,
-                        banner: banner,
-                        fullImageUrl: fullImageUrl,
-                      );
-                    }
-
-                    // Fallback to default card when banners are empty
-                    return _buildDefaultSuggestionCard(
+                    // Split card with text & banner image
+                    return _buildSuggestionCardWithBanner(
                       context: context,
-                      title: 'Explore In-city',
-                      subtitle:
-                          'Across town, around the corner, and everywhere in between.',
+                      banner: banner,
+                      fullImageUrl: fullImageUrl,
                     );
-                  },
-                ),
+                  }
+
+                  // Fallback to default card when banners are empty
+                  return _buildDefaultSuggestionCard(
+                    context: context,
+                    title: 'Explore In-city',
+                    subtitle:
+                        'Across town, around the corner, and everywhere in between.',
+                  );
+                },
               ),
+            ),
             const SizedBox(height: 16),
             // Pagination Dots
             if (count > 1)
@@ -817,10 +993,7 @@ class _HomePageView extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFFF1F8FF),
-            Color(0xFFFDE4F2),
-          ],
+          colors: [Color(0xFFF1F8FF), Color(0xFFFDE4F2)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -918,8 +1091,7 @@ class _HomePageView extends StatelessWidget {
                             ),
                           );
                         },
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(
+                        errorBuilder: (context, error, stackTrace) => Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
@@ -962,10 +1134,7 @@ class _HomePageView extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFFF1F8FF),
-            Color(0xFFFDE4F2),
-          ],
+          colors: [Color(0xFFF1F8FF), Color(0xFFFDE4F2)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -1311,16 +1480,15 @@ class _HeroBannerImage extends StatelessWidget {
   final String? imageUrl;
   static const double _heroHeight = 260.0;
 
-  const _HeroBannerImage({
-    this.imageUrl,
-  });
+  const _HeroBannerImage({this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
     final rawUrl = imageUrl?.trim() ?? '';
     final resolvedUrl = ApiEndpoints.resolveImageUrl(rawUrl).trim();
     final uri = Uri.tryParse(resolvedUrl);
-    final isValidUrl = resolvedUrl.isNotEmpty &&
+    final isValidUrl =
+        resolvedUrl.isNotEmpty &&
         uri != null &&
         (uri.isScheme('http') || uri.isScheme('https'));
 
@@ -1360,11 +1528,9 @@ class _HeroBannerImage extends StatelessWidget {
                 strokeWidth: 2,
                 value: loadingProgress.expectedTotalBytes != null
                     ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
+                          loadingProgress.expectedTotalBytes!
                     : null,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Colors.white54,
-                ),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white54),
               ),
             ),
           );
@@ -1394,3 +1560,4 @@ class _HeroBannerImage extends StatelessWidget {
     );
   }
 }
+/*in cardriver app and cardriver_customer both before API api must check date and time UTC formate . please update both projects */

@@ -681,7 +681,7 @@ class _BookingsListState extends State<_BookingsList> {
                           ),
                         ),
 
-                        // Right: START OTP Badge (if upcoming/pending and has OTP)
+                        //  Right: START OTP Badge (if upcoming/pending and has OTP)
                         if (booking.startOtp.isNotEmpty &&
                             !isCancelled &&
                             !isCompleted) ...[
