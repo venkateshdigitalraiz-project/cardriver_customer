@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/network/api_logger.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/storage/app_auth_storage.dart';
@@ -102,7 +103,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
   @override
   Widget build(BuildContext context) {
     // Setup Clean Architecture dependencies
-    final dio = Dio(
+    final dio = createLoggedDio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 25),
         receiveTimeout: const Duration(seconds: 25),

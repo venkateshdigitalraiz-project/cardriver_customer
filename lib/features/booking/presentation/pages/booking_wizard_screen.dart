@@ -188,9 +188,17 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                           children: [
                             const StepLocationVehicle(),
                             if (isLocalOneWay)
-                              _buildRapidoChargesCard(context, state),
+                              _buildReturnVehiclesSection(
+                                context,
+                                state,
+                                isLocal: true,
+                              ),
                             if (isOutstationOneWay)
-                              _buildBusTrainChargesCard(context, state),
+                              _buildReturnVehiclesSection(
+                                context,
+                                state,
+                                isLocal: false,
+                              ),
                             if (displayFare > 0 ||
                                 state.status == BookingFlowStatus.success)
                               Padding(
@@ -471,111 +479,26 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
     );
   }
 
-  Widget _buildRapidoChargesCard(BuildContext context, BookingFlowState state) {
-    final bool isChecked = state.request.includeRapidoCharges;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isChecked ? Colors.orange.shade300 : Colors.grey.shade300,
-            width: isChecked ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: InkWell(
-          onTap: () {
-            context.read<BookingFlowBloc>().add(
-              UpdateRapidoChargesEvent(!isChecked),
-            );
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.two_wheeler,
-                    color: Colors.orange.shade800,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Rapido Charges',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Driver return conveyance for local one-way trip',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: Checkbox(
-                    value: isChecked,
-                    activeColor: Colors.orange.shade800,
-                    checkColor: Colors.white,
-                    side: BorderSide(
-                      color: isChecked
-                          ? Colors.orange.shade800
-                          : Colors.grey.shade600,
-                      width: 2.0,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    onChanged: (val) {
-                      context.read<BookingFlowBloc>().add(
-                        UpdateRapidoChargesEvent(val ?? false),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBusTrainChargesCard(
+  Widget _buildReturnVehiclesSection(
     BuildContext context,
-    BookingFlowState state,
-  ) {
-    final String returnMode = state.request.outstationReturnMode;
+    BookingFlowState state, {
+    required bool isLocal,
+  }) {
+    final charges = state.charges;
+    final List<String> vehicles = isLocal
+        ? (charges?.local.oneWay.returnVehicles ?? const [])
+        : (charges?.outstation.oneWay.returnVehicles ?? const []);
+
+    if (vehicles.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final selectedVehicles = state.request.returnVehicles;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -597,31 +520,42 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color:
+                        isLocal ? Colors.orange.shade50 : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    returnMode == 'train' ? Icons.train : Icons.directions_bus,
-                    color: Colors.blue.shade800,
+                    isLocal
+                        ? Icons.two_wheeler_rounded
+                        : Icons.directions_bus_filled_rounded,
+                    color:
+                        isLocal ? Colors.orange.shade800 : Colors.blue.shade800,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Return Travel Charges',
-                        style: TextStyle(
+                        isLocal
+                            ? 'Driver Return Travel'
+                            : 'Driver Return Charges',
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
                       Text(
-                        'Return conveyance for outstation one-way trip',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                        isLocal
+                            ? 'Select return transit conveyance for local one-way'
+                            : 'Select return conveyance options for outstation one-way',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ),
@@ -629,139 +563,141 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            // Two Radio Buttons: Bus & Train
-            RadioGroup<String>(
-              groupValue: returnMode,
-              onChanged: (val) {
-                if (val != null) {
-                  context.read<BookingFlowBloc>().add(
-                    UpdateOutstationReturnModeEvent(val),
-                  );
-                }
-              },
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        context.read<BookingFlowBloc>().add(
-                          const UpdateOutstationReturnModeEvent('bus'),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: returnMode == 'bus'
-                              ? Colors.blue.shade50
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: returnMode == 'bus'
-                                ? Colors.blue.shade400
-                                : Colors.grey.shade300,
-                            width: returnMode == 'bus' ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Radio<String>(
-                              value: 'bus',
-                              activeColor: Colors.blue.shade800,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            Icon(
-                              Icons.directions_bus,
-                              size: 18,
-                              color: returnMode == 'bus'
-                                  ? Colors.blue.shade800
-                                  : Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Bus',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: returnMode == 'bus'
-                                    ? Colors.blue.shade900
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                children: vehicles.map((vehicle) {
+                  final isSelected = selectedVehicles.contains(vehicle);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _buildVehicleCheckboxCard(
+                      context,
+                      vehicle: vehicle,
+                      isSelected: isSelected,
+                      isLocal: isLocal,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        context.read<BookingFlowBloc>().add(
-                          const UpdateOutstationReturnModeEvent('train'),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: returnMode == 'train'
-                              ? Colors.blue.shade50
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: returnMode == 'train'
-                                ? Colors.blue.shade400
-                                : Colors.grey.shade300,
-                            width: returnMode == 'train' ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Radio<String>(
-                              value: 'train',
-                              activeColor: Colors.blue.shade800,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            Icon(
-                              Icons.train,
-                              size: 18,
-                              color: returnMode == 'train'
-                                  ? Colors.blue.shade800
-                                  : Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Train',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: returnMode == 'train'
-                                    ? Colors.blue.shade900
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildVehicleCheckboxCard(
+    BuildContext context, {
+    required String vehicle,
+    required bool isSelected,
+    required bool isLocal,
+  }) {
+    final Color activeBorderColor =
+        isLocal ? Colors.orange.shade600 : Colors.blue.shade600;
+    final Color activeBgColor = isSelected
+        ? (isLocal ? Colors.orange.shade50 : Colors.blue.shade50)
+        : Colors.white;
+    final Color activeIndicatorColor =
+        isLocal ? Colors.orange.shade800 : Colors.blue.shade800;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: activeBgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isSelected ? activeBorderColor : Colors.grey.shade300,
+          width: isSelected ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isSelected ? 0.05 : 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () {
+            context.read<BookingFlowBloc>().add(
+              ToggleReturnVehicleEvent(vehicle),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected ? activeIndicatorColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: isSelected
+                          ? activeIndicatorColor
+                          : Colors.grey.shade400,
+                      width: 1.6,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Center(
+                          child: Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _getTransitIcon(vehicle),
+                  size: 18,
+                  color: isSelected
+                      ? activeIndicatorColor
+                      : Colors.grey.shade600,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  vehicle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF334155),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getTransitIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('bus')) {
+      return Icons.directions_bus_filled_rounded;
+    } else if (lower.contains('train')) {
+      return Icons.train_rounded;
+    } else if (lower.contains('cab') || lower.contains('taxi')) {
+      return Icons.local_taxi_rounded;
+    } else if (lower.contains('bike') ||
+        lower.contains('rapido') ||
+        lower.contains('two')) {
+      return Icons.two_wheeler_rounded;
+    } else {
+      return Icons.directions_car_rounded;
+    }
   }
 }

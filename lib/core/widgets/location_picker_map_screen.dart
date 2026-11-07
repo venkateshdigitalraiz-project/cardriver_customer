@@ -14,8 +14,16 @@ import '../utils/place_address_utils.dart';
 class LocationPickerMapScreen extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
+  final String? title;
+  final bool? isPickup;
 
-  const LocationPickerMapScreen({super.key, this.initialLat, this.initialLng});
+  const LocationPickerMapScreen({
+    super.key,
+    this.initialLat,
+    this.initialLng,
+    this.title,
+    this.isPickup,
+  });
 
   @override
   State<LocationPickerMapScreen> createState() =>
@@ -259,10 +267,17 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String screenTitle = widget.title ??
+        (widget.isPickup == true
+            ? 'Pickup Location'
+            : widget.isPickup == false
+                ? 'Drop Location'
+                : 'Pick Location');
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text('Pick Location', style: GoogleFonts.inter(fontSize: 16)),
+        title: Text(screenTitle, style: GoogleFonts.inter(fontSize: 16)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -478,7 +493,7 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             child: Text(
-                              'Confirm Location',
+                              'Confirm $screenTitle',
                               style: GoogleFonts.inter(
                                 color: AppColors.white,
                                 fontWeight: FontWeight.w600,

@@ -43,7 +43,11 @@ class LocalChargesModel extends LocalChargesEntity {
 }
 
 class LocalTripChargesModel extends LocalTripChargesEntity {
-  const LocalTripChargesModel({super.morningHours, super.nightHours});
+  const LocalTripChargesModel({
+    super.morningHours,
+    super.nightHours,
+    super.returnVehicles,
+  });
 
   factory LocalTripChargesModel.fromJson(Map<String, dynamic> json) {
     final morningData = json['morningHours'] ??
@@ -51,6 +55,11 @@ class LocalTripChargesModel extends LocalTripChargesEntity {
         json['dayHours'] ??
         json['day_hours'];
     final nightData = json['nightHours'] ?? json['night_hours'];
+    final returnVehiclesData =
+        json['returnVehicles'] ?? json['return_vehicles'];
+    final List<String> parsedReturnVehicles = returnVehiclesData is List
+        ? returnVehiclesData.map((e) => e.toString()).toList()
+        : const [];
 
     return LocalTripChargesModel(
       morningHours: morningData != null && morningData is Map<String, dynamic>
@@ -59,6 +68,7 @@ class LocalTripChargesModel extends LocalTripChargesEntity {
       nightHours: nightData != null && nightData is Map<String, dynamic>
           ? TimeSlotChargeModel.fromJson(nightData)
           : const TimeSlotChargeEntity(),
+      returnVehicles: parsedReturnVehicles,
     );
   }
 }
@@ -110,9 +120,16 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
     super.day,
     super.customerPrice,
     super.driverPrice,
+    super.returnVehicles,
   });
 
   factory OutstationTripChargeModel.fromJson(Map<String, dynamic> json) {
+    final returnVehiclesData =
+        json['returnVehicles'] ?? json['return_vehicles'];
+    final List<String> parsedReturnVehicles = returnVehiclesData is List
+        ? returnVehiclesData.map((e) => e.toString()).toList()
+        : const [];
+
     return OutstationTripChargeModel(
       day: (json['day'] as num?)?.toInt() ?? 1,
       customerPrice:
@@ -123,6 +140,7 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
       driverPrice:
           ((json['driverPrice'] ?? json['driver_price']) as num?)?.toDouble() ??
           0.0,
+      returnVehicles: parsedReturnVehicles,
     );
   }
 }

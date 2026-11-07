@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/storage/app_auth_storage.dart';
 import '../models/valet_booking_model.dart';
 import '../models/valet_parking_location_model.dart';
@@ -16,7 +17,9 @@ abstract class ValetParkingRemoteDataSource {
     int limit = 10,
     String? status,
   });
-  Future<List<ValetParkingLocationModel>> getValetLocations({String query = ''});
+  Future<List<ValetParkingLocationModel>> getValetLocations({
+    String query = '',
+  });
   Future<List<ValetParkingTicketModel>> getActiveTickets();
   Future<ValetParkingTicketModel> requestValetBooking({
     required String locationId,
@@ -53,7 +56,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       "location": {
         "type": "Point",
         "coordinates": [77.6412, 12.9716],
-        "address": "The Leela Palace, Old Airport Rd, Bengaluru"
+        "address": "The Leela Palace, Old Airport Rd, Bengaluru",
       },
       "address": "The Leela Palace, Old Airport Rd, Bengaluru",
       "venueName": "The Leela Palace Grand Ballroom",
@@ -63,7 +66,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         "taxAmount": 630,
         "totalAmount": 4130,
         "staffPayoutTotal": 2800,
-        "platformCommission": 700
+        "platformCommission": 700,
       },
       "assignedStaffIds": ["6ad0ca7c08eb31d1e722c809"],
       "status": "completed",
@@ -75,7 +78,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       "updatedAt": "2026-10-16T13:20:28.046Z",
       "__v": 2,
       "adminNotes": "",
-      "cancellationReason": ""
+      "cancellationReason": "",
     },
     {
       "_id": "6ad0ad1bec6bb2dbe4eaba28",
@@ -91,7 +94,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         "type": "Point",
         "coordinates": [77.6483, 12.9606],
         "address":
-            "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008"
+            "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008",
       },
       "address":
           "The Leela Palace, 23 HAL Old Airport Rd, Kodihalli, Bengaluru, Karnataka 560008",
@@ -102,12 +105,12 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         "taxAmount": 1800,
         "totalAmount": 11800,
         "staffPayoutTotal": 2400,
-        "platformCommission": 7600
+        "platformCommission": 7600,
       },
       "assignedStaffIds": [
         "6ad0e2d008eb31d1e722c80b",
         "6ad0ca7c08eb31d1e722c809",
-        "6ad0e0f408eb31d1e722c80a"
+        "6ad0e0f408eb31d1e722c80a",
       ],
       "status": "in_progress",
       "paymentStatus": "pending",
@@ -121,8 +124,8 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       "bookingId": "VLT-785688",
       "createdAt": "2026-10-15T10:38:19.686Z",
       "updatedAt": "2026-10-15T14:35:03.563Z",
-      "__v": 3
-    }
+      "__v": 3,
+    },
   ];
 
   @override
@@ -131,7 +134,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
     int limit = 10,
     String? status,
   }) async {
-    final client = dio ?? Dio();
+    final client = dio ?? createLoggedDio();
     final cookie = await _resolveAuthCookie();
 
     final token = cookie.contains('user_token=')
@@ -144,24 +147,33 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    final queryParameters = <String, dynamic>{
-      'page': page,
-      'limit': limit,
-    };
-    if (status != null && status.trim().isNotEmpty && status.trim().toLowerCase() != 'all') {
+    final queryParameters = <String, dynamic>{'page': page, 'limit': limit};
+    if (status != null &&
+        status.trim().isNotEmpty &&
+        status.trim().toLowerCase() != 'all') {
       queryParameters['status'] = status.trim().toLowerCase();
     }
 
-    final fullUrl = Uri.parse(ApiEndpoints.valetBooking).replace(
-      queryParameters: queryParameters.map((k, v) => MapEntry(k, v.toString())),
-    ).toString();
+    final fullUrl = Uri.parse(ApiEndpoints.valetBooking)
+        .replace(
+          queryParameters: queryParameters.map(
+            (k, v) => MapEntry(k, v.toString()),
+          ),
+        )
+        .toString();
 
-    debugPrint('================================================================');
+    debugPrint(
+      '================================================================',
+    );
     debugPrint('🚀 [ValetParkingRemoteDataSource] GET Valet Bookings API');
     debugPrint('🌐 URL: $fullUrl');
-    debugPrint('🔑 Authorization: Bearer ${token.length > 20 ? "${token.substring(0, 15)}..." : token}');
+    debugPrint(
+      '🔑 Authorization: Bearer ${token.length > 20 ? "${token.substring(0, 15)}..." : token}',
+    );
     debugPrint('📋 Query Parameters -> $queryParameters');
-    debugPrint('================================================================');
+    debugPrint(
+      '================================================================',
+    );
 
     try {
       final response = await client.get(
@@ -174,28 +186,40 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         ),
       );
 
-      debugPrint('================================================================');
-      debugPrint('📥 [ValetParkingRemoteDataSource] Response Status: ${response.statusCode}');
+      debugPrint(
+        '================================================================',
+      );
+      debugPrint(
+        '📥 [ValetParkingRemoteDataSource] Response Status: ${response.statusCode}',
+      );
       debugPrint('📄 Data: ${response.data}');
-      debugPrint('================================================================');
+      debugPrint(
+        '================================================================',
+      );
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
         if (data is Map<String, dynamic> && data['data'] is List) {
           final list = data['data'] as List;
           return list
-              .map((item) =>
-                  ValetBookingModel.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) =>
+                    ValetBookingModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
         } else if (data is List) {
           return data
-              .map((item) =>
-                  ValetBookingModel.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) =>
+                    ValetBookingModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Network fetch error on valetBooking API: $e. Falling back to cached dataset.');
+      debugPrint(
+        '⚠️ Network fetch error on valetBooking API: $e. Falling back to cached dataset.',
+      );
     }
 
     // Fallback to validated dataset to ensure offline/local stability
@@ -242,7 +266,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         'Covered Deck',
         '24/7 CCTV & Security',
         'EV Fast Charger',
-        'Complimentary Dust Clean'
+        'Complimentary Dust Clean',
       ],
     ),
     const ValetParkingLocationModel(
@@ -261,7 +285,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         'Dedicated Bay',
         'Key Safe Locker',
         'Automated Gate Pass',
-        'Interior Detailing Option'
+        'Interior Detailing Option',
       ],
     ),
     const ValetParkingLocationModel(
@@ -280,7 +304,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         'VIP Express Lane',
         'Covered Basements P2/P3',
         'SMS Retrieval Alert',
-        'Luggage Assistance'
+        'Luggage Assistance',
       ],
     ),
     const ValetParkingLocationModel(
@@ -299,7 +323,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
         'High Clearance Bays',
         'Instant Key Handover',
         'Valet Chauffeur Return',
-        'Insurance Protected'
+        'Insurance Protected',
       ],
     ),
   ];
@@ -350,7 +374,7 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
       'Rohit Sharma',
       'Amitabh Verma',
       'Sunil Pawar',
-      'Deepak Yadav'
+      'Deepak Yadav',
     ];
     final valetName = names[random.nextInt(names.length)];
 
@@ -382,9 +406,9 @@ class ValetParkingRemoteDataSourceImpl implements ValetParkingRemoteDataSource {
     final index = _tickets.indexWhere((t) => t.ticketId == ticketId);
     if (index != -1) {
       final current = _tickets[index];
-      _tickets[index] = current.copyWith(
-        status: ValetTicketStatus.retrievalRequested,
-      ) as ValetParkingTicketModel;
+      _tickets[index] =
+          current.copyWith(status: ValetTicketStatus.retrievalRequested)
+              as ValetParkingTicketModel;
     }
   }
 }

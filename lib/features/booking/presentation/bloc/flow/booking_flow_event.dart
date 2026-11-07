@@ -114,3 +114,21 @@ class UpdateOutstationReturnModeEvent extends BookingFlowEvent {
   @override
   List<Object?> get props => [mode];
 }
+
+class UpdateReturnVehiclesEvent extends BookingFlowEvent {
+  final List<String> returnVehicles;
+
+  const UpdateReturnVehiclesEvent(this.returnVehicles);
+
+  @override
+  List<Object?> get props => [returnVehicles];
+}
+
+class ToggleReturnVehicleEvent extends BookingFlowEvent {
+  final String vehicle;
+
+  const ToggleReturnVehicleEvent(this.vehicle);
+
+  @override
+  List<Object?> get props => [vehicle];
+}

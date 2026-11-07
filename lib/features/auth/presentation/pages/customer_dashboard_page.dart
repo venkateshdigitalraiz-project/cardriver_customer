@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../booking/data/datasources/booking_remote_datasource.dart';
 import '../../../booking/data/repositories/booking_repository_impl.dart';
@@ -44,7 +45,7 @@ class CustomerDashboardPage extends StatelessWidget {
           create: (_) => BookingBloc(
             repository: BookingRepositoryImpl(
               remoteDataSource: BookingRemoteDataSourceImpl(
-                dio: Dio(
+                dio: createLoggedDio(
                   BaseOptions(
                     connectTimeout: const Duration(seconds: 25),
                     receiveTimeout: const Duration(seconds: 25),

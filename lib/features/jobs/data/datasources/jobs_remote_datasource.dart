@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../domain/entities/create_job_request_entity.dart';
 import '../../domain/entities/job_post_response_entity.dart';
 import '../../domain/entities/user_job_entity.dart';
@@ -22,7 +23,7 @@ abstract class JobsRemoteDataSource {
 class JobsRemoteDataSourceImpl implements JobsRemoteDataSource {
   final Dio dio;
 
-  JobsRemoteDataSourceImpl({Dio? dio}) : dio = dio ?? Dio();
+  JobsRemoteDataSourceImpl({Dio? dio}) : dio = dio ?? createLoggedDio();
 
   static String _extractCleanToken(String? raw) {
     if (raw == null) return '';

@@ -97,14 +97,16 @@ class LocalChargesEntity extends Equatable {
 class LocalTripChargesEntity extends Equatable {
   final TimeSlotChargeEntity morningHours;
   final TimeSlotChargeEntity nightHours;
+  final List<String> returnVehicles;
 
   const LocalTripChargesEntity({
     this.morningHours = const TimeSlotChargeEntity(),
     this.nightHours = const TimeSlotChargeEntity(),
+    this.returnVehicles = const [],
   });
 
   @override
-  List<Object?> get props => [morningHours, nightHours];
+  List<Object?> get props => [morningHours, nightHours, returnVehicles];
 }
 
 class TimeSlotChargeEntity extends Equatable {
@@ -149,13 +151,15 @@ class OutstationTripChargeEntity extends Equatable {
   final int day;
   final double customerPrice;
   final double driverPrice;
+  final List<String> returnVehicles;
 
   const OutstationTripChargeEntity({
     this.day = 1,
     this.customerPrice = 0.0,
     this.driverPrice = 0.0,
+    this.returnVehicles = const [],
   });
 
   @override
-  List<Object?> get props => [day, customerPrice, driverPrice];
+  List<Object?> get props => [day, customerPrice, driverPrice, returnVehicles];
 }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_logger.dart';
 import '../../domain/entities/driver_job_item.dart';
 import '../../domain/entities/driver_job_response.dart';
 import '../../domain/entities/valet_event_booking_item.dart';
@@ -43,7 +44,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   @override
   Future<ValetEventBookingResponse> addValetEventBooking(
       ValetEventBookingItem booking) async {
-    final client = dio ?? Dio();
+    final client = dio ?? createLoggedDio();
     final cookie = await _resolveAuthCookie();
 
     final token = cookie.contains('user_token=')
@@ -134,7 +135,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<DriverJobResponse> postDriverJob(DriverJobItem job) async {
-    final client = dio ?? Dio();
+    final client = dio ?? createLoggedDio();
     final cookie = await _resolveAuthCookie();
 
     final token = cookie.contains('user_token=')
@@ -194,7 +195,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<HomeDataModel> getHomeData() async {
-    final client = dio ?? Dio();
+    final client = dio ?? createLoggedDio();
     final cookie = await _resolveAuthCookie();
 
     final token = cookie.contains('user_token=')

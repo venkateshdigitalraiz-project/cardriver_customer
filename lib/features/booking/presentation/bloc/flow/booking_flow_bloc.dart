@@ -32,6 +32,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     on<ClearLocationEvent>(_onClearLocation);
     on<UpdateRapidoChargesEvent>(_onUpdateRapidoCharges);
     on<UpdateOutstationReturnModeEvent>(_onUpdateOutstationReturnMode);
+    on<UpdateReturnVehiclesEvent>(_onUpdateReturnVehicles);
+    on<ToggleReturnVehicleEvent>(_onToggleReturnVehicle);
   }
 
   BookingFareResult _calculateFare({
@@ -78,6 +80,38 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     emit(
       state.copyWith(
         request: state.request.copyWith(outstationReturnMode: event.mode),
+      ),
+    );
+  }
+
+  void _onUpdateReturnVehicles(
+    UpdateReturnVehiclesEvent event,
+    Emitter<BookingFlowState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        request: state.request.copyWith(
+          returnVehicles: event.returnVehicles,
+        ),
+      ),
+    );
+  }
+
+  void _onToggleReturnVehicle(
+    ToggleReturnVehicleEvent event,
+    Emitter<BookingFlowState> emit,
+  ) {
+    final current = List<String>.from(state.request.returnVehicles);
+    if (current.contains(event.vehicle)) {
+      current.remove(event.vehicle);
+    } else {
+      current.add(event.vehicle);
+    }
+    emit(
+      state.copyWith(
+        request: state.request.copyWith(
+          returnVehicles: current,
+        ),
       ),
     );
   }
@@ -362,6 +396,10 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         "vehicleType": request.vehicleCategory.toLowerCase(),
         if (request.includeRapidoCharges)
           "rapidoCharges": true,
+        if (request.returnVehicles.isNotEmpty) ...{
+          "returnVehicles": request.returnVehicles,
+          "driverReturnOption": request.returnVehicles,
+        },
       };
 
       final response = await submitBookingUseCase(payload);
@@ -442,6 +480,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       tripType: event.tripType,
       durationHours: newDuration,
       includeRapidoCharges: willBeLocalOneWay && state.request.includeRapidoCharges,
+      returnVehicles: const [],
     );
 
     final fareResult = _calculateFare(
