@@ -103,8 +103,10 @@ class _MyJobPostsViewState extends State<_MyJobPostsView> {
       ),
       body: BlocConsumer<MyJobsBloc, MyJobsState>(
         listenWhen: (previous, current) =>
-            current.successMessage != null ||
+            (current.successMessage != null &&
+                previous.successMessage != current.successMessage) ||
             (current.errorMessage != null &&
+                previous.errorMessage != current.errorMessage &&
                 current.status != MyJobsStatus.loading),
         listener: (context, state) {
           if (state.successMessage != null) {

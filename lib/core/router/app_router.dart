@@ -36,6 +36,9 @@ import '../../features/support/presentation/pages/support_page.dart';
 import '../../features/tickets/presentation/pages/tickets_page.dart';
 import '../../features/valet_parking/presentation/pages/valet_parking_page.dart';
 import '../../features/wallet/presentation/pages/wallet_page.dart';
+import '../../features/rating/domain/usecases/submit_rating_usecase.dart';
+import '../../features/rating/presentation/bloc/rating_bloc.dart';
+import '../../features/rating/presentation/pages/rating_page.dart';
 
 /// Centralized route paths for the customer application
 class AppRoutes {
@@ -66,6 +69,7 @@ class AppRoutes {
   static const String myJobPosts = '/my-job-posts';
   static const String jobDetails = '/job-details';
   static const String jobDetailsWithParam = '/job-details/:jobId';
+  static const String rateTrip = '/rate-trip';
 }
 
 /// Centralized route names for named navigation
@@ -78,6 +82,7 @@ class AppRouteNames {
   static const String bookingWizard = 'bookingWizard';
   static const String bookingConfirmed = 'bookingConfirmed';
   static const String bookingDetails = 'bookingDetails';
+  static const String rateTrip = 'rateTrip';
   static const String profile = 'profile';
   static const String editProfile = 'editProfile';
   static const String savedLocations = 'savedLocations';
@@ -197,6 +202,36 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.rateTrip,
+          name: AppRouteNames.rateTrip,
+          builder: (context, state) {
+            RatingPageArgs? args;
+            if (state.extra is RatingPageArgs) {
+              args = state.extra as RatingPageArgs;
+            } else if (state.extra is Map) {
+              final map = state.extra as Map;
+              args = RatingPageArgs(
+                bookingId: map['bookingId']?.toString() ?? '',
+                driverName: map['driverName']?.toString(),
+                driverPhoto: map['driverPhoto']?.toString(),
+                vehicleInfo: map['vehicleInfo']?.toString(),
+                tripInfo: map['tripInfo']?.toString(),
+              );
+            } else {
+              args = RatingPageArgs(
+                bookingId: state.uri.queryParameters['bookingId'] ?? '',
+              );
+            }
+
+            return BlocProvider<RatingBloc>(
+              create: (context) => RatingBloc(
+                submitRatingUseCase: context.read<SubmitRatingUseCase>(),
+              ),
+              child: CustomerRatingPage(args: args),
+            );
+          },
+        ),
+        GoRoute(
           path: AppRoutes.profile,
           name: AppRouteNames.profile,
           builder: (context, state) => const ProfilePage(),
@@ -293,18 +328,21 @@ class AppRouter {
             double? initialLng;
             String? title;
             bool? isPickup;
+            String? initialAddress;
             if (state.extra is Map) {
               final map = state.extra as Map;
               initialLat = (map['initialLat'] as num?)?.toDouble();
               initialLng = (map['initialLng'] as num?)?.toDouble();
               title = map['title'] as String?;
               isPickup = map['isPickup'] as bool?;
+              initialAddress = map['initialAddress'] as String?;
             }
             return LocationPickerMapScreen(
               initialLat: initialLat,
               initialLng: initialLng,
               title: title,
               isPickup: isPickup,
+              initialAddress: initialAddress,
             );
           },
         ),

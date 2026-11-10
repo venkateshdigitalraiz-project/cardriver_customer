@@ -103,10 +103,16 @@ class _RegisterPageState extends State<RegisterPage> {
     final size = MediaQuery.of(context).size;
 
     return BlocConsumer<RegisterBloc, RegisterState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          (current.status == RegisterStatus.failure &&
+              previous.errorMessage != current.errorMessage &&
+              current.errorMessage != null),
       listener: (context, state) {
         if (state.status == RegisterStatus.success) {
           print('🎉 [REGISTER PAGE] UI Received RegisterStatus.success');
           context.read<RegisterBloc>().add(const ResetRegisterState());
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: const Color(0xFF1E1E1E),
@@ -132,6 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
           context.pop();
         } else if (state.status == RegisterStatus.failure && state.errorMessage != null) {
           print('❌ [REGISTER PAGE] UI Received RegisterStatus.failure: ${state.errorMessage}');
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: AppColors.error,

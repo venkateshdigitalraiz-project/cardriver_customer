@@ -105,6 +105,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     if (current.contains(event.vehicle)) {
       current.remove(event.vehicle);
     } else {
+      // Single select: clear any previous selection and select only the new vehicle
+      current.clear();
       current.add(event.vehicle);
     }
     emit(

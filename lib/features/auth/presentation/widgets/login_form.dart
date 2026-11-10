@@ -36,6 +36,7 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void _onSubmit(LoginState state) {
+    if (state.status == LoginStatus.loading) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }

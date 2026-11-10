@@ -479,8 +479,11 @@ class _BookingsListState extends State<_BookingsList> {
         booking.driverName.toLowerCase() != 'unassigned' &&
         booking.driverMobile != 'N/A' &&
         booking.driverMobile.isNotEmpty;
-    final isCancelled = booking.statusGroup.toLowerCase() == 'cancelled';
-    final isCompleted = booking.statusGroup.toLowerCase() == 'completed';
+    final isCancelled = booking.statusGroup.toLowerCase() == 'cancelled' ||
+        booking.status.toLowerCase().contains('cancel');
+    final isCompleted = booking.statusGroup.toLowerCase() == 'completed' ||
+        booking.status.toLowerCase() == 'trip_completed' ||
+        booking.status.toLowerCase().contains('completed');
     final isOutstation =
         booking.tripType.toLowerCase().contains('outstation') ||
         booking.serviceType.toLowerCase().contains('outstation');
@@ -685,7 +688,8 @@ class _BookingsListState extends State<_BookingsList> {
                         //  Right: START OTP Badge (if upcoming/pending and has OTP)
                         if (booking.startOtp.isNotEmpty &&
                             !isCancelled &&
-                            !isCompleted) ...[
+                            !isCompleted &&
+                            booking.status.toLowerCase() != 'trip_completed') ...[
                           const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -744,6 +748,12 @@ class _BookingsListState extends State<_BookingsList> {
 
                     // Route Timeline (Pickup -> Drop)
                     _buildRouteTimeline(booking, isOutstation),
+
+                    // Driver Return Option Card (e.g. Rapido Charges for Local + One Way)
+                    if (booking.driverReturnOption.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _buildDriverReturnOptionCard(booking),
+                    ],
 
                     const SizedBox(height: 14),
 
@@ -1340,6 +1350,104 @@ class _BookingsListState extends State<_BookingsList> {
     context.push('${AppRoutes.bookingDetails}/$bookingIdToUse');
   }
 
+  Widget _buildDriverReturnOptionCard(BookingEntity booking) {
+    final options = booking.driverReturnOption;
+    if (options.isEmpty) return const SizedBox.shrink();
+
+    final String optionTitle = options.join(', ');
+    final bool isRapido = optionTitle.toLowerCase().contains('rapido');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isRapido ? const Color(0xFFFFFBEB) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isRapido ? const Color(0xFFFCD34D) : const Color(0xFFCBD5E1),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: isRapido ? const Color(0xFFFEF3C7) : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isRapido
+                  ? Icons.two_wheeler_rounded
+                  : (optionTitle.toLowerCase().contains('train')
+                      ? Icons.train_rounded
+                      : Icons.directions_bus_filled_rounded),
+              size: 18,
+              color:
+                  isRapido ? const Color(0xFFD97706) : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'DRIVER RETURN CHARGES',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: isRapido
+                            ? const Color(0xFFB45309)
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isRapido
+                            ? const Color(0xFFD97706).withValues(alpha: 0.15)
+                            : const Color(0xFF0F172A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Included',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: isRapido
+                              ? const Color(0xFF92400E)
+                              : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  optionTitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isRapido
+                        ? const Color(0xFF78350F)
+                        : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase().trim()) {
       case 'upcoming':
@@ -1353,6 +1461,7 @@ class _BookingsListState extends State<_BookingsList> {
         return const Color(0xFF0D9488); // Teal
       case 'pending':
         return const Color(0xFFD97706); // Amber
+      case 'trip_completed':
       case 'completed':
       case 'finished':
         return const Color(0xFF16A34A); // Emerald Green
@@ -1378,6 +1487,7 @@ class _BookingsListState extends State<_BookingsList> {
         return Icons.directions_car_filled_rounded;
       case 'pending':
         return Icons.hourglass_top_rounded;
+      case 'trip_completed':
       case 'completed':
       case 'finished':
         return Icons.check_circle_rounded;

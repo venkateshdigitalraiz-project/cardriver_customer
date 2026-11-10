@@ -285,8 +285,13 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
         ),
       ),
       body: BlocConsumer<PostJobBloc, PostJobState>(
+        listenWhen: (previous, current) =>
+            previous.isFailure != current.isFailure ||
+            (current.errorMessage != null &&
+                previous.errorMessage != current.errorMessage),
         listener: (context, state) {
           if (state.isFailure && state.errorMessage != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(

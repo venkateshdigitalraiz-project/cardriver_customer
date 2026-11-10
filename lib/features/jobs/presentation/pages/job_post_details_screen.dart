@@ -49,9 +49,11 @@ class _JobPostDetailsView extends StatelessWidget {
     return BlocConsumer<JobDetailsBloc, JobDetailsState>(
       listenWhen: (previous, current) =>
           previous.status != current.status ||
-          current.errorMessage != null,
+          (current.errorMessage != null &&
+              previous.errorMessage != current.errorMessage),
       listener: (context, state) {
         if (state.isDeleted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Job post deleted successfully'),
@@ -61,6 +63,7 @@ class _JobPostDetailsView extends StatelessWidget {
           );
           context.pop(true); // Return true so calling list can refresh
         } else if (state.errorMessage != null && state.job != null) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),

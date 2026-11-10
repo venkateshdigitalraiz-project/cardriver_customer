@@ -187,7 +187,21 @@ class ProfileView extends StatelessWidget {
                               children: [
                                 _buildStatItem('Bookings', '24'),
                                 _buildStatDivider(color: Colors.black12),
-                                _buildStatItem('Rating', '4.9 ★'),
+                                _buildStatItem(
+                                  'Rating',
+                                  '4.9 ★',
+                                  onTap: () {
+                                    context.pushNamed(
+                                      AppRouteNames.rateTrip,
+                                      extra: {
+                                        'bookingId': '',
+                                        'driverName': 'Assigned Driver',
+                                        'vehicleInfo': 'Verified Professional Driver',
+                                        'tripInfo': 'Customer Trip Feedback',
+                                      },
+                                    );
+                                  },
+                                ),
                                 _buildStatDivider(color: Colors.black12),
                                 _buildStatItem(
                                   'Wallet',
@@ -215,6 +229,8 @@ class ProfileView extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
                           children: [
+                            // Rating & Experience Card
+                            _buildRatingFeedbackCard(context),
                             _buildSectionHeader('Account Settings'),
                             _buildCardGroup(
                               children: [
@@ -504,6 +520,115 @@ class ProfileView extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRatingFeedbackCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFB800), Color(0xFFE69500)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFB800).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Colors.black,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rate Driver & Trip',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Help maintain top-tier service quality by reviewing your driver',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.rate_review_rounded, size: 17),
+              label: const Text('Leave a Review'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB800),
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              onPressed: () {
+                context.pushNamed(
+                  AppRouteNames.rateTrip,
+                  extra: {
+                    'bookingId': '',
+                    'driverName': 'Assigned Driver',
+                    'vehicleInfo': 'Verified Professional Driver',
+                    'tripInfo': 'Recent Trip Experience',
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -105,8 +105,20 @@ class _WalletViewState extends State<_WalletView> {
         ],
       ),
       body: BlocConsumer<WalletBloc, WalletState>(
+        listenWhen: (previous, current) {
+          if (current is WalletLoaded && current.successMessage != null) {
+            return previous is! WalletLoaded ||
+                previous.successMessage != current.successMessage;
+          }
+          if (current is WalletError) {
+            return previous is! WalletError ||
+                previous.message != current.message;
+          }
+          return false;
+        },
         listener: (context, state) {
           if (state is WalletLoaded && state.successMessage != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
@@ -115,6 +127,7 @@ class _WalletViewState extends State<_WalletView> {
               ),
             );
           } else if (state is WalletError) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),

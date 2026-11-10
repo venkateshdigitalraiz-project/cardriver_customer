@@ -80,6 +80,7 @@ class BookingDetailEntity extends Equatable {
   final DateTime? cancelledAt;
   final String userNotes;
   final String adminNotes;
+  final List<String> driverReturnOption;
 
   // Timestamps
   final DateTime createdAt;
@@ -134,6 +135,7 @@ class BookingDetailEntity extends Equatable {
     this.cancelledAt,
     this.userNotes = '',
     this.adminNotes = '',
+    this.driverReturnOption = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -144,9 +146,15 @@ class BookingDetailEntity extends Equatable {
   /// Status group for tab matching
   String get statusGroup {
     final s = bookingStatus.toLowerCase().trim();
-    if (s == 'completed' || s == 'finished') {
+    if (s == 'completed' ||
+        s == 'finished' ||
+        s == 'trip_completed' ||
+        s.contains('completed')) {
       return 'Completed';
-    } else if (s == 'cancelled' || s == 'canceled' || s == 'rejected') {
+    } else if (s == 'cancelled' ||
+        s == 'canceled' ||
+        s == 'rejected' ||
+        s.contains('cancel')) {
       return 'Cancelled';
     } else {
       return 'Upcoming';
@@ -244,6 +252,7 @@ class BookingDetailEntity extends Equatable {
         cancelledAt,
         userNotes,
         adminNotes,
+        driverReturnOption,
         createdAt,
         updatedAt,
       ];

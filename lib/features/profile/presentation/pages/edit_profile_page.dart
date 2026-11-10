@@ -52,8 +52,14 @@ class _EditProfileViewState extends State<EditProfileView> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
+        listenWhen: (previous, current) =>
+            current is ProfileSubmitSuccess ||
+            (current is ProfileError &&
+                (previous is! ProfileError ||
+                    previous.message != current.message)),
         listener: (context, state) {
           if (state is ProfileSubmitSuccess) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -67,6 +73,7 @@ class _EditProfileViewState extends State<EditProfileView> {
             );
             context.pop(); // Go back after success
           } else if (state is ProfileError) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(

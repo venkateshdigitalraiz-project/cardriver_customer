@@ -132,6 +132,10 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                 children: [
                                   PublishLocationField(
                                     label: 'Pickup Location',
+                                    isPickup: true,
+                                    title: 'Pickup Location',
+                                    initialLat: state.request.pickupLat,
+                                    initialLng: state.request.pickupLng,
                                     showLabel: false,
                                     showShadow: false,
                                     backgroundColor: Colors.transparent,
@@ -158,8 +162,20 @@ class _StepLocationVehicleState extends State<StepLocationVehicle> {
                                     label: isRoundTrip
                                         ? 'Drop Location & Return'
                                         : (isOutstation
-                                              ? 'Destination (Required)'
-                                              : 'Drop Location (Optional)'),
+                                              ? 'Destination'
+                                              : 'Drop Location'),
+                                    isPickup: false,
+                                    title: isRoundTrip
+                                        ? 'Drop Location & Return'
+                                        : (isOutstation
+                                              ? 'Destination'
+                                              : 'Drop Location'),
+                                    initialLat:
+                                        state.request.dropLat ??
+                                        state.request.pickupLat,
+                                    initialLng:
+                                        state.request.dropLng ??
+                                        state.request.pickupLng,
                                     showLabel: false,
                                     showShadow: false,
                                     backgroundColor: Colors.transparent,

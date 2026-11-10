@@ -21,6 +21,7 @@ class BookingModel extends BookingEntity {
     super.paymentStatus = 'pending',
     super.paymentMethod = 'online',
     super.createdAt,
+    super.driverReturnOption = const [],
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -119,6 +120,21 @@ class BookingModel extends BookingEntity {
     final paymentMethod = json['paymentMethod']?.toString() ?? 'online';
     final bookingMode = json['bookingMode']?.toString() ?? 'scheduled';
 
+    // Parse driver return options (e.g. ["Rapido Charges"], ["Bus"], etc.)
+    List<String> returnOptions = const [];
+    if (json['driverReturnOption'] is List) {
+      returnOptions = (json['driverReturnOption'] as List)
+          .map((e) => e?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else if (json['driverReturnOption'] is String &&
+        json['driverReturnOption'].toString().isNotEmpty) {
+      returnOptions = [json['driverReturnOption'].toString()];
+    } else if (json['returnVehicle'] != null &&
+        json['returnVehicle'].toString().isNotEmpty) {
+      returnOptions = [json['returnVehicle'].toString()];
+    }
+
     DateTime? createdAt;
     if (json['createdAt'] != null) {
       createdAt = DateTime.tryParse(json['createdAt'].toString());
@@ -143,6 +159,7 @@ class BookingModel extends BookingEntity {
       paymentStatus: paymentStatus,
       paymentMethod: paymentMethod,
       createdAt: createdAt,
+      driverReturnOption: returnOptions,
     );
   }
 }

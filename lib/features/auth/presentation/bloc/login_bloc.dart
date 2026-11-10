@@ -77,7 +77,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   Future<void> _onSendOtpRequested(SendOtpRequested event, Emitter<LoginState> emit) async {
-    emit(state.copyWith(status: LoginStatus.loading, clearError: true));
+    if (state.status == LoginStatus.loading) return;
+    emit(state.copyWith(
+      status: LoginStatus.loading,
+      clearError: true,
+      isOtpSent: false,
+    ));
     
     try {
       if (state.mode == LoginMode.phone) {
@@ -85,7 +90,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         await loginWithPhoneUseCase(phone: event.contact);
         
         emit(state.copyWith(
-          status: LoginStatus.initial, // Show OTP field
+          status: LoginStatus.initial, // Show OTP field only on success
           isOtpSent: true,
         ));
       } else {
@@ -100,11 +105,13 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(state.copyWith(
         status: LoginStatus.failure,
         errorMessage: e.message,
+        isOtpSent: false, // 4-digit OTP is not visible on failure
       ));
     } on Failure catch (e) {
       emit(state.copyWith(
         status: LoginStatus.failure,
         errorMessage: e.message,
+        isOtpSent: false, // 4-digit OTP is not visible on failure
       ));
     } catch (e) {
       String msg = 'An unexpected error occurred';
@@ -132,11 +139,13 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(state.copyWith(
         status: LoginStatus.failure,
         errorMessage: msg,
+        isOtpSent: false, // 4-digit OTP is not visible on failure
       ));
     }
   }
 
   Future<void> _onVerifyOtpSubmitted(VerifyOtpSubmitted event, Emitter<LoginState> emit) async {
+    if (state.status == LoginStatus.loading) return;
     emit(state.copyWith(status: LoginStatus.loading, clearError: true));
 
     try {

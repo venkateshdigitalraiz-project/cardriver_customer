@@ -102,53 +102,103 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       final response = await dio.post(
         ApiEndpoints.login,
-        options: Options(headers: {'Content-Type': 'application/json'}),
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          validateStatus: (status) => true, // Handle all status codes (401, 402, 403, 404, 500, etc.)
+        ),
         data: {'phone': phone},
       );
 
       debugPrint('✅ API Response -> Status: ${response.statusCode}');
       debugPrint('✅ API Data -> ${response.data}');
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      // If response status is an error (e.g. 401, 402, 403, 404, 500)
+      if (response.statusCode != 200 && response.statusCode != 201) {
         final responseData = _parseResponseMap(response.data);
-
-        final isRegistered = responseData['isRegistered'];
-        if (isRegistered == false || isRegistered?.toString().toLowerCase() == 'false') {
-          final msg = responseData['message']?.toString();
-          final userMsg = (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'User not registered';
-          debugPrint('⚠️ [loginWithPhone] User not registered: $userMsg');
-          throw AuthFailure(userMsg);
+        final serverMsg = responseData['message']?.toString();
+        if (serverMsg != null && serverMsg.trim().isNotEmpty) {
+          throw AuthFailure(serverMsg.trim());
         }
 
-        final successVal = responseData['success'];
-        final statusVal = responseData['status'];
-        if (successVal == false || 
-            successVal?.toString().toLowerCase() == 'false' || 
-            statusVal == false || 
-            statusVal?.toString().toLowerCase() == 'false' ||
-            statusVal == 'failed') {
-          final msg = responseData['message']?.toString();
-          throw AuthFailure(
-            (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'Failed to send OTP. Please try again.',
-          );
+        switch (response.statusCode) {
+          case 401:
+            throw const AuthFailure('Unauthorized (Error 401). Invalid credentials or unregistered mobile.');
+          case 402:
+            throw const AuthFailure('Payment Required (Error 402).');
+          case 403:
+            throw const AuthFailure('Access Forbidden (Error 403).');
+          case 404:
+            throw const AuthFailure('User not registered (Error 404). Please create an account.');
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            throw const AuthFailure('Server is currently down or experiencing issues (Error 500). Please try again later.');
+          default:
+            throw AuthFailure('Login failed with status ${response.statusCode}. Please try again.');
         }
-
-        Map<String, dynamic> userMap = {};
-        if (responseData.containsKey('data') && responseData['data'] is Map) {
-          userMap = Map<String, dynamic>.from(responseData['data'] as Map);
-        } else {
-          userMap = responseData;
-        }
-
-        return CustomerUserModel.fromJson(userMap);
-      } else {
-        throw const AuthFailure('Failed to login. Please try again.');
       }
+
+      // Successful HTTP status (200 / 201), verify response payload
+      final responseData = _parseResponseMap(response.data);
+
+      final isRegistered = responseData['isRegistered'];
+      if (isRegistered == false || isRegistered?.toString().toLowerCase() == 'false') {
+        final msg = responseData['message']?.toString();
+        final userMsg = (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'User not registered';
+        debugPrint('⚠️ [loginWithPhone] User not registered: $userMsg');
+        throw AuthFailure(userMsg);
+      }
+
+      final successVal = responseData['success'];
+      final statusVal = responseData['status'];
+      if (successVal == false || 
+          successVal?.toString().toLowerCase() == 'false' || 
+          statusVal == false || 
+          statusVal?.toString().toLowerCase() == 'false' ||
+          statusVal == 'failed') {
+        final msg = responseData['message']?.toString();
+        throw AuthFailure(
+          (msg != null && msg.trim().isNotEmpty) ? msg.trim() : 'Failed to send OTP. Please try again.',
+        );
+      }
+
+      Map<String, dynamic> userMap = {};
+      if (responseData.containsKey('data') && responseData['data'] is Map) {
+        userMap = Map<String, dynamic>.from(responseData['data'] as Map);
+      } else {
+        userMap = responseData;
+      }
+
+      return CustomerUserModel.fromJson(userMap);
     } on DioException catch (e) {
       debugPrint('❌ API DioException -> ${e.message}, Response: ${e.response?.data}');
       final serverMessage = _extractErrorMessage(e);
       if (serverMessage != null && serverMessage.trim().isNotEmpty) {
         throw AuthFailure(serverMessage.trim());
+      }
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null) {
+        switch (statusCode) {
+          case 401:
+            throw const AuthFailure('Unauthorized (Error 401).');
+          case 402:
+            throw const AuthFailure('Payment Required (Error 402).');
+          case 403:
+            throw const AuthFailure('Access Forbidden (Error 403).');
+          case 404:
+            throw const AuthFailure('User not registered (Error 404).');
+          case 500:
+            throw const AuthFailure('Server error (Error 500). Please try again later.');
+          default:
+            throw AuthFailure('Server returned status $statusCode.');
+        }
+      }
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw const AuthFailure('Server is currently down or unreachable. Please try again later.');
       }
       throw const AuthFailure('Unable to connect to the server. Please check your internet connection and try again.');
     } catch (e) {

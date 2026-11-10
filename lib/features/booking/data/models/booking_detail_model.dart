@@ -50,6 +50,7 @@ class BookingDetailModel extends BookingDetailEntity {
     super.cancelledAt,
     super.userNotes = '',
     super.adminNotes = '',
+    super.driverReturnOption = const [],
     required super.createdAt,
     required super.updatedAt,
   });
@@ -241,6 +242,21 @@ class BookingDetailModel extends BookingDetailEntity {
       }
     }
 
+    // Parse driver return options (e.g. ["Rapido Charges"], ["Bus"], etc.)
+    List<String> returnOptions = const [];
+    if (bMap['driverReturnOption'] is List) {
+      returnOptions = (bMap['driverReturnOption'] as List)
+          .map((e) => e?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else if (bMap['driverReturnOption'] is String &&
+        bMap['driverReturnOption'].toString().isNotEmpty) {
+      returnOptions = [bMap['driverReturnOption'].toString()];
+    } else if (bMap['returnVehicle'] != null &&
+        bMap['returnVehicle'].toString().isNotEmpty) {
+      returnOptions = [bMap['returnVehicle'].toString()];
+    }
+
     // Other notes & rating
     final isUserRated = bMap['isUserRated'] == true;
     final isDriverRated = bMap['isDriverRated'] == true;
@@ -298,6 +314,7 @@ class BookingDetailModel extends BookingDetailEntity {
       cancelledAt: cancelledAt,
       userNotes: userNotes,
       adminNotes: adminNotes,
+      driverReturnOption: returnOptions,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

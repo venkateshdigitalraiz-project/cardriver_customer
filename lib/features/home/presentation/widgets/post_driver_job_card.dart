@@ -180,8 +180,13 @@ class _PostDriverJobCardState extends State<PostDriverJobCard> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<HomeBloc, HomeState>(
+      listenWhen: (previous, current) =>
+          previous.driverJobSubmitSuccess != current.driverJobSubmitSuccess ||
+          (current.driverJobErrorMessage != null &&
+              previous.driverJobErrorMessage != current.driverJobErrorMessage),
       listener: (context, state) {
         if (state.driverJobSubmitSuccess) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -205,6 +210,7 @@ class _PostDriverJobCardState extends State<PostDriverJobCard> {
           );
         } else if (state.driverJobErrorMessage != null &&
             state.driverJobErrorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.driverJobErrorMessage!),

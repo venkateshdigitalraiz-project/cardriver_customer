@@ -20,6 +20,10 @@ class PublishLocationField extends StatefulWidget {
   final bool showLabel;
   final bool showShadow;
   final Color? backgroundColor;
+  final bool? isPickup;
+  final String? title;
+  final double? initialLat;
+  final double? initialLng;
 
   const PublishLocationField({
     super.key,
@@ -32,6 +36,10 @@ class PublishLocationField extends StatefulWidget {
     this.showLabel = true,
     this.showShadow = true,
     this.backgroundColor,
+    this.isPickup,
+    this.title,
+    this.initialLat,
+    this.initialLng,
   });
 
   @override
@@ -59,9 +67,28 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
   }
 
   Future<void> _openMapPicker() async {
+    final bool effectiveIsPickup = widget.isPickup ??
+        (widget.label.toLowerCase().contains('pickup') ||
+            widget.hint.toLowerCase().contains('pickup'));
+
+    final String effectiveTitle = widget.title ??
+        (widget.label.trim().isNotEmpty
+            ? widget.label.trim()
+            : (effectiveIsPickup ? 'Pickup Location' : 'Drop Location'));
+
+    final latToUse = _lastLat ?? widget.initialLat;
+    final lngToUse = _lastLng ?? widget.initialLng;
+    final String addressToUse = widget.controller.text.trim();
+
     final result = await context.push<PlaceAddressDetails>(
       AppRoutes.locationPickerMap,
-      extra: {'initialLat': _lastLat, 'initialLng': _lastLng},
+      extra: {
+        'initialLat': latToUse,
+        'initialLng': lngToUse,
+        'title': effectiveTitle,
+        'isPickup': effectiveIsPickup,
+        'initialAddress': addressToUse.isNotEmpty ? addressToUse : null,
+      },
     );
 
     if (result != null) {

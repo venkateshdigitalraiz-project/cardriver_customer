@@ -437,10 +437,6 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
   }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// AddLocationScreen  â€” full-screen map + search + name field + save
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 class AddLocationScreen extends StatefulWidget {
   /// The parent context that owns the LocationBloc.
   final BuildContext parentCtx;
@@ -527,8 +523,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
             orElse: () => results[0],
           );
           final List<dynamic> components = result['address_components'] ?? [];
-          final rawFormatted =
-              result['formatted_address']?.toString() ?? '';
+          final rawFormatted = result['formatted_address']?.toString() ?? '';
           final formattedAddress = cleanAddressString(rawFormatted);
           var shortAddress = buildShortAddress(components);
           if (shortAddress.isEmpty) shortAddress = formattedAddress;
@@ -606,8 +601,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
             // Build address details from the place details response
             final List<dynamic> components =
                 details['address_components'] ?? [];
-            final rawFormatted =
-                details['formatted_address']?.toString() ?? '';
+            final rawFormatted = details['formatted_address']?.toString() ?? '';
             final formattedAddress = cleanAddressString(rawFormatted);
             var shortAddress = buildShortAddress(components);
             if (shortAddress.isEmpty) shortAddress = formattedAddress;
@@ -796,7 +790,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
                         inputDecoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
-                          hintText: 'Search for a locationâ€¦',
+                          hintText: 'Search for a location',
                           hintStyle: GoogleFonts.inter(
                             fontSize: 14,
                             color: AppColors.textSecondary,

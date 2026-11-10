@@ -133,8 +133,14 @@ class _ValetParkingPageViewState extends State<_ValetParkingPageView>
         ),
       ),
       child: BlocConsumer<ValetParkingBloc, ValetParkingState>(
+        listenWhen: (previous, current) =>
+            (current.errorMessage != null &&
+                previous.errorMessage != current.errorMessage) ||
+            (current.successMessage != null &&
+                previous.successMessage != current.successMessage),
         listener: (context, state) {
           if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),

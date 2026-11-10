@@ -14,7 +14,7 @@ import '../bloc/booking_detail/booking_detail_bloc.dart';
 import '../bloc/booking_detail/booking_detail_event.dart';
 import '../bloc/booking_detail/booking_detail_state.dart';
 import 'package:go_router/go_router.dart';
-// import '../../../../core/router/app_router.dart';
+import '../../../../core/router/app_router.dart';
 
 class BookingDetailsPage extends StatelessWidget {
   final String bookingId;
@@ -189,9 +189,11 @@ class _BookingDetailsView extends StatelessWidget {
                     _buildOverviewCard(context, booking),
                     const SizedBox(height: 14),
 
-                    // OTP Verification Ticket (if present)
+                    // OTP Verification Ticket (if present and not completed/cancelled)
                     if (booking.startOtp.isNotEmpty &&
-                        booking.statusGroup != 'Cancelled') ...[
+                        booking.statusGroup != 'Cancelled' &&
+                        booking.statusGroup != 'Completed' &&
+                        booking.bookingStatus.toLowerCase() != 'trip_completed') ...[
                       _buildOtpTicket(context, booking.startOtp),
                       const SizedBox(height: 14),
                     ],
@@ -200,9 +202,27 @@ class _BookingDetailsView extends StatelessWidget {
                     _buildRouteSection(context, booking),
                     const SizedBox(height: 14),
 
+                    // Driver Return Option Card (e.g. Rapido Charges for Local + One Way)
+                    if (booking.driverReturnOption.isNotEmpty) ...[
+                      _buildDriverReturnOptionCard(booking),
+                      const SizedBox(height: 14),
+                    ],
+
                     // Driver Section
                     _buildDriverSection(context, booking),
                     const SizedBox(height: 14),
+
+                    // Rate Driver Card (if trip completed)
+                    if (booking.statusGroup == 'Completed' ||
+                        booking.bookingStatus.toLowerCase() == 'trip_completed') ...[
+                      if (!booking.isUserRated) ...[
+                        _buildRateDriverCard(context, booking),
+                        const SizedBox(height: 14),
+                      ] else ...[
+                        _buildAlreadyRatedCard(context),
+                        const SizedBox(height: 14),
+                      ],
+                    ],
 
                     // // Vehicle & Service Specifications
                     // _buildVehicleSection(context, booking),
@@ -226,6 +246,104 @@ class _BookingDetailsView extends StatelessWidget {
 
           return const SizedBox();
         },
+      ),
+    );
+  }
+
+  Widget _buildDriverReturnOptionCard(BookingDetailEntity booking) {
+    final options = booking.driverReturnOption;
+    if (options.isEmpty) return const SizedBox.shrink();
+
+    final String optionTitle = options.join(', ');
+    final bool isRapido = optionTitle.toLowerCase().contains('rapido');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isRapido ? const Color(0xFFFFFBEB) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isRapido ? const Color(0xFFFCD34D) : const Color(0xFFCBD5E1),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isRapido ? const Color(0xFFFEF3C7) : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isRapido
+                  ? Icons.two_wheeler_rounded
+                  : (optionTitle.toLowerCase().contains('train')
+                      ? Icons.train_rounded
+                      : Icons.directions_bus_filled_rounded),
+              size: 20,
+              color:
+                  isRapido ? const Color(0xFFD97706) : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'DRIVER RETURN CHARGES',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: isRapido
+                            ? const Color(0xFFB45309)
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isRapido
+                            ? const Color(0xFFD97706).withValues(alpha: 0.15)
+                            : const Color(0xFF0F172A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Included',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: isRapido
+                              ? const Color(0xFF92400E)
+                              : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  optionTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isRapido
+                        ? const Color(0xFF78350F)
+                        : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -901,6 +1019,138 @@ class _BookingDetailsView extends StatelessWidget {
     );
   }
 
+  Widget _buildRateDriverCard(BuildContext context, BookingDetailEntity booking) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFFB800).withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFB800).withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB800).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFFB800),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rate Your Trip & Driver',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'How was your ride with ${booking.driverName.isNotEmpty ? booking.driverName : 'your driver'}?',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.star_rate_rounded, size: 18),
+              label: const Text('Leave a Review'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB800),
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              onPressed: () {
+                context.pushNamed(
+                  AppRouteNames.rateTrip,
+                  extra: {
+                    'bookingId': booking.id,
+                    'driverName': booking.driverName,
+                    'vehicleInfo': booking.driverVehicle,
+                    'tripInfo': '${booking.bookingMode} • ${booking.serviceType}',
+                  },
+                ).then((rated) {
+                  if (rated == true) {
+                    context.read<BookingDetailBloc>().add(
+                          RefreshBookingDetail(booking.id),
+                        );
+                  }
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlreadyRatedCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF10B981).withValues(alpha: 0.3),
+        ),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+          SizedBox(width: 8),
+          Text(
+            'Trip Rated • Thank you for your feedback!',
+            style: TextStyle(
+              color: Color(0xFF10B981),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Widget _buildVehicleSection(
   //   BuildContext context,
   //   BookingDetailEntity booking,
@@ -1295,6 +1545,7 @@ class _BookingDetailsView extends StatelessWidget {
         return const Color(0xFF0D9488); // Teal
       case 'pending':
         return const Color(0xFFD97706); // Amber
+      case 'trip_completed':
       case 'completed':
       case 'finished':
         return const Color(0xFF16A34A); // Green
@@ -1320,6 +1571,7 @@ class _BookingDetailsView extends StatelessWidget {
         return Icons.directions_car_filled_rounded;
       case 'pending':
         return Icons.hourglass_top_rounded;
+      case 'trip_completed':
       case 'completed':
       case 'finished':
         return Icons.check_circle_rounded;

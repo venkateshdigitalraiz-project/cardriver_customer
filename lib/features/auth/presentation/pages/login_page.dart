@@ -66,6 +66,18 @@ class _LoginPageState extends State<LoginPage> {
     final size = MediaQuery.of(context).size;
 
     return BlocListener<LoginBloc, LoginState>(
+      listenWhen: (previous, current) {
+        if (previous.status != current.status) return true;
+        if (current.status == LoginStatus.failure &&
+            previous.errorMessage != current.errorMessage &&
+            current.errorMessage != null) {
+          return true;
+        }
+        if (previous.introBanners.isEmpty && current.introBanners.isNotEmpty) {
+          return true;
+        }
+        return false;
+      },
       listener: (context, state) {
         if (state.introBanners.isNotEmpty && _autoScrollTimer == null) {
           _startAutoScroll(state.introBanners.length);

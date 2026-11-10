@@ -19,6 +19,7 @@ class BookingEntity extends Equatable {
   final String paymentStatus;
   final String paymentMethod;
   final DateTime? createdAt;
+  final List<String> driverReturnOption;
 
   const BookingEntity({
     required this.id,
@@ -39,14 +40,21 @@ class BookingEntity extends Equatable {
     this.paymentStatus = 'pending',
     this.paymentMethod = 'online',
     this.createdAt,
+    this.driverReturnOption = const [],
   });
 
   /// Group status into 'Upcoming', 'Completed', or 'Cancelled' for tab categorization
   String get statusGroup {
     final s = status.toLowerCase().trim();
-    if (s == 'completed' || s == 'finished') {
+    if (s == 'completed' ||
+        s == 'finished' ||
+        s == 'trip_completed' ||
+        s.contains('completed')) {
       return 'Completed';
-    } else if (s == 'cancelled' || s == 'canceled' || s == 'rejected') {
+    } else if (s == 'cancelled' ||
+        s == 'canceled' ||
+        s == 'rejected' ||
+        s.contains('cancel')) {
       return 'Cancelled';
     } else {
       // 'pending', 'confirmed', 'assigned', 'accepted', 'in_progress', 'upcoming', 'scheduled'
@@ -85,6 +93,7 @@ class BookingEntity extends Equatable {
         paymentStatus,
         paymentMethod,
         createdAt,
+        driverReturnOption,
       ];
 }
 

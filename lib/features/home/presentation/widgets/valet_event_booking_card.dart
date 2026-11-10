@@ -119,12 +119,14 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
 
   Future<void> _pickEventDate() async {
     final now = DateTime.now();
-    DateTime initialDate = now.add(const Duration(days: 1));
+    // Enable calendar starting from the next date (e.g. today is 10/11/2026 -> next date is 11/11/2026)
+    final nextDate =
+        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    DateTime initialDate = nextDate;
     final existingText = _eventDateController.text.trim();
     if (existingText.isNotEmpty) {
       final parsed = DateTime.tryParse(existingText);
-      if (parsed != null &&
-          !parsed.isBefore(now.subtract(const Duration(days: 1)))) {
+      if (parsed != null && !parsed.isBefore(nextDate)) {
         initialDate = parsed;
       }
     }
@@ -132,8 +134,8 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365 * 3)),
+      firstDate: nextDate,
+      lastDate: nextDate.add(const Duration(days: 365 * 3)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -425,9 +427,14 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<HomeBloc, HomeState>(
+      listenWhen: (previous, current) =>
+          previous.valetSubmitSuccess != current.valetSubmitSuccess ||
+          (current.valetErrorMessage != null &&
+              previous.valetErrorMessage != current.valetErrorMessage),
       listener: (context, state) {
         if (state.valetSubmitSuccess && state.valetBookingResponse != null) {
           final res = state.valetBookingResponse!;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -470,6 +477,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
           context.read<HomeBloc>().add(ResetValetBookingSubmission());
         } else if (state.valetErrorMessage != null &&
             state.valetErrorMessage!.isNotEmpty) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(

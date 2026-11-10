@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -16,6 +17,7 @@ class LocationPickerMapScreen extends StatefulWidget {
   final double? initialLng;
   final String? title;
   final bool? isPickup;
+  final String? initialAddress;
 
   const LocationPickerMapScreen({
     super.key,
@@ -23,6 +25,7 @@ class LocationPickerMapScreen extends StatefulWidget {
     this.initialLng,
     this.title,
     this.isPickup,
+    this.initialAddress,
   });
 
   @override
@@ -32,13 +35,16 @@ class LocationPickerMapScreen extends StatefulWidget {
 
 class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   static const String _googleApiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  static final Map<String, PlaceAddressDetails> _geocodeCache = {};
 
   GoogleMapController? _mapController;
-  LatLng _pickedLocation = const LatLng(20.5937, 78.9629);
-  bool _loading = true;
+  LatLng _pickedLocation = const LatLng(17.3850, 78.4867); // Hyderabad default
+  bool _loading = false;
   bool _resolving = false;
   bool _isProgrammaticMove = false;
+  bool _userHasMovedMap = false;
   PlaceAddressDetails? _resolvedDetails;
+  Timer? _geocodeDebounce;
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -51,19 +57,61 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
 
   @override
   void dispose() {
+    _geocodeDebounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _initLocation() async {
+    // 1. If coordinates are already provided, snap immediately
     if (widget.initialLat != null && widget.initialLng != null) {
       _pickedLocation = LatLng(widget.initialLat!, widget.initialLng!);
-      await _reverseGeocode(_pickedLocation);
+      if (widget.initialAddress != null && widget.initialAddress!.isNotEmpty) {
+        _resolvedDetails = PlaceAddressDetails(
+          formattedAddress: widget.initialAddress!,
+          shortAddress: widget.initialAddress!,
+          city: '',
+          state: '',
+          pincode: '',
+          lat: widget.initialLat!,
+          lng: widget.initialLng!,
+          googleMapsUrl: PlaceAddressDetails.buildMapsUrl(
+            widget.initialLat!,
+            widget.initialLng!,
+          ),
+          cityCandidates: const [],
+        );
+      }
       if (mounted) setState(() => _loading = false);
+      _reverseGeocode(_pickedLocation);
       return;
     }
 
+    // 2. Instant last known position cached by OS (takes 0-10ms)
+    try {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && mounted) {
+        final target = LatLng(lastKnown.latitude, lastKnown.longitude);
+        _pickedLocation = target;
+        _isProgrammaticMove = true;
+        _mapController?.moveCamera(CameraUpdate.newLatLng(target));
+        if (mounted) setState(() => _loading = false);
+        _reverseGeocode(target);
+      }
+    } catch (_) {}
+
+    // Ensure map is visible immediately without blank spinner screen
+    if (_loading && mounted) {
+      setState(() => _loading = false);
+      _reverseGeocode(_pickedLocation);
+    }
+
+    // 3. Background fresh GPS acquisition with fast timeout (non-blocking)
+    _acquireFreshLocationInBackground();
+  }
+
+  Future<void> _acquireFreshLocationInBackground() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -71,26 +119,32 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        if (mounted) setState(() => _loading = false);
-        await _reverseGeocode(_pickedLocation);
         return;
       }
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) setState(() => _loading = false);
-        await _reverseGeocode(_pickedLocation);
-        return;
-      }
+      if (!serviceEnabled) return;
+
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 4),
+        ),
       );
-      _pickedLocation = LatLng(position.latitude, position.longitude);
-      await _reverseGeocode(_pickedLocation);
+
+      if (!mounted) return;
+      final target = LatLng(position.latitude, position.longitude);
+
+      // Only re-center if user hasn't actively panned the map
+      if (!_userHasMovedMap) {
+        _isProgrammaticMove = true;
+        _pickedLocation = target;
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(target, 16),
+        );
+        _reverseGeocode(target);
+      }
     } catch (e) {
-      debugPrint('Error getting current location: $e');
-      await _reverseGeocode(_pickedLocation);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      debugPrint('Background location fetch: $e');
     }
   }
 
@@ -106,7 +160,26 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
     return '';
   }
 
-  Future<void> _reverseGeocode(LatLng position) async {
+  void _reverseGeocode(LatLng position) {
+    final cacheKey =
+        '${position.latitude.toStringAsFixed(4)},${position.longitude.toStringAsFixed(4)}';
+    if (_geocodeCache.containsKey(cacheKey)) {
+      if (mounted) {
+        setState(() {
+          _resolvedDetails = _geocodeCache[cacheKey];
+          _resolving = false;
+        });
+      }
+      return;
+    }
+
+    _geocodeDebounce?.cancel();
+    _geocodeDebounce = Timer(const Duration(milliseconds: 200), () {
+      _performReverseGeocode(position, cacheKey);
+    });
+  }
+
+  Future<void> _performReverseGeocode(LatLng position, String cacheKey) async {
     if (mounted) setState(() => _resolving = true);
     try {
       final url = Uri.parse(
@@ -114,7 +187,8 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
         '?latlng=${position.latitude},${position.longitude}'
         '&key=$_googleApiKey',
       );
-      final response = await http.get(url);
+      final response =
+          await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'OK' &&
@@ -141,22 +215,27 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
           final pincode = _extractComponent(components, ['postal_code']);
           var shortAddress = buildShortAddress(components);
           if (shortAddress.isEmpty) shortAddress = formattedAddress;
+
+          final details = PlaceAddressDetails(
+            formattedAddress: formattedAddress,
+            shortAddress: shortAddress,
+            city: city,
+            state: state,
+            pincode: pincode,
+            lat: position.latitude,
+            lng: position.longitude,
+            googleMapsUrl: PlaceAddressDetails.buildMapsUrl(
+              position.latitude,
+              position.longitude,
+            ),
+            cityCandidates: extractCityCandidates(components),
+          );
+
+          _geocodeCache[cacheKey] = details;
+
           if (mounted) {
             setState(() {
-              _resolvedDetails = PlaceAddressDetails(
-                formattedAddress: formattedAddress,
-                shortAddress: shortAddress,
-                city: city,
-                state: state,
-                pincode: pincode,
-                lat: position.latitude,
-                lng: position.longitude,
-                googleMapsUrl: PlaceAddressDetails.buildMapsUrl(
-                  position.latitude,
-                  position.longitude,
-                ),
-                cityCandidates: extractCityCandidates(components),
-              );
+              _resolvedDetails = details;
             });
           }
         } else {
@@ -218,18 +297,20 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
             final pincode = _extractComponent(components, ['postal_code']);
 
             if (mounted) {
+              final detailsObj = PlaceAddressDetails(
+                formattedAddress: formattedAddress,
+                shortAddress: shortAddress,
+                city: city,
+                state: state,
+                pincode: pincode,
+                lat: lat,
+                lng: lng,
+                googleMapsUrl: PlaceAddressDetails.buildMapsUrl(lat, lng),
+                cityCandidates: extractCityCandidates(components),
+              );
+              _geocodeCache['${lat.toStringAsFixed(4)},${lng.toStringAsFixed(4)}'] = detailsObj;
               setState(() {
-                _resolvedDetails = PlaceAddressDetails(
-                  formattedAddress: formattedAddress,
-                  shortAddress: shortAddress,
-                  city: city,
-                  state: state,
-                  pincode: pincode,
-                  lat: lat,
-                  lng: lng,
-                  googleMapsUrl: PlaceAddressDetails.buildMapsUrl(lat, lng),
-                  cityCandidates: extractCityCandidates(components),
-                );
+                _resolvedDetails = detailsObj;
               });
             }
 
@@ -261,27 +342,25 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
   }
 
   void _onCameraMove(CameraPosition position) {
+    if (!_isProgrammaticMove) {
+      _userHasMovedMap = true;
+    }
     _isProgrammaticMove = false;
     _pickedLocation = position.target;
   }
 
   @override
   Widget build(BuildContext context) {
-    final String screenTitle = widget.title ??
-        (widget.isPickup == true
-            ? 'Pickup Location'
-            : widget.isPickup == false
-                ? 'Drop Location'
-                : 'Pick Location');
+    final String screenTitle =
+        widget.title ??
+        (widget.isPickup == true ? 'Pickup Location' : 'Drop Location');
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(screenTitle, style: GoogleFonts.inter(fontSize: 16)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
+      body: Stack(
               children: [
                 GoogleMap(
                   initialCameraPosition: CameraPosition(
@@ -325,113 +404,120 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                       color: AppColors.white,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
                       ],
                     ),
-                      inputDecoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.white,
-                        hintText: 'Search for a location (e.g. Ameerpet)',
-                        hintStyle: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: AppColors.textSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.textSecondary, size: 20),
-                          onPressed: () {
-                            _searchController.clear();
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                      ),
-                      textStyle: GoogleFonts.inter(
+                    inputDecoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.white,
+                      hintText: 'Search for a location (e.g. Ameerpet)',
+                      hintStyle: GoogleFonts.inter(
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: AppColors.textSecondary,
                       ),
-                      itemClick: (Prediction prediction) {
-                        _searchController.text = prediction.description ?? '';
-                        _onSearchResultSelected(prediction);
-                      },
-                      seperatedBuilder: const Divider(
-                        color: AppColors.borderLight,
-                        height: 1,
-                        thickness: 1,
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.textSecondary,
                       ),
-                      itemBuilder: (context, index, Prediction prediction) {
-                        final String mainText =
-                            prediction.structuredFormatting?.mainText ??
-                            prediction.description ??
-                            '';
-                        final String secondaryText =
-                            prediction.structuredFormatting?.secondaryText ??
-                            '';
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          color: AppColors.white,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                color: AppColors.primary,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                      suffixIcon: IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    textStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                    itemClick: (Prediction prediction) {
+                      _searchController.text = prediction.description ?? '';
+                      _onSearchResultSelected(prediction);
+                    },
+                    seperatedBuilder: const Divider(
+                      color: AppColors.borderLight,
+                      height: 1,
+                      thickness: 1,
+                    ),
+                    itemBuilder: (context, index, Prediction prediction) {
+                      final String mainText =
+                          prediction.structuredFormatting?.mainText ??
+                          prediction.description ??
+                          '';
+                      final String secondaryText =
+                          prediction.structuredFormatting?.secondaryText ?? '';
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        color: AppColors.white,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              color: AppColors.primary,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    mainText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (secondaryText.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
                                     Text(
-                                      mainText,
+                                      secondaryText,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.inter(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
                                       ),
                                     ),
-                                    if (secondaryText.isNotEmpty) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        secondaryText,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
                                   ],
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 Positioned(
                   left: 16,
@@ -453,10 +539,11 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                         Text(
                           _resolving
                               ? 'Locating...'
-                              : (_resolvedDetails?.shortAddress.isNotEmpty == true
+                              : (_resolvedDetails?.shortAddress.isNotEmpty ==
+                                        true
                                     ? _resolvedDetails!.shortAddress
                                     : (_resolvedDetails?.formattedAddress ??
-                                        'Move the map to select a location')),
+                                          'Move the map to select a location')),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
@@ -468,7 +555,8 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                         if (!_resolving &&
                             _resolvedDetails != null &&
                             _resolvedDetails!.formattedAddress.isNotEmpty &&
-                            _resolvedDetails!.formattedAddress != _resolvedDetails!.shortAddress) ...[
+                            _resolvedDetails!.formattedAddress !=
+                                _resolvedDetails!.shortAddress) ...[
                           const SizedBox(height: 4),
                           Text(
                             _resolvedDetails!.formattedAddress,
@@ -486,8 +574,7 @@ class _LocationPickerMapScreenState extends State<LocationPickerMapScreen> {
                           child: ElevatedButton(
                             onPressed: _resolvedDetails == null
                                 ? null
-                                : () =>
-                                      context.pop(_resolvedDetails),
+                                : () => context.pop(_resolvedDetails),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
