@@ -56,6 +56,9 @@ import 'features/wallet/domain/usecases/get_wallet_usecase.dart';
 import 'features/rating/data/datasources/rating_remote_datasource.dart';
 import 'features/rating/data/repositories/rating_repository_impl.dart';
 import 'features/rating/domain/usecases/submit_rating_usecase.dart';
+import 'features/referral/data/datasources/referral_remote_datasource.dart';
+import 'features/referral/data/repositories/referral_repository_impl.dart';
+import 'features/referral/domain/usecases/get_referral_info_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -169,6 +172,11 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
     final ratingRepository = RatingRepositoryImpl(remoteDataSource: ratingRemoteDataSource);
     final submitRatingUseCase = SubmitRatingUseCase(ratingRepository);
 
+    // Referral dependencies
+    final referralRemoteDataSource = ReferralRemoteDataSourceImpl(dio: dio);
+    final referralRepository = ReferralRepositoryImpl(remoteDataSource: referralRemoteDataSource);
+    final getReferralInfoUseCase = GetReferralInfoUseCase(referralRepository);
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: registerUseCase),
@@ -179,6 +187,7 @@ class _DriverCustomerAppState extends State<DriverCustomerApp> {
         RepositoryProvider.value(value: getDriverBookingsUseCase),
         RepositoryProvider.value(value: getBookingDetailUseCase),
         RepositoryProvider.value(value: submitRatingUseCase),
+        RepositoryProvider.value(value: getReferralInfoUseCase),
         RepositoryProvider.value(value: getUserProfileUseCase),
         RepositoryProvider.value(value: updateUserProfileUseCase),
         RepositoryProvider.value(value: openWhatsAppHelplineUseCase),

@@ -63,20 +63,34 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       debugPrint('🌍 API Charges Response -> ${response.statusCode} ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
-        if (data is Map<String, dynamic>) {
-          final rawList = data['data'];
+        dynamic data = response.data;
+        if (data is String) {
+          try {
+            data = jsonDecode(data);
+          } catch (_) {}
+        }
+        if (data is Map) {
+          final mapData = Map<String, dynamic>.from(data);
+          final rawList = mapData['data'];
           if (rawList is List && rawList.isNotEmpty) {
-            return ChargesModel.fromJson(rawList[0] as Map<String, dynamic>);
-          } else if (rawList is Map<String, dynamic>) {
-            return ChargesModel.fromJson(rawList);
-          } else if (data['local'] != null) {
-            return ChargesModel.fromJson(data);
-          } else if (data['charges'] != null && data['charges'] is Map<String, dynamic>) {
-            return ChargesModel.fromJson(data['charges'] as Map<String, dynamic>);
+            final first = rawList[0];
+            if (first is Map) {
+              return ChargesModel.fromJson(Map<String, dynamic>.from(first));
+            }
+          } else if (rawList is Map) {
+            return ChargesModel.fromJson(Map<String, dynamic>.from(rawList));
+          } else if (mapData['local'] != null) {
+            return ChargesModel.fromJson(mapData);
+          } else if (mapData['charges'] != null && mapData['charges'] is Map) {
+            return ChargesModel.fromJson(
+              Map<String, dynamic>.from(mapData['charges'] as Map),
+            );
           }
         } else if (data is List && data.isNotEmpty) {
-          return ChargesModel.fromJson(data[0] as Map<String, dynamic>);
+          final first = data[0];
+          if (first is Map) {
+            return ChargesModel.fromJson(Map<String, dynamic>.from(first));
+          }
         }
       }
       throw const ServerFailure('Failed to load charges: Invalid response format');

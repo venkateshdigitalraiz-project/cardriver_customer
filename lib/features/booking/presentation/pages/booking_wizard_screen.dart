@@ -568,7 +568,8 @@ class _BookingWizardScreenState extends State<BookingWizardScreen> {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: vehicles.map((vehicle) {
-                  final isSelected = selectedVehicles.contains(vehicle);
+                  final isSelected = selectedVehicles.contains(vehicle) ||
+                      state.request.driverReturnOption == vehicle;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: _buildVehicleCheckboxCard(

@@ -39,6 +39,9 @@ import '../../features/wallet/presentation/pages/wallet_page.dart';
 import '../../features/rating/domain/usecases/submit_rating_usecase.dart';
 import '../../features/rating/presentation/bloc/rating_bloc.dart';
 import '../../features/rating/presentation/pages/rating_page.dart';
+import '../../features/referral/domain/usecases/get_referral_info_usecase.dart';
+import '../../features/referral/presentation/bloc/referral_bloc.dart';
+import '../../features/referral/presentation/pages/refer_and_earn_page.dart';
 
 /// Centralized route paths for the customer application
 class AppRoutes {
@@ -70,6 +73,7 @@ class AppRoutes {
   static const String jobDetails = '/job-details';
   static const String jobDetailsWithParam = '/job-details/:jobId';
   static const String rateTrip = '/rate-trip';
+  static const String referAndEarn = '/refer-and-earn';
 }
 
 /// Centralized route names for named navigation
@@ -83,6 +87,7 @@ class AppRouteNames {
   static const String bookingConfirmed = 'bookingConfirmed';
   static const String bookingDetails = 'bookingDetails';
   static const String rateTrip = 'rateTrip';
+  static const String referAndEarn = 'referAndEarn';
   static const String profile = 'profile';
   static const String editProfile = 'editProfile';
   static const String savedLocations = 'savedLocations';
@@ -228,6 +233,18 @@ class AppRouter {
                 submitRatingUseCase: context.read<SubmitRatingUseCase>(),
               ),
               child: CustomerRatingPage(args: args),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.referAndEarn,
+          name: AppRouteNames.referAndEarn,
+          builder: (context, state) {
+            return BlocProvider<ReferralBloc>(
+              create: (context) => ReferralBloc(
+                getReferralInfoUseCase: context.read<GetReferralInfoUseCase>(),
+              ),
+              child: const ReferAndEarnPage(),
             );
           },
         ),

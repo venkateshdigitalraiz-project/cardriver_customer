@@ -8,6 +8,10 @@ abstract class PostJobEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class LoadJobChargesEvent extends PostJobEvent {
+  const LoadJobChargesEvent();
+}
+
 class SubmitJobPostEvent extends PostJobEvent {
   final CreateJobRequestEntity request;
 

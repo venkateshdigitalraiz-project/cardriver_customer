@@ -1,15 +1,41 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../booking/domain/entities/charges_entity.dart';
+import '../../../booking/domain/usecases/get_charges_usecase.dart';
 import '../../domain/usecases/post_user_job_usecase.dart';
 import 'post_job_event.dart';
 import 'post_job_state.dart';
 
 class PostJobBloc extends Bloc<PostJobEvent, PostJobState> {
   final PostUserJobUseCase postUserJobUseCase;
+  final GetChargesUseCase? getChargesUseCase;
 
-  PostJobBloc({required this.postUserJobUseCase})
-      : super(const PostJobState()) {
+  PostJobBloc({
+    required this.postUserJobUseCase,
+    this.getChargesUseCase,
+  }) : super(const PostJobState()) {
+    on<LoadJobChargesEvent>(_onLoadJobCharges);
     on<SubmitJobPostEvent>(_onSubmitJobPost);
     on<ResetJobPostEvent>(_onResetJobPost);
+  }
+
+  Future<void> _onLoadJobCharges(
+    LoadJobChargesEvent event,
+    Emitter<PostJobState> emit,
+  ) async {
+    if (getChargesUseCase == null) return;
+    emit(state.copyWith(isLoadingCharges: true));
+    try {
+      final charges = await getChargesUseCase!();
+      emit(state.copyWith(
+        isLoadingCharges: false,
+        permanentJobs: charges.permanentJobs,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isLoadingCharges: false,
+        permanentJobs: const [],
+      ));
+    }
   }
 
   Future<void> _onSubmitJobPost(

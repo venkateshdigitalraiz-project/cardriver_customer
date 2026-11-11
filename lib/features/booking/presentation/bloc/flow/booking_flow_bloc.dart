@@ -92,6 +92,9 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       state.copyWith(
         request: state.request.copyWith(
           returnVehicles: event.returnVehicles,
+          driverReturnOption: event.returnVehicles.isNotEmpty
+              ? event.returnVehicles.first
+              : null,
         ),
       ),
     );
@@ -102,17 +105,21 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     Emitter<BookingFlowState> emit,
   ) {
     final current = List<String>.from(state.request.returnVehicles);
+    String? selectedOption;
     if (current.contains(event.vehicle)) {
       current.remove(event.vehicle);
+      selectedOption = current.isNotEmpty ? current.first : null;
     } else {
       // Single select: clear any previous selection and select only the new vehicle
       current.clear();
       current.add(event.vehicle);
+      selectedOption = event.vehicle;
     }
     emit(
       state.copyWith(
         request: state.request.copyWith(
           returnVehicles: current,
+          driverReturnOption: selectedOption,
         ),
       ),
     );
@@ -396,12 +403,11 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
             },
           },
         "vehicleType": request.vehicleCategory.toLowerCase(),
-        if (request.includeRapidoCharges)
-          "rapidoCharges": true,
-        if (request.returnVehicles.isNotEmpty) ...{
-          "returnVehicles": request.returnVehicles,
-          "driverReturnOption": request.returnVehicles,
-        },
+        if (request.driverReturnOption != null &&
+            request.driverReturnOption!.isNotEmpty)
+          "driverReturnOption": request.driverReturnOption
+        else if (request.returnVehicles.isNotEmpty)
+          "driverReturnOption": request.returnVehicles.first,
       };
 
       final response = await submitBookingUseCase(payload);
@@ -483,6 +489,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       durationHours: newDuration,
       includeRapidoCharges: willBeLocalOneWay && state.request.includeRapidoCharges,
       returnVehicles: const [],
+      driverReturnOption: null,
     );
 
     final fareResult = _calculateFare(

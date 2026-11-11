@@ -196,7 +196,8 @@ class ProfileView extends StatelessWidget {
                                       extra: {
                                         'bookingId': '',
                                         'driverName': 'Assigned Driver',
-                                        'vehicleInfo': 'Verified Professional Driver',
+                                        'vehicleInfo':
+                                            'Verified Professional Driver',
                                         'tripInfo': 'Customer Trip Feedback',
                                       },
                                     );
@@ -229,11 +230,13 @@ class ProfileView extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
                           children: [
-                            // Rating & Experience Card
-                            _buildRatingFeedbackCard(context),
                             _buildSectionHeader('Account Settings'),
                             _buildCardGroup(
                               children: [
+                                _buildRatingFeedbackCard(context),
+                                _buildDivider(),
+                                _buildReferAndEarnCard(context),
+                                _buildDivider(),
                                 _buildPremiumMenuItem(
                                   title: 'My Job Posts',
                                   subtitle:
@@ -458,9 +461,61 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  Widget _buildRatingFeedbackCard(BuildContext context) {
+    return _buildPremiumMenuItem(
+      title: 'Rate Driver & Trip',
+      subtitle:
+          'Help maintain top-tier service quality by reviewing your driver',
+      icon: Icons.star_rounded,
+      iconBgColor: const Color(0xFFFEF3C7),
+      iconColor: const Color(0xFFD97706),
+      onTap: () {
+        context.pushNamed(
+          AppRouteNames.rateTrip,
+          extra: {
+            'bookingId': '',
+            'driverName': 'Assigned Driver',
+            'vehicleInfo': 'Verified Professional Driver',
+            'tripInfo': 'Recent Trip Experience',
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildReferAndEarnCard(BuildContext context) {
+    return _buildPremiumMenuItem(
+      title: 'Refer & Earn',
+      titleBadge: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFA7F3D0)),
+        ),
+        child: const Text(
+          'Earn ₹100',
+          style: TextStyle(
+            color: Color(0xFF059669),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      subtitle: 'Invite friends & get ₹100 ride cashback in your wallet',
+      icon: Icons.card_giftcard_rounded,
+      iconBgColor: const Color(0xFFFFFBEB),
+      iconColor: const Color(0xFFD97706),
+      onTap: () {
+        context.push(AppRoutes.referAndEarn);
+      },
+    );
+  }
+
   Widget _buildPremiumMenuItem({
     required String title,
     String? subtitle,
+    Widget? titleBadge,
     required IconData icon,
     required Color iconBgColor,
     required Color iconColor,
@@ -489,13 +544,21 @@ class ProfileView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        if (titleBadge != null) ...[
+                          const SizedBox(width: 8),
+                          titleBadge,
+                        ],
+                      ],
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
@@ -520,115 +583,6 @@ class ProfileView extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRatingFeedbackCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFB800), Color(0xFFE69500)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFFB800).withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.star_rounded,
-                  color: Colors.black,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rate Driver & Trip',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Help maintain top-tier service quality by reviewing your driver',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                        height: 1.25,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.rate_review_rounded, size: 17),
-              label: const Text('Leave a Review'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFB800),
-                foregroundColor: Colors.black,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              onPressed: () {
-                context.pushNamed(
-                  AppRouteNames.rateTrip,
-                  extra: {
-                    'bookingId': '',
-                    'driverName': 'Assigned Driver',
-                    'vehicleInfo': 'Verified Professional Driver',
-                    'tripInfo': 'Recent Trip Experience',
-                  },
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

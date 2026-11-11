@@ -6,11 +6,13 @@ class ChargesEntity extends Equatable {
   final String id;
   final LocalChargesEntity local;
   final OutstationChargesEntity outstation;
+  final List<PermanentJobChargeEntity> permanentJobs;
 
   const ChargesEntity({
     this.id = '',
     this.local = const LocalChargesEntity(),
     this.outstation = const OutstationChargesEntity(),
+    this.permanentJobs = const [],
   });
 
   BookingFareResult calculateFareResult({
@@ -52,7 +54,26 @@ class ChargesEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, local, outstation];
+  List<Object?> get props => [id, local, outstation, permanentJobs];
+}
+
+class PermanentJobChargeEntity extends Equatable {
+  final String id;
+  final int totalHours;
+  final int monthlySalary;
+  final String status;
+  final String createdAt;
+
+  const PermanentJobChargeEntity({
+    this.id = '',
+    this.totalHours = 8,
+    this.monthlySalary = 0,
+    this.status = 'Active',
+    this.createdAt = '',
+  });
+
+  @override
+  List<Object?> get props => [id, totalHours, monthlySalary, status, createdAt];
 }
 
 class LocalChargesEntity extends Equatable {

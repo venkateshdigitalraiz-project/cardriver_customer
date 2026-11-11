@@ -1,7 +1,12 @@
 import '../../domain/entities/charges_entity.dart';
 
 class ChargesModel extends ChargesEntity {
-  const ChargesModel({super.id, super.local, super.outstation});
+  const ChargesModel({
+    super.id,
+    super.local,
+    super.outstation,
+    super.permanentJobs,
+  });
 
   factory ChargesModel.fromJson(Map<String, dynamic> json) {
     return ChargesModel(
@@ -16,11 +21,66 @@ class ChargesModel extends ChargesEntity {
               json['outstation'] as Map<String, dynamic>,
             )
           : const OutstationChargesEntity(),
+      permanentJobs: json['permanentJobs'] is List
+          ? (json['permanentJobs'] as List)
+              .where((e) => e is Map)
+              .map((e) => PermanentJobChargeModel.fromJson(
+                    Map<String, dynamic>.from(e as Map),
+                  ))
+              .toList()
+          : const [],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'_id': id};
+    return {
+      '_id': id,
+      'permanentJobs': permanentJobs
+          .map((e) => e is PermanentJobChargeModel
+              ? e.toJson()
+              : {
+                  'id': e.id,
+                  'totalHours': e.totalHours,
+                  'monthlySalary': e.monthlySalary,
+                  'status': e.status,
+                  'createdAt': e.createdAt,
+                })
+          .toList(),
+    };
+  }
+}
+
+class PermanentJobChargeModel extends PermanentJobChargeEntity {
+  const PermanentJobChargeModel({
+    super.id,
+    super.totalHours,
+    super.monthlySalary,
+    super.status,
+    super.createdAt,
+  });
+
+  factory PermanentJobChargeModel.fromJson(Map<String, dynamic> json) {
+    return PermanentJobChargeModel(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      totalHours: json['totalHours'] is num
+          ? (json['totalHours'] as num).toInt()
+          : (int.tryParse(json['totalHours']?.toString() ?? '8') ?? 8),
+      monthlySalary: json['monthlySalary'] is num
+          ? (json['monthlySalary'] as num).toInt()
+          : (int.tryParse(json['monthlySalary']?.toString() ?? '0') ?? 0),
+      status: json['status']?.toString() ?? 'Active',
+      createdAt: json['createdAt']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'totalHours': totalHours,
+      'monthlySalary': monthlySalary,
+      'status': status,
+      'createdAt': createdAt,
+    };
   }
 }
 
@@ -50,7 +110,8 @@ class LocalTripChargesModel extends LocalTripChargesEntity {
   });
 
   factory LocalTripChargesModel.fromJson(Map<String, dynamic> json) {
-    final morningData = json['morningHours'] ??
+    final morningData =
+        json['morningHours'] ??
         json['morning_hours'] ??
         json['dayHours'] ??
         json['day_hours'];

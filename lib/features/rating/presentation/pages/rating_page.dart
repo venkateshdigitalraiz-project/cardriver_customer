@@ -23,6 +23,8 @@ class RatingPageArgs {
   final String? dropAddress;
   final String? totalFare;
   final String? driverToken;
+  final String backgroundImage;
+  final BoxFit backgroundFit;
 
   const RatingPageArgs({
     this.bookingId = '',
@@ -41,6 +43,8 @@ class RatingPageArgs {
     this.dropAddress,
     this.totalFare,
     this.driverToken,
+    this.backgroundImage = 'assets/images/sunny_city_road.png',
+    this.backgroundFit = BoxFit.fill,
   });
 
   factory RatingPageArgs.fromMap(Map<String, dynamic> map) {
@@ -49,10 +53,12 @@ class RatingPageArgs {
       customerName:
           map['customerName']?.toString() ?? map['driverName']?.toString(),
       customerId: map['customerId']?.toString(),
-      customerPhoto: map['customerPhoto']?.toString() ??
+      customerPhoto:
+          map['customerPhoto']?.toString() ??
           map['avatarUrl']?.toString() ??
           map['driverPhoto']?.toString(),
-      avatarUrl: map['avatarUrl']?.toString() ??
+      avatarUrl:
+          map['avatarUrl']?.toString() ??
           map['customerPhoto']?.toString() ??
           map['driverPhoto']?.toString(),
       driverName: map['driverName']?.toString(),
@@ -67,6 +73,12 @@ class RatingPageArgs {
       dropAddress: map['dropAddress']?.toString(),
       totalFare: map['totalFare']?.toString(),
       driverToken: map['driverToken']?.toString(),
+      backgroundImage:
+          map['backgroundImage']?.toString() ??
+          'assets/images/sunny_city_road.png',
+      backgroundFit: map['backgroundFit'] == 'cover'
+          ? BoxFit.cover
+          : BoxFit.fill,
     );
   }
 
@@ -88,6 +100,8 @@ class RatingPageArgs {
       'dropAddress': dropAddress,
       'totalFare': totalFare,
       'driverToken': driverToken,
+      'backgroundImage': backgroundImage,
+      'backgroundFit': backgroundFit.name,
     };
   }
 
@@ -108,6 +122,8 @@ class RatingPageArgs {
     String? dropAddress,
     String? totalFare,
     String? driverToken,
+    String? backgroundImage,
+    BoxFit? backgroundFit,
   }) {
     return RatingPageArgs(
       bookingId: bookingId ?? this.bookingId,
@@ -126,6 +142,8 @@ class RatingPageArgs {
       dropAddress: dropAddress ?? this.dropAddress,
       totalFare: totalFare ?? this.totalFare,
       driverToken: driverToken ?? this.driverToken,
+      backgroundImage: backgroundImage ?? this.backgroundImage,
+      backgroundFit: backgroundFit ?? this.backgroundFit,
     );
   }
 }
@@ -169,10 +187,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
     _FeedbackChipData('Shared Ride Well', Icons.groups_rounded),
   ];
 
-  String get _effectiveBookingId =>
-      widget.args?.bookingId.isNotEmpty == true
-          ? widget.args!.bookingId
-          : widget.bookingId;
+  String get _effectiveBookingId => widget.args?.bookingId.isNotEmpty == true
+      ? widget.args!.bookingId
+      : widget.bookingId;
 
   String? get _effectiveCustomerName =>
       widget.args?.customerName ??
@@ -207,9 +224,17 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
     super.dispose();
   }
 
+  String get _effectiveBackgroundImage =>
+      widget.args?.backgroundImage ?? 'assets/images/sunny_city_road.png';
+
+  BoxFit get _effectiveBackgroundFit =>
+      widget.args?.backgroundFit ?? BoxFit.fill;
+
   @override
   Widget build(BuildContext context) {
     const primaryAmber = Color(0xFFF59E0B);
+    final bgImage = _effectiveBackgroundImage;
+    final hasBgImage = bgImage.isNotEmpty;
 
     return Theme(
       data: AppTheme.lightTheme.copyWith(scaffoldBackgroundColor: Colors.white),
@@ -228,7 +253,8 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                 backgroundColor: const Color(0xFFEF4444),
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
           }
@@ -236,8 +262,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
         builder: (context, state) {
           return Scaffold(
             backgroundColor: Colors.white,
+            extendBodyBehindAppBar: true,
             appBar: AppBar(
-              backgroundColor: Colors.white,
+              backgroundColor: Colors.transparent,
               elevation: 0,
               surfaceTintColor: Colors.transparent,
               systemOverlayStyle: SystemUiOverlayStyle.dark,
@@ -251,9 +278,16 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.chevron_left_rounded,
@@ -275,187 +309,220 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
               ),
               centerTitle: true,
             ),
-            body: SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-
-                    // 1. Hero Artwork with Warm Yellow Skyline, Avatar & Map Pin
-                    _buildHeroIllustration(),
-                    const SizedBox(height: 18),
-
-                    // 2. Headings
-                    Text(
-                      _effectivePrompt,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.4,
-                      ),
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 1. Full-screen background image fitted to screen width & height
+                if (hasBgImage)
+                  Positioned.fill(
+                    child: Image.asset(
+                      bgImage,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: _effectiveBackgroundFit,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _effectiveSubtitle,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                  ),
 
-                    // 3. Golden Star Rating Row (.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
-                    _buildStarRatingRow(context, state.rating),
-                    const SizedBox(height: 20),
+                // 2. Foreground Scrollable Content
+                SafeArea(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
 
-                    // 4. Feedback Chips matching attached image
-                    _buildChipsSection(context, state.selectedTags),
-                    const SizedBox(height: 20),
+                        // 1. Hero Artwork with Warm Yellow Skyline, Avatar & Map Pin
+                        _buildHeroIllustration(hasBgImage: hasBgImage),
+                        const SizedBox(height: 18),
 
-                    // 5. Add Comment Box with Pencil Icon
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: const Color(0xFFE2E8F0), width: 1.2),
+                        // 2. Headings
+                        Text(
+                          _effectivePrompt,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.4,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 6),
+                        Text(
+                          _effectiveSubtitle,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 3. Golden Star Rating Row (.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
+                        _buildStarRatingRow(context, state.rating),
+                        const SizedBox(height: 20),
+
+                        // 4. Feedback Chips matching attached image
+                        _buildChipsSection(context, state.selectedTags),
+                        const SizedBox(height: 20),
+
+                        // 5. Add Comment Box with Pencil Icon
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.2,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 2, right: 8),
-                                  child: Icon(
-                                    Icons.edit_outlined,
-                                    size: 16,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _commentController,
-                                    maxLength: 200,
-                                    maxLines: 2,
-                                    onChanged: (val) {
-                                      setState(() {});
-                                      context
-                                          .read<RatingBloc>()
-                                          .add(ChangeCommentEvent(val));
-                                    },
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      color: Color(0xFF0F172A),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      hintText: 'Add a comment (optional)...',
-                                      hintStyle: TextStyle(
-                                        color: Color(0xFF94A3B8),
-                                        fontSize: 13.5,
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 2,
+                                        right: 8,
                                       ),
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                      counterText: '',
+                                      child: Icon(
+                                        Icons.edit_outlined,
+                                        size: 16,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _commentController,
+                                        maxLength: 200,
+                                        maxLines: 2,
+                                        onChanged: (val) {
+                                          setState(() {});
+                                          context.read<RatingBloc>().add(
+                                            ChangeCommentEvent(val),
+                                          );
+                                        },
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          color: Color(0xFF0F172A),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'Add a comment (optional)...',
+                                          hintStyle: TextStyle(
+                                            color: Color(0xFF94A3B8),
+                                            fontSize: 13.5,
+                                          ),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                          counterText: '',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  '${_commentController.text.length}/200',
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
-                            Text(
-                              '${_commentController.text.length}/200',
-                              style: const TextStyle(
-                                color: Color(0xFF94A3B8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 6. Vibrant Golden / Amber Pill Submit Rating Button ->
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryAmber,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shadowColor: primaryAmber.withValues(alpha: 0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
                           ),
-                          onPressed: state.status ==
-                                  RatingSubmissionStatus.loading
-                              ? null
-                              : () {
-                                  HapticFeedback.mediumImpact();
-                                  context.read<RatingBloc>().add(
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 6. Vibrant Golden / Amber Pill Submit Rating Button ->
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryAmber,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shadowColor: primaryAmber.withValues(
+                                  alpha: 0.4,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed:
+                                  state.status == RatingSubmissionStatus.loading
+                                  ? null
+                                  : () {
+                                      HapticFeedback.mediumImpact();
+                                      context.read<RatingBloc>().add(
                                         SubmitRatingEvent(
                                           bookingId: _effectiveBookingId,
                                           driverName: _effectiveCustomerName,
                                         ),
                                       );
-                                },
-                          child: state.status == RatingSubmissionStatus.loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Submit Rating',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.2,
+                                    },
+                              child:
+                                  state.status == RatingSubmissionStatus.loading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Submit Rating',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Colors.white,
+                                          size: 19,
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 8),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      color: Colors.white,
-                                      size: 19,
-                                    ),
-                                  ],
-                                ),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        const SizedBox(height: 20),
+
+                        // 7. Decorative Footer Illustration
+                        _BottomCityCarIllustration(hasBgImage: hasBgImage),
+                      ],
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // 7. Decorative Footer Illustration (Warm Golden Landscape & Little Black Car)
-                    const _BottomCityCarIllustration(),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           );
         },
@@ -464,19 +531,18 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
   }
 
   // ================= 1. Hero Artwork Illustration =================
-  Widget _buildHeroIllustration() {
+  Widget _buildHeroIllustration({bool hasBgImage = false}) {
     return SizedBox(
       height: 180,
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background soft warm yellow skyline
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _HeaderSkylinePainter(),
+          // Background soft warm yellow skyline (fallback if no background image)
+          if (!hasBgImage)
+            Positioned.fill(
+              child: CustomPaint(painter: _HeaderSkylinePainter()),
             ),
-          ),
 
           // Central Passenger Portrait Avatar with White Border & Shadow
           Positioned(
@@ -500,7 +566,8 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                     ],
                   ),
                   child: ClipOval(
-                    child: _effectiveAvatarUrl != null &&
+                    child:
+                        _effectiveAvatarUrl != null &&
                             _effectiveAvatarUrl!.isNotEmpty
                         ? Image.network(
                             _effectiveAvatarUrl!,
@@ -598,8 +665,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
           starColor = const Color(0xFFFFB800);
         } else {
           iconData = Icons.star_rounded;
-          starColor =
-              const Color(0xFFE2E8F0); // Light grey star as in attached design
+          starColor = const Color(
+            0xFFE2E8F0,
+          ); // Light grey star as in attached design
         }
 
         return Padding(
@@ -614,11 +682,7 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                   duration: const Duration(milliseconds: 200),
                   scale: (isFull || isHalf) ? 1.12 : 1.0,
                   curve: Curves.easeOutBack,
-                  child: Icon(
-                    iconData,
-                    size: 46,
-                    color: starColor,
-                  ),
+                  child: Icon(iconData, size: 46, color: starColor),
                 ),
                 // Left half tap zone (.5, 1.5, 2.5, 3.5, 4.5)
                 Positioned(
@@ -630,9 +694,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                     behavior: HitTestBehavior.translucent,
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      context
-                          .read<RatingBloc>()
-                          .add(ChangeRatingScoreEvent(starNumber - 0.5));
+                      context.read<RatingBloc>().add(
+                        ChangeRatingScoreEvent(starNumber - 0.5),
+                      );
                     },
                   ),
                 ),
@@ -646,9 +710,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
                     behavior: HitTestBehavior.translucent,
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      context
-                          .read<RatingBloc>()
-                          .add(ChangeRatingScoreEvent(starNumber.toDouble()));
+                      context.read<RatingBloc>().add(
+                        ChangeRatingScoreEvent(starNumber.toDouble()),
+                      );
                     },
                   ),
                 ),
@@ -753,8 +817,9 @@ class _CustomerRatingPageState extends State<CustomerRatingPage>
       builder: (dialogCtx) {
         return Dialog(
           backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -882,15 +947,23 @@ class _HeaderSkylinePainter extends CustomPainter {
 
     // Soft white bottom fade
     final fadePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [Colors.white.withValues(alpha: 0.0), Colors.white],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(
-          0, size.height * 0.65, size.width, size.height * 0.35));
+      ..shader =
+          LinearGradient(
+            colors: [Colors.white.withValues(alpha: 0.0), Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(
+            Rect.fromLTWH(
+              0,
+              size.height * 0.65,
+              size.width,
+              size.height * 0.35,
+            ),
+          );
     canvas.drawRect(
-        Rect.fromLTWH(0, size.height * 0.65, size.width, size.height * 0.35),
-        fadePaint);
+      Rect.fromLTWH(0, size.height * 0.65, size.width, size.height * 0.35),
+      fadePaint,
+    );
   }
 
   @override
@@ -904,9 +977,7 @@ class _CarVectorGraphic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _CarPainter(color: color),
-    );
+    return CustomPaint(painter: _CarPainter(color: color));
   }
 }
 
@@ -970,10 +1041,14 @@ class _CarPainter extends CustomPainter {
 
 /// Bottom Decorative Golden Waves, Trees & little Black Car
 class _BottomCityCarIllustration extends StatelessWidget {
-  const _BottomCityCarIllustration();
+  final bool hasBgImage;
+  const _BottomCityCarIllustration({this.hasBgImage = false});
 
   @override
   Widget build(BuildContext context) {
+    if (hasBgImage) {
+      return const SizedBox(height: 36);
+    }
     return SizedBox(
       height: 90,
       width: double.infinity,
@@ -981,11 +1056,7 @@ class _BottomCityCarIllustration extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         children: [
           // Golden landscape silhouette & layered warm waves
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _BottomWavePainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _BottomWavePainter())),
           // Little Black Car traveling on top of the golden road
           Positioned(
             bottom: 24,

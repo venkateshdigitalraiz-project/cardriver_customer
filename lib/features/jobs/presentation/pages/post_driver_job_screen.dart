@@ -1,10 +1,10 @@
-import 'dart:convert';
+// import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_places_flutter/model/prediction.dart';
-import 'package:http/http.dart' as http;
+// import 'package:google_places_flutter/model/prediction.dart';
+// import 'package:http/http.dart' as http;
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -13,6 +13,8 @@ import '../../data/datasources/jobs_remote_datasource.dart';
 import '../../data/repositories/jobs_repository_impl.dart';
 import '../../domain/entities/create_job_request_entity.dart';
 import '../../domain/usecases/post_user_job_usecase.dart';
+import '../../../booking/domain/entities/charges_entity.dart';
+import '../../../booking/domain/usecases/get_charges_usecase.dart';
 import '../bloc/post_job_bloc.dart';
 import '../bloc/post_job_event.dart';
 import '../bloc/post_job_state.dart';
@@ -27,7 +29,8 @@ class PostDriverJobScreen extends StatelessWidget {
         postUserJobUseCase: PostUserJobUseCase(
           JobsRepositoryImpl(remoteDataSource: JobsRemoteDataSourceImpl()),
         ),
-      ),
+        getChargesUseCase: context.read<GetChargesUseCase>(),
+      )..add(const LoadJobChargesEvent()),
       child: const _PostDriverJobView(),
     );
   }
@@ -41,7 +44,7 @@ class _PostDriverJobView extends StatefulWidget {
 }
 
 class _PostDriverJobViewState extends State<_PostDriverJobView> {
-  static const String _apiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  // static const String _apiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
   final _formKey = GlobalKey<FormState>();
   final FocusNode _locationFocus = FocusNode();
 
@@ -53,6 +56,8 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
 
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 7));
   String _selectedJobType = 'full_time';
+  int? _selectedTotalHours;
+  int? _minMonthlySalary;
   String _selectedPaymentMethod = 'razorpay';
   final double _paymentFee = 499.0;
 
@@ -69,7 +74,7 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     _titleController = TextEditingController(
       text: 'Private Chauffeur for Luxury Sedan',
     );
-    _salaryController = TextEditingController(text: '25000');
+    _salaryController = TextEditingController();
     _locationController = TextEditingController(
       text: 'Jubilee Hills, Hyderabad',
     );
@@ -139,39 +144,39 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     }
   }
 
-  Future<void> _onSuggestionSelected(Prediction prediction) async {
-    _locationFocus.unfocus();
-    final description = prediction.description ?? '';
-    if (description.isNotEmpty) {
-      _locationController.text = description;
-      setState(() {});
-    }
+  // Future<void> _onSuggestionSelected(Prediction prediction) async {
+  //   _locationFocus.unfocus();
+  //   final description = prediction.description ?? '';
+  //   if (description.isNotEmpty) {
+  //     _locationController.text = description;
+  //     setState(() {});
+  //   }
 
-    if (prediction.placeId == null || prediction.placeId!.isEmpty) return;
+  //   if (prediction.placeId == null || prediction.placeId!.isEmpty) return;
 
-    try {
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json'
-        '?place_id=${prediction.placeId!}'
-        '&fields=formatted_address,geometry'
-        '&key=$_apiKey',
-      );
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'OK' && data['result'] != null) {
-          final formatted =
-              data['result']['formatted_address']?.toString() ?? '';
-          if (formatted.isNotEmpty) {
-            _locationController.text = formatted;
-            setState(() {});
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error fetching place details: $e');
-    }
-  }
+  //   try {
+  //     final url = Uri.parse(
+  //       'https://maps.googleapis.com/maps/api/place/details/json'
+  //       '?place_id=${prediction.placeId!}'
+  //       '&fields=formatted_address,geometry'
+  //       '&key=$_apiKey',
+  //     );
+  //     final response = await http.get(url);
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       if (data['status'] == 'OK' && data['result'] != null) {
+  //         final formatted =
+  //             data['result']['formatted_address']?.toString() ?? '';
+  //         if (formatted.isNotEmpty) {
+  //           _locationController.text = formatted;
+  //           setState(() {});
+  //         }
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint('⚠️ Error fetching place details: $e');
+  //   }
+  // }
 
   Future<void> _pickJoiningDate() async {
     final now = DateTime.now();
@@ -220,11 +225,44 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
       return;
     }
 
-    final salary =
-        int.tryParse(
-          _salaryController.text.replaceAll(RegExp(r'[^0-9]'), ''),
-        ) ??
-        25000;
+    if (_selectedTotalHours == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select working hours from the dropdown'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final salary = int.tryParse(
+      _salaryController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+
+    if (salary == null || salary <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid monthly salary'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_minMonthlySalary != null && salary < _minMonthlySalary!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Monthly salary cannot be less than ₹$_minMonthlySalary for $_selectedTotalHours hours/day',
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     // Format ISO 8601 UTC timestamp: e.g. 2026-12-01T00:00:00.000Z
     final isoDate = DateTime.utc(
@@ -241,6 +279,7 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     final request = CreateJobRequestEntity(
       title: _titleController.text.trim(),
       monthlySalary: salary,
+      totalHours: _selectedTotalHours!,
       joiningDate: isoDate,
       description: _descriptionController.text.trim(),
       paymentAmount: _paymentFee,
@@ -388,6 +427,12 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
                   ),
                   const SizedBox(height: 18),
 
+                  // Working Hours Dropdown
+                  _buildSectionHeader('Working Hours (Per Day) *'),
+                  const SizedBox(height: 6),
+                  _buildHoursDropdown(state),
+                  const SizedBox(height: 18),
+
                   // Monthly Salary & Joining Date Row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,14 +453,25 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
                                 color: Color(0xFF0F172A),
                               ),
                               decoration: _inputDecoration(
-                                hint: 'e.g. 25000',
+                                hint: _minMonthlySalary != null
+                                    ? 'Min ₹$_minMonthlySalary'
+                                    : 'Select hours first',
                                 prefixText: '₹ ',
                               ),
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Enter salary';
-                                if (int.tryParse(v.trim()) == null)
+                                }
+                                final salary = int.tryParse(
+                                  v.trim().replaceAll(RegExp(r'[^0-9]'), ''),
+                                );
+                                if (salary == null) {
                                   return 'Numbers only';
+                                }
+                                if (_minMonthlySalary != null &&
+                                    salary < _minMonthlySalary!) {
+                                  return 'Minimum ₹$_minMonthlySalary required';
+                                }
                                 return null;
                               },
                             ),
@@ -682,93 +738,180 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     );
   }
 
-  Widget _buildPaymentSummaryCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.shield_rounded,
-                    color: Color(0xFF10B981),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Listing & Verification Fee',
-                    style: AppTypography.titleMedium.copyWith(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
+  // Widget _buildPaymentSummaryCard() {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(color: const Color(0xFFE2E8F0)),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withValues(alpha: 0.03),
+  //           blurRadius: 8,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Row(
+  //               children: [
+  //                 const Icon(
+  //                   Icons.shield_rounded,
+  //                   color: Color(0xFF10B981),
+  //                   size: 18,
+  //                 ),
+  //                 const SizedBox(width: 6),
+  //                 Text(
+  //                   'Listing & Verification Fee',
+  //                   style: AppTypography.titleMedium.copyWith(
+  //                     fontSize: 13.5,
+  //                     fontWeight: FontWeight.w700,
+  //                     color: const Color(0xFF0F172A),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //             const Text(
+  //               '₹499',
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.w900,
+  //                 color: Color(0xFF1E3A8A),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const Divider(height: 18, color: Color(0xFFF1F5F9)),
+  //         Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFFEFF6FF),
+  //                 borderRadius: BorderRadius.circular(6),
+  //               ),
+  //               child: const Row(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Icon(
+  //                     Icons.payment_rounded,
+  //                     size: 13,
+  //                     color: Color(0xFF2563EB),
+  //                   ),
+  //                   SizedBox(width: 4),
+  //                   Text(
+  //                     'Razorpay Secured',
+  //                     style: TextStyle(
+  //                       fontSize: 11,
+  //                       fontWeight: FontWeight.bold,
+  //                       color: Color(0xFF1D4ED8),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const Spacer(),
+  //             const Text(
+  //               'Includes 30 days active listing',
+  //               style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget _buildHoursDropdown(PostJobState state) {
+    if (state.isLoadingCharges) {
+      return Container(
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF1E3A8A),
               ),
-              const Text(
-                '₹499',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1E3A8A),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Loading hours...',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final options = state.permanentJobs;
+
+    final effectiveValue =
+        options.any((o) => o.totalHours == _selectedTotalHours)
+        ? _selectedTotalHours
+        : null;
+
+    return DropdownButtonFormField<int>(
+      value: effectiveValue,
+      decoration: _inputDecoration(
+        hint: options.isEmpty
+            ? 'No hours available'
+            : 'Select Hours (e.g. 8, 10)',
+        prefixIcon: Icons.schedule_rounded,
+      ),
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: Color(0xFF0F172A),
+      ),
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      validator: (v) => v == null ? 'Please select hours' : null,
+      items: options.map((job) {
+        return DropdownMenuItem<int>(
+          value: job.totalHours,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${job.totalHours} Hours',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
                 ),
               ),
+              const SizedBox(width: 8),
             ],
           ),
-          const Divider(height: 18, color: Color(0xFFF1F5F9)),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.payment_rounded,
-                      size: 13,
-                      color: Color(0xFF2563EB),
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Razorpay Secured',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1D4ED8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              const Text(
-                'Includes 30 days active listing',
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      }).toList(),
+      onChanged: (newHours) {
+        if (newHours == null) return;
+        setState(() {
+          _selectedTotalHours = newHours;
+          final matched = options.where((j) => j.totalHours == newHours);
+          if (matched.isNotEmpty) {
+            final job = matched.first;
+            _minMonthlySalary = job.monthlySalary;
+            _salaryController.text = job.monthlySalary.toString();
+          }
+          _formKey.currentState?.validate();
+        });
+      },
     );
   }
 

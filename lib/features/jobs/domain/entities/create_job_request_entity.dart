@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class CreateJobRequestEntity extends Equatable {
   final String title;
   final int monthlySalary;
+  final int totalHours;
   final String joiningDate;
   final String description;
   final double paymentAmount;
@@ -16,6 +17,7 @@ class CreateJobRequestEntity extends Equatable {
   const CreateJobRequestEntity({
     required this.title,
     required this.monthlySalary,
+    required this.totalHours,
     required this.joiningDate,
     required this.description,
     this.paymentAmount = 499.0,
@@ -31,6 +33,7 @@ class CreateJobRequestEntity extends Equatable {
     return {
       'title': title,
       'monthlySalary': monthlySalary,
+      'totalHours': totalHours,
       'joiningDate': joiningDate,
       'description': description,
       'paymentAmount': paymentAmount,
@@ -47,6 +50,7 @@ class CreateJobRequestEntity extends Equatable {
     return CreateJobRequestEntity(
       title: json['title']?.toString() ?? '',
       monthlySalary: (json['monthlySalary'] as num?)?.toInt() ?? 0,
+      totalHours: (json['totalHours'] as num?)?.toInt() ?? 0,
       joiningDate: json['joiningDate']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       paymentAmount: (json['paymentAmount'] as num?)?.toDouble() ?? 499.0,
@@ -63,6 +67,7 @@ class CreateJobRequestEntity extends Equatable {
   List<Object?> get props => [
         title,
         monthlySalary,
+        totalHours,
         joiningDate,
         description,
         paymentAmount,
