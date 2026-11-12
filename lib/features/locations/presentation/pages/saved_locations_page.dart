@@ -102,7 +102,7 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json'
         '?latlng=${_currentPosition!.latitude},${_currentPosition!.longitude}'
-        '&key=AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s',
+        '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -448,7 +448,7 @@ class AddLocationScreen extends StatefulWidget {
 }
 
 class _AddLocationScreenState extends State<AddLocationScreen> {
-  static const String _apiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  static const String _apiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
 
   // â”€â”€ Map â”€â”€
   GoogleMapController? _mapController;

@@ -1,6 +1,7 @@
 import 'package:cardriver_customer/features/booking/domain/usecases/submit_booking_usecase.dart';
 import 'package:cardriver_customer/features/booking/domain/usecases/get_charges_usecase.dart';
 import 'package:cardriver_customer/features/booking/domain/usecases/calculate_fare_usecase.dart';
+import '../../../../../core/cache/charges_cache.dart';
 import 'package:cardriver_customer/features/booking/domain/entities/booking_fare_result.dart';
 import 'package:cardriver_customer/features/booking/domain/entities/booking_request_entity.dart';
 import 'package:cardriver_customer/features/booking/domain/entities/charges_entity.dart';
@@ -20,7 +21,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     required this.submitBookingUseCase,
     required this.getChargesUseCase,
     required this.calculateFareUseCase,
-  }) : super(const BookingFlowState()) {
+  }) : super(BookingFlowState(charges: ChargesCache.instance.charges)) {
     on<NextStepEvent>(_onNextStep);
     on<PreviousStepEvent>(_onPreviousStep);
     on<UpdateLocationVehicleEvent>(_onUpdateLocationVehicle);
@@ -34,6 +35,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
     on<UpdateOutstationReturnModeEvent>(_onUpdateOutstationReturnMode);
     on<UpdateReturnVehiclesEvent>(_onUpdateReturnVehicles);
     on<ToggleReturnVehicleEvent>(_onToggleReturnVehicle);
+    on<ToggleOutstationRoundTripNoteEvent>(_onToggleOutstationRoundTripNote);
   }
 
   BookingFareResult _calculateFare({
@@ -120,6 +122,40 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         request: state.request.copyWith(
           returnVehicles: current,
           driverReturnOption: selectedOption,
+        ),
+      ),
+    );
+  }
+
+  void _onToggleOutstationRoundTripNote(
+    ToggleOutstationRoundTripNoteEvent event,
+    Emitter<BookingFlowState> emit,
+  ) {
+    final bool newSelected =
+        event.isSelected ?? !state.request.outstationNoteSelected;
+    final noteText =
+        state.charges?.outstation.roundTrip.note ??
+        ChargesCache.instance.charges?.outstation.roundTrip.note ??
+        '';
+
+    final currentVehicles = List<String>.from(state.request.returnVehicles);
+    if (newSelected) {
+      if (noteText.isNotEmpty && !currentVehicles.contains(noteText)) {
+        currentVehicles.add(noteText);
+      }
+    } else {
+      currentVehicles.remove(noteText);
+    }
+
+    emit(
+      state.copyWith(
+        request: state.request.copyWith(
+          outstationNoteSelected: newSelected,
+          packageNote: newSelected && noteText.isNotEmpty ? noteText : null,
+          returnVehicles: currentVehicles,
+          driverReturnOption: newSelected && noteText.isNotEmpty
+              ? noteText
+              : null,
         ),
       ),
     );
@@ -330,6 +366,23 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         );
         return;
       }
+      final bool isRoundTrip =
+          request.tripType.toLowerCase().contains('round');
+      if (isRoundTrip) {
+        final charges = state.charges ?? ChargesCache.instance.charges;
+        final String noteText =
+            charges?.outstation.roundTrip.note.trim() ?? '';
+        if (noteText.isNotEmpty && !request.outstationNoteSelected) {
+          emit(
+            state.copyWith(
+              status: BookingFlowStatus.error,
+              errorMessage:
+                  'Please select the trip inclusions checkbox before confirming your booking.',
+            ),
+          );
+          return;
+        }
+      }
     }
 
     emit(
@@ -344,6 +397,13 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       final String tripType = request.tripType.toLowerCase().contains('round')
           ? 'round_trip'
           : 'one_way';
+
+      final String packageNote = (request.packageNote != null &&
+              request.packageNote!.trim().isNotEmpty)
+          ? request.packageNote!.trim()
+          : (state.charges?.outstation.roundTrip.note.trim() ??
+              ChargesCache.instance.charges?.outstation.roundTrip.note.trim() ??
+              '');
 
       // Construct UTC ISO timestamp string ending with 'Z'
       // Converts user's selected local date and time (IST) to UTC ISO 8601 representation
@@ -370,7 +430,7 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
         if (isOutstation) ...{
           "durationDays": duration,
           "durationHours": duration * 24,
-          if (tripType == 'round_trip')
+          if (tripType == 'round_trip') ...{
             "returnDate": DateTime(
               dt.year,
               dt.month,
@@ -378,6 +438,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
               request.scheduleHour ?? 0,
               request.scheduleMinute ?? 0,
             ).toUtc().toIso8601String(),
+            if (packageNote.isNotEmpty) "packageNote": packageNote,
+          },
         } else ...{
           "durationHours": duration,
         },
@@ -487,7 +549,8 @@ class BookingFlowBloc extends Bloc<BookingFlowEvent, BookingFlowState> {
       isOutstation: event.isOutstation,
       tripType: event.tripType,
       durationHours: newDuration,
-      includeRapidoCharges: willBeLocalOneWay && state.request.includeRapidoCharges,
+      includeRapidoCharges:
+          willBeLocalOneWay && state.request.includeRapidoCharges,
       returnVehicles: const [],
       driverReturnOption: null,
     );

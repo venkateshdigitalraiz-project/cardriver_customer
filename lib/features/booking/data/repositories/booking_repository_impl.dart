@@ -1,3 +1,4 @@
+import '../../../../core/cache/charges_cache.dart';
 import '../../domain/entities/booking_rate_config_entity.dart';
 import '../../domain/entities/booking_entity.dart';
 import '../../domain/entities/booking_detail_entity.dart';
@@ -17,7 +18,22 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<ChargesEntity> getCharges() async {
-    return await remoteDataSource.fetchCharges();
+    final cache = ChargesCache.instance;
+    if (cache.hasData) {
+      return cache.charges!;
+    }
+    if (cache.inFlight != null) {
+      return await cache.inFlight!;
+    }
+    final future = remoteDataSource.fetchCharges();
+    cache.inFlight = future;
+    try {
+      final charges = await future;
+      cache.setCharges(charges);
+      return charges;
+    } finally {
+      cache.inFlight = null;
+    }
   }
 
   @override

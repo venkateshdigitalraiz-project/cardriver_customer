@@ -977,7 +977,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
         '?input=${Uri.encodeComponent(q)}'
         '&types=(cities)'
         '&components=country:in'
-        '&key=AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s',
+        '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -1033,7 +1033,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
           'https://maps.googleapis.com/maps/api/place/details/json'
           '?place_id=${item.placeId}'
           '&fields=geometry,formatted_address'
-          '&key=AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s',
+          '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
         );
         final response = await http.get(url);
         if (response.statusCode == 200) {

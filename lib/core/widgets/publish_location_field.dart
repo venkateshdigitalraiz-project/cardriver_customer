@@ -47,7 +47,7 @@ class PublishLocationField extends StatefulWidget {
 }
 
 class _PublishLocationFieldState extends State<PublishLocationField> {
-  static const String _googleApiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  static const String _googleApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
   final FocusNode _focusNode = FocusNode();
 
   double? _lastLat;
@@ -67,11 +67,13 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
   }
 
   Future<void> _openMapPicker() async {
-    final bool effectiveIsPickup = widget.isPickup ??
+    final bool effectiveIsPickup =
+        widget.isPickup ??
         (widget.label.toLowerCase().contains('pickup') ||
             widget.hint.toLowerCase().contains('pickup'));
 
-    final String effectiveTitle = widget.title ??
+    final String effectiveTitle =
+        widget.title ??
         (widget.label.trim().isNotEmpty
             ? widget.label.trim()
             : (effectiveIsPickup ? 'Pickup Location' : 'Drop Location'));
@@ -181,7 +183,11 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
                     return const SizedBox.shrink();
                   }
                   return IconButton(
-                    icon: const Icon(Icons.clear, color: AppColors.textSecondary, size: 20),
+                    icon: const Icon(
+                      Icons.clear,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
                     onPressed: () {
                       widget.controller.clear();
                       widget.onChanged('');

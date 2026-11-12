@@ -14,6 +14,7 @@ import '../bloc/booking_detail/booking_detail_bloc.dart';
 import '../bloc/booking_detail/booking_detail_event.dart';
 import '../bloc/booking_detail/booking_detail_state.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/cache/charges_cache.dart';
 import '../../../../core/router/app_router.dart';
 
 class BookingDetailsPage extends StatelessWidget {
@@ -202,8 +203,13 @@ class _BookingDetailsView extends StatelessWidget {
                     _buildRouteSection(context, booking),
                     const SizedBox(height: 14),
 
-                    // Driver Return Option Card (e.g. Rapido Charges for Local + One Way)
-                    if (booking.driverReturnOption.isNotEmpty) ...[
+                    // Driver Return Option / Trip Inclusion Card
+                    if (booking.driverReturnOption.isNotEmpty ||
+                        ((booking.serviceType.toLowerCase().contains('outstation') ||
+                                booking.tripType.toLowerCase().contains('outstation')) &&
+                            (booking.tripType.toLowerCase().contains('round') ||
+                                booking.returnDate != null ||
+                                booking.tripType.toLowerCase().contains('two_way')))) ...[
                       _buildDriverReturnOptionCard(booking),
                       const SizedBox(height: 14),
                     ],
@@ -251,11 +257,42 @@ class _BookingDetailsView extends StatelessWidget {
   }
 
   Widget _buildDriverReturnOptionCard(BookingDetailEntity booking) {
-    final options = booking.driverReturnOption;
+    final bool isOutstation =
+        booking.serviceType.toLowerCase().contains('outstation') ||
+        booking.tripType.toLowerCase().contains('outstation');
+
+    final bool isRoundTrip =
+        booking.tripType.toLowerCase().contains('round') ||
+        booking.returnDate != null ||
+        booking.tripType.toLowerCase().contains('two_way') ||
+        booking.tripType.toLowerCase().contains('twoway');
+
+    List<String> options = List<String>.from(booking.driverReturnOption);
+    if (options.isEmpty && (isOutstation && isRoundTrip)) {
+      final cachedNote =
+          ChargesCache.instance.charges?.outstation.roundTrip.note.trim();
+      final defaultNote = (cachedNote != null && cachedNote.isNotEmpty)
+          ? cachedNote
+          : 'inclusive with food and room';
+      options = [defaultNote];
+    }
+
     if (options.isEmpty) return const SizedBox.shrink();
 
     final String optionTitle = options.join(', ');
-    final bool isRapido = optionTitle.toLowerCase().contains('rapido');
+    final lowerTitle = optionTitle.toLowerCase();
+    final bool isRapido =
+        lowerTitle.contains('rapido') || lowerTitle.contains('bike');
+
+    final bool isTripInclusionByText =
+        lowerTitle.contains('food') ||
+        lowerTitle.contains('room') ||
+        lowerTitle.contains('inclusive') ||
+        lowerTitle.contains('inclusion') ||
+        lowerTitle.contains('allowance');
+
+    final bool isOutstationRoundTrip =
+        (isOutstation && isRoundTrip) || isTripInclusionByText;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -278,9 +315,11 @@ class _BookingDetailsView extends StatelessWidget {
             child: Icon(
               isRapido
                   ? Icons.two_wheeler_rounded
-                  : (optionTitle.toLowerCase().contains('train')
-                      ? Icons.train_rounded
-                      : Icons.directions_bus_filled_rounded),
+                  : (isOutstationRoundTrip
+                      ? Icons.hotel_rounded
+                      : (optionTitle.toLowerCase().contains('train')
+                          ? Icons.train_rounded
+                          : Icons.directions_bus_filled_rounded)),
               size: 20,
               color:
                   isRapido ? const Color(0xFFD97706) : const Color(0xFF0F172A),
@@ -294,7 +333,9 @@ class _BookingDetailsView extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'DRIVER RETURN CHARGES',
+                      isOutstationRoundTrip
+                          ? 'TRIP INCLUSION'
+                          : 'DRIVER RETURN CHARGES',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,

@@ -66,9 +66,9 @@ class PermanentJobChargeEntity extends Equatable {
 
   const PermanentJobChargeEntity({
     this.id = '',
-    this.totalHours = 8,
+    this.totalHours = 0,
     this.monthlySalary = 0,
-    this.status = 'Active',
+    this.status = '',
     this.createdAt = '',
   });
 
@@ -81,34 +81,8 @@ class LocalChargesEntity extends Equatable {
   final LocalTripChargesEntity roundTrip;
 
   const LocalChargesEntity({
-    this.oneWay = const LocalTripChargesEntity(
-      morningHours: TimeSlotChargeEntity(
-        hours: 4,
-        timeRange: '06:00-18:00',
-        customerPrice: 500.0,
-        driverPrice: 400.0,
-      ),
-      nightHours: TimeSlotChargeEntity(
-        hours: 4,
-        timeRange: '18:00-06:00',
-        customerPrice: 650.0,
-        driverPrice: 500.0,
-      ),
-    ),
-    this.roundTrip = const LocalTripChargesEntity(
-      morningHours: TimeSlotChargeEntity(
-        hours: 8,
-        timeRange: '06:00-18:00',
-        customerPrice: 900.0,
-        driverPrice: 750.0,
-      ),
-      nightHours: TimeSlotChargeEntity(
-        hours: 8,
-        timeRange: '18:00-06:00',
-        customerPrice: 1100.0,
-        driverPrice: 900.0,
-      ),
-    ),
+    this.oneWay = const LocalTripChargesEntity(),
+    this.roundTrip = const LocalTripChargesEntity(),
   });
 
   @override
@@ -137,7 +111,7 @@ class TimeSlotChargeEntity extends Equatable {
   final double driverPrice;
 
   const TimeSlotChargeEntity({
-    this.hours = 4,
+    this.hours = 0,
     this.timeRange = '',
     this.customerPrice = 0.0,
     this.driverPrice = 0.0,
@@ -152,16 +126,8 @@ class OutstationChargesEntity extends Equatable {
   final OutstationTripChargeEntity roundTrip;
 
   const OutstationChargesEntity({
-    this.oneWay = const OutstationTripChargeEntity(
-      day: 1,
-      customerPrice: 2500.0,
-      driverPrice: 2000.0,
-    ),
-    this.roundTrip = const OutstationTripChargeEntity(
-      day: 1,
-      customerPrice: 4500.0,
-      driverPrice: 3800.0,
-    ),
+    this.oneWay = const OutstationTripChargeEntity(),
+    this.roundTrip = const OutstationTripChargeEntity(),
   });
 
   @override
@@ -172,15 +138,17 @@ class OutstationTripChargeEntity extends Equatable {
   final int day;
   final double customerPrice;
   final double driverPrice;
+  final String note;
   final List<String> returnVehicles;
 
   const OutstationTripChargeEntity({
-    this.day = 1,
+    this.day = 0,
     this.customerPrice = 0.0,
     this.driverPrice = 0.0,
+    this.note = '',
     this.returnVehicles = const [],
   });
 
   @override
-  List<Object?> get props => [day, customerPrice, driverPrice, returnVehicles];
+  List<Object?> get props => [day, customerPrice, driverPrice, note, returnVehicles];
 }

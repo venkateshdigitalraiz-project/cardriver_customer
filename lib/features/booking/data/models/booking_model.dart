@@ -133,6 +133,9 @@ class BookingModel extends BookingEntity {
     } else if (json['returnVehicle'] != null &&
         json['returnVehicle'].toString().isNotEmpty) {
       returnOptions = [json['returnVehicle'].toString()];
+    } else if (json['packageNote'] != null &&
+        json['packageNote'].toString().isNotEmpty) {
+      returnOptions = [json['packageNote'].toString()];
     }
 
     DateTime? createdAt;

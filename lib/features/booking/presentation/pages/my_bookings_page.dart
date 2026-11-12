@@ -18,6 +18,7 @@ import '../bloc/my_bookings/my_bookings_state.dart';
 import '../../../main_navigation/presentation/bloc/navigation_bloc.dart';
 import '../../../main_navigation/presentation/bloc/navigation_state.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/cache/charges_cache.dart';
 import '../../../../core/router/app_router.dart';
 
 class MyBookingsPage extends StatelessWidget {
@@ -479,9 +480,11 @@ class _BookingsListState extends State<_BookingsList> {
         booking.driverName.toLowerCase() != 'unassigned' &&
         booking.driverMobile != 'N/A' &&
         booking.driverMobile.isNotEmpty;
-    final isCancelled = booking.statusGroup.toLowerCase() == 'cancelled' ||
+    final isCancelled =
+        booking.statusGroup.toLowerCase() == 'cancelled' ||
         booking.status.toLowerCase().contains('cancel');
-    final isCompleted = booking.statusGroup.toLowerCase() == 'completed' ||
+    final isCompleted =
+        booking.statusGroup.toLowerCase() == 'completed' ||
         booking.status.toLowerCase() == 'trip_completed' ||
         booking.status.toLowerCase().contains('completed');
     final isOutstation =
@@ -689,7 +692,8 @@ class _BookingsListState extends State<_BookingsList> {
                         if (booking.startOtp.isNotEmpty &&
                             !isCancelled &&
                             !isCompleted &&
-                            booking.status.toLowerCase() != 'trip_completed') ...[
+                            booking.status.toLowerCase() !=
+                                'trip_completed') ...[
                           const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -749,8 +753,18 @@ class _BookingsListState extends State<_BookingsList> {
                     // Route Timeline (Pickup -> Drop)
                     _buildRouteTimeline(booking, isOutstation),
 
-                    // Driver Return Option Card (e.g. Rapido Charges for Local + One Way)
-                    if (booking.driverReturnOption.isNotEmpty) ...[
+                    // Driver Return Option / Trip Inclusion Card
+                    if (booking.driverReturnOption.isNotEmpty ||
+                        ((booking.serviceType.toLowerCase().contains(
+                                  'outstation',
+                                ) ||
+                                booking.tripType.toLowerCase().contains(
+                                  'outstation',
+                                )) &&
+                            (booking.tripType.toLowerCase().contains('round') ||
+                                booking.tripType.toLowerCase().contains(
+                                  'two_way',
+                                )))) ...[
                       const SizedBox(height: 12),
                       _buildDriverReturnOptionCard(booking),
                     ],
@@ -1351,11 +1365,46 @@ class _BookingsListState extends State<_BookingsList> {
   }
 
   Widget _buildDriverReturnOptionCard(BookingEntity booking) {
-    final options = booking.driverReturnOption;
+    final bool isOutstation =
+        booking.serviceType.toLowerCase().contains('outstation') ||
+        booking.tripType.toLowerCase().contains('outstation');
+
+    final bool isRoundTrip =
+        booking.tripType.toLowerCase().contains('round') ||
+        booking.tripType.toLowerCase().contains('two_way') ||
+        booking.tripType.toLowerCase().contains('twoway');
+
+    List<String> options = List<String>.from(booking.driverReturnOption);
+    if (options.isEmpty && (isOutstation && isRoundTrip)) {
+      final cachedNote = ChargesCache
+          .instance
+          .charges
+          ?.outstation
+          .roundTrip
+          .note
+          .trim();
+      final defaultNote = (cachedNote != null && cachedNote.isNotEmpty)
+          ? cachedNote
+          : 'inclusive with food and room';
+      options = [defaultNote];
+    }
+
     if (options.isEmpty) return const SizedBox.shrink();
 
     final String optionTitle = options.join(', ');
-    final bool isRapido = optionTitle.toLowerCase().contains('rapido');
+    final lowerTitle = optionTitle.toLowerCase();
+    final bool isRapido =
+        lowerTitle.contains('rapido') || lowerTitle.contains('bike');
+
+    final bool isTripInclusionByText =
+        lowerTitle.contains('food') ||
+        lowerTitle.contains('room') ||
+        lowerTitle.contains('inclusive') ||
+        lowerTitle.contains('inclusion') ||
+        lowerTitle.contains('allowance');
+
+    final bool isOutstationRoundTrip =
+        (isOutstation && isRoundTrip) || isTripInclusionByText;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1378,12 +1427,15 @@ class _BookingsListState extends State<_BookingsList> {
             child: Icon(
               isRapido
                   ? Icons.two_wheeler_rounded
-                  : (optionTitle.toLowerCase().contains('train')
-                      ? Icons.train_rounded
-                      : Icons.directions_bus_filled_rounded),
+                  : (isOutstationRoundTrip
+                        ? Icons.hotel_rounded
+                        : (optionTitle.toLowerCase().contains('train')
+                              ? Icons.train_rounded
+                              : Icons.directions_bus_filled_rounded)),
               size: 18,
-              color:
-                  isRapido ? const Color(0xFFD97706) : const Color(0xFF0F172A),
+              color: isRapido
+                  ? const Color(0xFFD97706)
+                  : const Color(0xFF0F172A),
             ),
           ),
           const SizedBox(width: 10),
@@ -1394,7 +1446,9 @@ class _BookingsListState extends State<_BookingsList> {
                 Row(
                   children: [
                     Text(
-                      'DRIVER RETURN CHARGES',
+                      isOutstationRoundTrip
+                          ? 'TRIP INCLUSION'
+                          : 'DRIVER RETURN CHARGES',
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,

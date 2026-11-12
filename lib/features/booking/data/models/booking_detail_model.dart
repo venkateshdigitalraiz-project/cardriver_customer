@@ -255,6 +255,9 @@ class BookingDetailModel extends BookingDetailEntity {
     } else if (bMap['returnVehicle'] != null &&
         bMap['returnVehicle'].toString().isNotEmpty) {
       returnOptions = [bMap['returnVehicle'].toString()];
+    } else if (bMap['packageNote'] != null &&
+        bMap['packageNote'].toString().isNotEmpty) {
+      returnOptions = [bMap['packageNote'].toString()];
     }
 
     // Other notes & rating

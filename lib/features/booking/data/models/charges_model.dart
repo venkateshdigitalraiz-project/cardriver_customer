@@ -64,11 +64,11 @@ class PermanentJobChargeModel extends PermanentJobChargeEntity {
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       totalHours: json['totalHours'] is num
           ? (json['totalHours'] as num).toInt()
-          : (int.tryParse(json['totalHours']?.toString() ?? '8') ?? 8),
+          : (int.tryParse(json['totalHours']?.toString() ?? '0') ?? 0),
       monthlySalary: json['monthlySalary'] is num
           ? (json['monthlySalary'] as num).toInt()
           : (int.tryParse(json['monthlySalary']?.toString() ?? '0') ?? 0),
-      status: json['status']?.toString() ?? 'Active',
+      status: json['status']?.toString() ?? '',
       createdAt: json['createdAt']?.toString() ?? '',
     );
   }
@@ -144,7 +144,7 @@ class TimeSlotChargeModel extends TimeSlotChargeEntity {
 
   factory TimeSlotChargeModel.fromJson(Map<String, dynamic> json) {
     return TimeSlotChargeModel(
-      hours: (json['hours'] as num?)?.toInt() ?? 4,
+      hours: (json['hours'] as num?)?.toInt() ?? 0,
       timeRange: (json['timeRange'] ?? json['time_range'])?.toString() ?? '',
       customerPrice:
           ((json['customerPrice'] ?? json['customer_price'] ?? json['price'])
@@ -181,6 +181,7 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
     super.day,
     super.customerPrice,
     super.driverPrice,
+    super.note,
     super.returnVehicles,
   });
 
@@ -192,7 +193,7 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
         : const [];
 
     return OutstationTripChargeModel(
-      day: (json['day'] as num?)?.toInt() ?? 1,
+      day: (json['day'] as num?)?.toInt() ?? 0,
       customerPrice:
           ((json['customerPrice'] ?? json['customer_price'] ?? json['price'])
                   as num?)
@@ -201,6 +202,7 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
       driverPrice:
           ((json['driverPrice'] ?? json['driver_price']) as num?)?.toDouble() ??
           0.0,
+      note: json['note']?.toString() ?? '',
       returnVehicles: parsedReturnVehicles,
     );
   }

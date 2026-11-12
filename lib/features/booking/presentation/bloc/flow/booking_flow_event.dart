@@ -132,3 +132,12 @@ class ToggleReturnVehicleEvent extends BookingFlowEvent {
   @override
   List<Object?> get props => [vehicle];
 }
+
+class ToggleOutstationRoundTripNoteEvent extends BookingFlowEvent {
+  final bool? isSelected;
+
+  const ToggleOutstationRoundTripNoteEvent([this.isSelected]);
+
+  @override
+  List<Object?> get props => [isSelected];
+}

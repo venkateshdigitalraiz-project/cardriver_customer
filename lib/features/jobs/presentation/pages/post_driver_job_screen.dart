@@ -13,7 +13,6 @@ import '../../data/datasources/jobs_remote_datasource.dart';
 import '../../data/repositories/jobs_repository_impl.dart';
 import '../../domain/entities/create_job_request_entity.dart';
 import '../../domain/usecases/post_user_job_usecase.dart';
-import '../../../booking/domain/entities/charges_entity.dart';
 import '../../../booking/domain/usecases/get_charges_usecase.dart';
 import '../bloc/post_job_bloc.dart';
 import '../bloc/post_job_event.dart';
@@ -44,7 +43,7 @@ class _PostDriverJobView extends StatefulWidget {
 }
 
 class _PostDriverJobViewState extends State<_PostDriverJobView> {
-  // static const String _apiKey = 'AIzaSyCvBoWiQ4Eh2UQusV3fjjfVeqyf6HiAO2s';
+  // static const String _apiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
   final _formKey = GlobalKey<FormState>();
   final FocusNode _locationFocus = FocusNode();
 
@@ -143,40 +142,6 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
       _formKey.currentState?.validate();
     }
   }
-
-  // Future<void> _onSuggestionSelected(Prediction prediction) async {
-  //   _locationFocus.unfocus();
-  //   final description = prediction.description ?? '';
-  //   if (description.isNotEmpty) {
-  //     _locationController.text = description;
-  //     setState(() {});
-  //   }
-
-  //   if (prediction.placeId == null || prediction.placeId!.isEmpty) return;
-
-  //   try {
-  //     final url = Uri.parse(
-  //       'https://maps.googleapis.com/maps/api/place/details/json'
-  //       '?place_id=${prediction.placeId!}'
-  //       '&fields=formatted_address,geometry'
-  //       '&key=$_apiKey',
-  //     );
-  //     final response = await http.get(url);
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(response.body);
-  //       if (data['status'] == 'OK' && data['result'] != null) {
-  //         final formatted =
-  //             data['result']['formatted_address']?.toString() ?? '';
-  //         if (formatted.isNotEmpty) {
-  //           _locationController.text = formatted;
-  //           setState(() {});
-  //         }
-  //       }
-  //     }
-  //   } catch (e) {
-  //     debugPrint('⚠️ Error fetching place details: $e');
-  //   }
-  // }
 
   Future<void> _pickJoiningDate() async {
     final now = DateTime.now();
@@ -327,8 +292,20 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
         listenWhen: (previous, current) =>
             previous.isFailure != current.isFailure ||
             (current.errorMessage != null &&
-                previous.errorMessage != current.errorMessage),
+                previous.errorMessage != current.errorMessage) ||
+            (previous.permanentJobs != current.permanentJobs &&
+                current.permanentJobs.isNotEmpty),
         listener: (context, state) {
+          if (state.permanentJobs.isNotEmpty && _selectedTotalHours == null) {
+            final defaultJob = state.permanentJobs.first;
+            setState(() {
+              _selectedTotalHours = defaultJob.totalHours;
+              _minMonthlySalary = defaultJob.monthlySalary;
+              if (_salaryController.text.trim().isEmpty) {
+                _salaryController.text = defaultJob.monthlySalary.toString();
+              }
+            });
+          }
           if (state.isFailure && state.errorMessage != null) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -457,6 +434,7 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
                                     ? 'Min ₹$_minMonthlySalary'
                                     : 'Select hours first',
                                 prefixText: '₹ ',
+                                errorMaxLines: 3,
                               ),
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
@@ -738,96 +716,6 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     );
   }
 
-  // Widget _buildPaymentSummaryCard() {
-  //   return Container(
-  //     padding: const EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(16),
-  //       border: Border.all(color: const Color(0xFFE2E8F0)),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black.withValues(alpha: 0.03),
-  //           blurRadius: 8,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             Row(
-  //               children: [
-  //                 const Icon(
-  //                   Icons.shield_rounded,
-  //                   color: Color(0xFF10B981),
-  //                   size: 18,
-  //                 ),
-  //                 const SizedBox(width: 6),
-  //                 Text(
-  //                   'Listing & Verification Fee',
-  //                   style: AppTypography.titleMedium.copyWith(
-  //                     fontSize: 13.5,
-  //                     fontWeight: FontWeight.w700,
-  //                     color: const Color(0xFF0F172A),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //             const Text(
-  //               '₹499',
-  //               style: TextStyle(
-  //                 fontSize: 16,
-  //                 fontWeight: FontWeight.w900,
-  //                 color: Color(0xFF1E3A8A),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         const Divider(height: 18, color: Color(0xFFF1F5F9)),
-  //         Row(
-  //           children: [
-  //             Container(
-  //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-  //               decoration: BoxDecoration(
-  //                 color: const Color(0xFFEFF6FF),
-  //                 borderRadius: BorderRadius.circular(6),
-  //               ),
-  //               child: const Row(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: [
-  //                   Icon(
-  //                     Icons.payment_rounded,
-  //                     size: 13,
-  //                     color: Color(0xFF2563EB),
-  //                   ),
-  //                   SizedBox(width: 4),
-  //                   Text(
-  //                     'Razorpay Secured',
-  //                     style: TextStyle(
-  //                       fontSize: 11,
-  //                       fontWeight: FontWeight.bold,
-  //                       color: Color(0xFF1D4ED8),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             const Spacer(),
-  //             const Text(
-  //               'Includes 30 days active listing',
-  //               style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Widget _buildHoursDropdown(PostJobState state) {
     if (state.isLoadingCharges) {
       return Container(
@@ -860,10 +748,23 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
 
     final options = state.permanentJobs;
 
+    if (_selectedTotalHours == null && options.isNotEmpty) {
+      final defaultJob = options.first;
+      _selectedTotalHours = defaultJob.totalHours;
+      _minMonthlySalary = defaultJob.monthlySalary;
+      if (_salaryController.text.trim().isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _salaryController.text.trim().isEmpty) {
+            _salaryController.text = defaultJob.monthlySalary.toString();
+          }
+        });
+      }
+    }
+
     final effectiveValue =
         options.any((o) => o.totalHours == _selectedTotalHours)
         ? _selectedTotalHours
-        : null;
+        : (options.isNotEmpty ? options.first.totalHours : null);
 
     return DropdownButtonFormField<int>(
       value: effectiveValue,
@@ -930,10 +831,17 @@ class _PostDriverJobViewState extends State<_PostDriverJobView> {
     required String hint,
     IconData? prefixIcon,
     String? prefixText,
+    int errorMaxLines = 3,
   }) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+      errorMaxLines: errorMaxLines,
+      errorStyle: const TextStyle(
+        fontSize: 11,
+        height: 1.25,
+        fontWeight: FontWeight.w500,
+      ),
       prefixIcon: prefixIcon != null
           ? Icon(prefixIcon, size: 18, color: const Color(0xFF64748B))
           : null,

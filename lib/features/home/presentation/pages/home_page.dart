@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../domain/usecases/get_home_data_usecase.dart';
+import '../../../booking/domain/usecases/get_charges_usecase.dart';
 import '../../domain/entities/home_banner_item.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -24,6 +25,15 @@ class HomePage extends StatelessWidget {
         try {
           useCase = ctx.read<GetHomeDataUseCase>();
         } catch (_) {}
+
+        // Pre-fetch common charges only once on HomePage initialization
+        try {
+          final getChargesUseCase = ctx.read<GetChargesUseCase>();
+          getChargesUseCase();
+        } catch (e) {
+          debugPrint('⚠️ [HomePage] Could not pre-fetch charges: $e');
+        }
+
         debugPrint(
           '🚀 [HomePage] Dispatching LoadHomeDataRequested to fetch /api/user/home data',
         );

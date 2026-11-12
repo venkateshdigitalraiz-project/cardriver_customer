@@ -21,6 +21,8 @@ class BookingRequestEntity extends Equatable {
   final String outstationReturnMode; // 'bus' or 'train'
   final List<String> returnVehicles;
   final String? driverReturnOption;
+  final bool outstationNoteSelected;
+  final String? packageNote;
 
   const BookingRequestEntity({
     this.pickupAddress,
@@ -43,6 +45,8 @@ class BookingRequestEntity extends Equatable {
     this.outstationReturnMode = 'bus',
     this.returnVehicles = const [],
     this.driverReturnOption,
+    this.outstationNoteSelected = false,
+    this.packageNote,
   });
 
   BookingRequestEntity copyWith({
@@ -66,6 +70,8 @@ class BookingRequestEntity extends Equatable {
     String? outstationReturnMode,
     List<String>? returnVehicles,
     String? driverReturnOption,
+    bool? outstationNoteSelected,
+    String? packageNote,
   }) {
     return BookingRequestEntity(
       pickupAddress: pickupAddress ?? this.pickupAddress,
@@ -88,6 +94,9 @@ class BookingRequestEntity extends Equatable {
       outstationReturnMode: outstationReturnMode ?? this.outstationReturnMode,
       returnVehicles: returnVehicles ?? this.returnVehicles,
       driverReturnOption: driverReturnOption ?? this.driverReturnOption,
+      outstationNoteSelected:
+          outstationNoteSelected ?? this.outstationNoteSelected,
+      packageNote: packageNote ?? this.packageNote,
     );
   }
 
@@ -111,6 +120,8 @@ class BookingRequestEntity extends Equatable {
       outstationReturnMode: outstationReturnMode,
       returnVehicles: returnVehicles,
       driverReturnOption: driverReturnOption,
+      outstationNoteSelected: outstationNoteSelected,
+      packageNote: packageNote,
     );
   }
 
@@ -134,5 +145,7 @@ class BookingRequestEntity extends Equatable {
     outstationReturnMode,
     returnVehicles,
     driverReturnOption,
+    outstationNoteSelected,
+    packageNote,
   ];
 }
