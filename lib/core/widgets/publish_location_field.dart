@@ -5,6 +5,7 @@ import 'package:google_places_flutter/model/prediction.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 
+import '../network/api_endpoints.dart';
 import '../theme/app_colors.dart';
 import '../utils/place_address_utils.dart';
 import 'package:go_router/go_router.dart';
@@ -47,7 +48,7 @@ class PublishLocationField extends StatefulWidget {
 }
 
 class _PublishLocationFieldState extends State<PublishLocationField> {
-  static const String _googleApiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
+  static const String _googleApiKey = ApiEndpoints.googleApiKey;
   final FocusNode _focusNode = FocusNode();
 
   double? _lastLat;
@@ -218,57 +219,117 @@ class _PublishLocationFieldState extends State<PublishLocationField> {
               List<dynamic> components = [];
 
               if (prediction.placeId != null) {
+                // 1. Try Places API (New) Place Details first
                 try {
+                  final cleanId = prediction.placeId!.startsWith('places/')
+                      ? prediction.placeId!.substring(7)
+                      : prediction.placeId!;
                   final url = Uri.parse(
-                    'https://maps.googleapis.com/maps/api/place/details/json'
-                    '?place_id=${prediction.placeId!}'
-                    '&fields=geometry,address_components,formatted_address'
-                    '&key=$_googleApiKey',
+                    'https://places.googleapis.com/v1/places/$cleanId',
                   );
-                  final response = await http.get(url);
+                  final response = await http.get(
+                    url,
+                    headers: {
+                      'X-Goog-Api-Key': _googleApiKey,
+                      'X-Goog-FieldMask':
+                          'id,displayName,formattedAddress,location,addressComponents',
+                    },
+                  );
                   if (response.statusCode == 200) {
                     final data = json.decode(response.body);
-                    if (data['status'] == 'OK' && data['result'] != null) {
-                      final details = data['result'];
-                      if (details['geometry'] != null) {
-                        final loc = details['geometry']['location'];
-                        if (loc != null) {
-                          parsedLat =
-                              double.tryParse(loc['lat'].toString()) ?? 0.0;
-                          parsedLng =
-                              double.tryParse(loc['lng'].toString()) ?? 0.0;
-                        }
+                    if (data is Map) {
+                      if (data['location'] != null) {
+                        parsedLat =
+                            (data['location']['latitude'] as num?)
+                                ?.toDouble() ??
+                            double.tryParse(
+                              data['location']['latitude'].toString(),
+                            ) ??
+                            0.0;
+                        parsedLng =
+                            (data['location']['longitude'] as num?)
+                                ?.toDouble() ??
+                            double.tryParse(
+                              data['location']['longitude'].toString(),
+                            ) ??
+                            0.0;
                       }
-                      if (details['formatted_address'] != null) {
+                      if (data['formattedAddress'] != null) {
                         formattedAddress = cleanAddressString(
-                          details['formatted_address'].toString(),
+                          data['formattedAddress'].toString(),
                         );
                       }
-                      components = details['address_components'] ?? [];
-                      city = _extractComponent(components, [
-                        'locality',
-                        'administrative_area_level_2',
-                        'sublocality',
-                        'sublocality_level_1',
-                      ]);
-                      state = _extractComponent(components, [
-                        'administrative_area_level_1',
-                      ]);
-                      pincode = _extractComponent(components, ['postal_code']);
-                      shortAddress = buildShortAddress(components);
-                      if (shortAddress.isEmpty) shortAddress = formattedAddress;
-                    } else {
-                      debugPrint(
-                        'Place Details API: ${data['status']} - ${data['error_message']}',
-                      );
+                      final dispName = data['displayName']?['text']?.toString();
+                      if (dispName != null && dispName.trim().isNotEmpty) {
+                        shortAddress = dispName.trim();
+                      }
+                      if (data['addressComponents'] is List) {
+                        components = data['addressComponents'];
+                        city = _extractComponent(components, [
+                          'locality',
+                          'administrative_area_level_2',
+                          'sublocality',
+                          'sublocality_level_1',
+                        ]);
+                        state = _extractComponent(components, [
+                          'administrative_area_level_1',
+                        ]);
+                        pincode = _extractComponent(components, [
+                          'postal_code',
+                        ]);
+                      }
                     }
-                  } else {
-                    debugPrint(
-                      'HTTP error fetching details: ${response.statusCode}',
-                    );
                   }
-                } catch (e) {
-                  debugPrint('Error fetching place details: $e');
+                } catch (_) {}
+
+                // 2. Fallback to Legacy Place Details
+                if (parsedLat == 0.0 && parsedLng == 0.0) {
+                  try {
+                    final url = Uri.parse(
+                      'https://maps.googleapis.com/maps/api/place/details/json'
+                      '?place_id=${prediction.placeId!}'
+                      '&fields=geometry,address_components,formatted_address'
+                      '&key=$_googleApiKey',
+                    );
+                    final response = await http.get(url);
+                    if (response.statusCode == 200) {
+                      final data = json.decode(response.body);
+                      if (data['status'] == 'OK' && data['result'] != null) {
+                        final details = data['result'];
+                        if (details['geometry'] != null) {
+                          final loc = details['geometry']['location'];
+                          if (loc != null) {
+                            parsedLat =
+                                double.tryParse(loc['lat'].toString()) ?? 0.0;
+                            parsedLng =
+                                double.tryParse(loc['lng'].toString()) ?? 0.0;
+                          }
+                        }
+                        if (details['formatted_address'] != null) {
+                          formattedAddress = cleanAddressString(
+                            details['formatted_address'].toString(),
+                          );
+                        }
+                        components = details['address_components'] ?? [];
+                        city = _extractComponent(components, [
+                          'locality',
+                          'administrative_area_level_2',
+                          'sublocality',
+                          'sublocality_level_1',
+                        ]);
+                        state = _extractComponent(components, [
+                          'administrative_area_level_1',
+                        ]);
+                        pincode = _extractComponent(components, [
+                          'postal_code',
+                        ]);
+                        final builtShort = buildShortAddress(components);
+                        if (builtShort.isNotEmpty) shortAddress = builtShort;
+                        if (shortAddress.isEmpty)
+                          shortAddress = formattedAddress;
+                      }
+                    }
+                  } catch (_) {}
                 }
               }
 

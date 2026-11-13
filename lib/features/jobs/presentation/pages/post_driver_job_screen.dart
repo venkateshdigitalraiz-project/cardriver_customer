@@ -43,7 +43,7 @@ class _PostDriverJobView extends StatefulWidget {
 }
 
 class _PostDriverJobViewState extends State<_PostDriverJobView> {
-  // static const String _apiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
+  // static const String _apiKey = ApiEndpoints.googleApiKey;
   final _formKey = GlobalKey<FormState>();
   final FocusNode _locationFocus = FocusNode();
 

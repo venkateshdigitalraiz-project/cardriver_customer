@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
+import '../../../../core/cache/charges_cache.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../booking/domain/entities/charges_entity.dart';
 import '../../domain/entities/valet_event_booking_item.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -57,6 +60,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
 
   List<_CityLocationItem> _citySuggestions = [];
   bool _isSearchingCities = false;
+  int? _calculatedCustomerPrice;
 
   @override
   void initState() {
@@ -76,6 +80,8 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
     _addressController = TextEditingController();
     _specialInstructionsController = TextEditingController();
     _paymentMethodController = TextEditingController();
+
+    _personController.addListener(_updateCustomerPrice);
   }
 
   void _clearAllFields() {
@@ -95,11 +101,13 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
     _paymentMethodController.clear();
     _citySuggestions = [];
     _isSearchingCities = false;
+    _calculatedCustomerPrice = null;
     setState(() {});
   }
 
   @override
   void dispose() {
+    _personController.removeListener(_updateCustomerPrice);
     _eventNameController.dispose();
     _eventTypeController.dispose();
     _eventDateController.dispose();
@@ -120,8 +128,11 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
   Future<void> _pickEventDate() async {
     final now = DateTime.now();
     // Enable calendar starting from the next date (e.g. today is 10/11/2026 -> next date is 11/11/2026)
-    final nextDate =
-        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final nextDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
     DateTime initialDate = nextDate;
     final existingText = _eventDateController.text.trim();
     if (existingText.isNotEmpty) {
@@ -235,6 +246,48 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
         }
       } catch (_) {}
     }
+    _updateCustomerPrice();
+  }
+
+  void _updateCustomerPrice() {
+    final startText = _startTimeController.text.trim();
+    final endText = _endTimeController.text.trim();
+    if (startText.isEmpty || endText.isEmpty) {
+      if (_calculatedCustomerPrice != null) {
+        setState(() {
+          _calculatedCustomerPrice = null;
+        });
+      }
+      return;
+    }
+
+    final valetCharge =
+        ChargesCache.instance.charges?.valetParking ??
+        const ValetParkingChargeEntity();
+
+    final baseCustomerPrice = valetCharge.customerPrice > 0
+        ? valetCharge.customerPrice
+        : 1200.0;
+    final baseHours = valetCharge.hours > 0 ? valetCharge.hours : 6;
+    final basePerson = valetCharge.person > 0 ? valetCharge.person : 1;
+
+    final staffCount = int.tryParse(_personController.text.trim()) ?? 1;
+    final hours = int.tryParse(_hoursController.text.trim()) ?? baseHours;
+
+    final effectiveHours = hours > 0 ? hours : baseHours;
+    final effectiveStaff = staffCount > 0 ? staffCount : 1;
+
+    double pricePerStaff = baseCustomerPrice;
+    if (effectiveHours > baseHours) {
+      final perHourRate = baseCustomerPrice / baseHours;
+      pricePerStaff =
+          baseCustomerPrice + ((effectiveHours - baseHours) * perHourRate);
+    }
+    final totalPrice = (pricePerStaff * (effectiveStaff / basePerson)).round();
+
+    setState(() {
+      _calculatedCustomerPrice = totalPrice;
+    });
   }
 
   void _submitForm() {
@@ -746,6 +799,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
                                           ),
                                           onPressed: () {
                                             _startTimeController.clear();
+                                            _updateHoursFromTimes();
                                             setState(() {});
                                           },
                                         )
@@ -784,6 +838,7 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
                                           ),
                                           onPressed: () {
                                             _endTimeController.clear();
+                                            _updateHoursFromTimes();
                                             setState(() {});
                                           },
                                         )
@@ -848,6 +903,103 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
                             isOptional: true,
                           ),
                           const SizedBox(height: 20),
+
+                          if (_startTimeController.text.trim().isNotEmpty &&
+                              _endTimeController.text.trim().isNotEmpty) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFFFBEB),
+                                    Color(0xFFFEF3C7),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(0xFFFDE68A),
+                                  width: 1.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFFD97706,
+                                    ).withValues(alpha: 0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xFFF59E0B,
+                                          ).withValues(alpha: 0.2),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.payments_rounded,
+                                          size: 18,
+                                          color: Color(0xFFB45309),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Customer Price',
+                                            style: AppTypography.labelSmall
+                                                .copyWith(
+                                                  color: const Color(
+                                                    0xFF78350F,
+                                                  ),
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${_hoursController.text.trim().isNotEmpty ? _hoursController.text.trim() : "6"} hrs • ${_personController.text.trim().isNotEmpty ? _personController.text.trim() : "1"} staff',
+                                            style: AppTypography.bodySmall
+                                                .copyWith(
+                                                  color: const Color(
+                                                    0xFF92400E,
+                                                  ),
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '₹${_calculatedCustomerPrice ?? (ChargesCache.instance.charges?.valetParking.customerPrice.round() ?? 1200)}',
+                                    style: AppTypography.titleMedium.copyWith(
+                                      color: const Color(0xFFB45309),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 19,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
 
                           // 11. Add Event Booking Button
                           SizedBox(
@@ -971,50 +1123,156 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
       _isSearchingCities = true;
     });
 
+    final List<_CityLocationItem> apiMatches = [];
+
+    // 1. Try Places API (New) first: POST https://places.googleapis.com/v1/places:autocomplete
     try {
       final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-        '?input=${Uri.encodeComponent(q)}'
-        '&types=(cities)'
-        '&components=country:in'
-        '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
+        'https://places.googleapis.com/v1/places:autocomplete',
       );
-      final response = await http.get(url);
+      final response = await http.post(
+        url,
+        headers: {
+          'X-Goog-Api-Key': ApiEndpoints.googleApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'input': q,
+          'includedRegionCodes': ['in'],
+        }),
+      );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['status'] == 'OK' && data['predictions'] != null) {
-          final List predictions = data['predictions'];
-          final List<_CityLocationItem> apiMatches = [];
-          for (final p in predictions) {
-            final desc = p['description']?.toString() ?? '';
-            final mainText =
-                p['structured_formatting']?['main_text']?.toString() ?? desc;
-            final secText =
-                p['structured_formatting']?['secondary_text']?.toString() ?? '';
-            final placeId = p['place_id']?.toString();
+        if (data is Map && data['suggestions'] is List) {
+          for (final item in data['suggestions']) {
+            final pred = item['placePrediction'];
+            if (pred != null) {
+              final rawPlace = pred['place']?.toString() ?? '';
+              final pId =
+                  pred['placeId']?.toString() ??
+                  (rawPlace.startsWith('places/')
+                      ? rawPlace.substring(7)
+                      : rawPlace);
+              final desc = pred['text']?['text']?.toString() ?? '';
+              final mainText =
+                  pred['structuredFormat']?['mainText']?['text']?.toString() ??
+                  desc;
+              final secText =
+                  pred['structuredFormat']?['secondaryText']?['text']
+                      ?.toString() ??
+                  '';
 
-            apiMatches.add(
-              _CityLocationItem(
-                name: mainText,
-                state: secText,
-                placeId: placeId,
-                lng: 0.0,
-                lat: 0.0,
-              ),
-            );
-          }
-          if (mounted &&
-              _cityLocationController.text.trim().toLowerCase() ==
-                  q.toLowerCase()) {
-            setState(() {
-              _citySuggestions = apiMatches;
-              _isSearchingCities = false;
-            });
-            return;
+              apiMatches.add(
+                _CityLocationItem(
+                  name: mainText,
+                  state: secText,
+                  placeId: pId,
+                  lng: 0.0,
+                  lat: 0.0,
+                ),
+              );
+            }
           }
         }
       }
     } catch (_) {}
+
+    // 2. Fallback to Legacy Places Autocomplete if empty
+    if (apiMatches.isEmpty) {
+      try {
+        final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+          '?input=${Uri.encodeComponent(q)}'
+          '&components=country:in'
+          '&key=${ApiEndpoints.googleApiKey}',
+        );
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data['status'] == 'OK' && data['predictions'] != null) {
+            final List predictions = data['predictions'];
+            for (final p in predictions) {
+              final desc = p['description']?.toString() ?? '';
+              final mainText =
+                  p['structured_formatting']?['main_text']?.toString() ?? desc;
+              final secText =
+                  p['structured_formatting']?['secondary_text']?.toString() ??
+                  '';
+              final placeId = p['place_id']?.toString();
+
+              apiMatches.add(
+                _CityLocationItem(
+                  name: mainText,
+                  state: secText,
+                  placeId: placeId,
+                  lng: 0.0,
+                  lat: 0.0,
+                ),
+              );
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback to OpenStreetMap (Nominatim) when Google Places quota is exhausted (429) or empty
+    if (apiMatches.isEmpty) {
+      try {
+        final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/search'
+          '?q=${Uri.encodeComponent(q)}'
+          '&format=json'
+          '&countrycodes=in'
+          '&limit=8',
+        );
+        final response = await http
+            .get(url, headers: {'User-Agent': 'CarDriverCustomer/1.0'})
+            .timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final List data = json.decode(response.body);
+          for (final item in data) {
+            final lat = double.tryParse(item['lat']?.toString() ?? '') ?? 0.0;
+            final lng = double.tryParse(item['lon']?.toString() ?? '') ?? 0.0;
+            final name = item['name']?.toString() ?? '';
+            final displayName = item['display_name']?.toString() ?? '';
+
+            String secText = '';
+            if (displayName.contains(',')) {
+              final parts = displayName
+                  .split(',')
+                  .map((e) => e.trim())
+                  .toList();
+              if (parts.length > 1) {
+                secText = parts.sublist(1).take(3).join(', ');
+              }
+            }
+
+            apiMatches.add(
+              _CityLocationItem(
+                name: name.isNotEmpty
+                    ? name
+                    : displayName.split(',').first.trim(),
+                state: secText,
+                placeId: null,
+                lng: lng,
+                lat: lat,
+              ),
+            );
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (mounted &&
+        _cityLocationController.text.trim().toLowerCase() == q.toLowerCase()) {
+      setState(() {
+        _citySuggestions = apiMatches;
+        _isSearchingCities = false;
+      });
+      return;
+    }
 
     if (mounted) {
       setState(() {
@@ -1028,23 +1286,56 @@ class _ValetEventBookingCardState extends State<ValetEventBookingCard> {
     double lat = item.lat;
 
     if ((lng == 0.0 || lat == 0.0) && item.placeId != null) {
+      // 1. Try Places API (New) details
       try {
+        final cleanId = item.placeId!.startsWith('places/')
+            ? item.placeId!.substring(7)
+            : item.placeId!;
         final url = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/details/json'
-          '?place_id=${item.placeId}'
-          '&fields=geometry,formatted_address'
-          '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
+          'https://places.googleapis.com/v1/places/$cleanId',
         );
-        final response = await http.get(url);
+        final response = await http.get(
+          url,
+          headers: {
+            'X-Goog-Api-Key': ApiEndpoints.googleApiKey,
+            'X-Goog-FieldMask': 'id,displayName,formattedAddress,location',
+          },
+        );
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          final loc = data['result']?['geometry']?['location'];
-          if (loc != null) {
-            lat = double.tryParse(loc['lat'].toString()) ?? 0.0;
-            lng = double.tryParse(loc['lng'].toString()) ?? 0.0;
+          if (data is Map && data['location'] != null) {
+            lat =
+                (data['location']['latitude'] as num?)?.toDouble() ??
+                double.tryParse(data['location']['latitude'].toString()) ??
+                0.0;
+            lng =
+                (data['location']['longitude'] as num?)?.toDouble() ??
+                double.tryParse(data['location']['longitude'].toString()) ??
+                0.0;
           }
         }
       } catch (_) {}
+
+      // 2. Fallback to Legacy Place Details
+      if (lng == 0.0 || lat == 0.0) {
+        try {
+          final url = Uri.parse(
+            'https://maps.googleapis.com/maps/api/place/details/json'
+            '?place_id=${item.placeId}'
+            '&fields=geometry,formatted_address'
+            '&key=${ApiEndpoints.googleApiKey}',
+          );
+          final response = await http.get(url);
+          if (response.statusCode == 200) {
+            final data = json.decode(response.body);
+            final loc = data['result']?['geometry']?['location'];
+            if (loc != null) {
+              lat = double.tryParse(loc['lat'].toString()) ?? 0.0;
+              lng = double.tryParse(loc['lng'].toString()) ?? 0.0;
+            }
+          }
+        } catch (_) {}
+      }
     }
 
     _cityLocationController.text = item.fullDescription;

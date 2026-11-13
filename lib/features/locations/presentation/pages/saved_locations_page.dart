@@ -14,6 +14,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/place_address_utils.dart';
 import '../../domain/entities/location_entity.dart';
@@ -102,7 +103,7 @@ class _SavedLocationsPageState extends State<SavedLocationsPage> {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json'
         '?latlng=${_currentPosition!.latitude},${_currentPosition!.longitude}'
-        '&key=AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU',
+        '&key=${ApiEndpoints.googleApiKey}',
       );
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -448,7 +449,7 @@ class AddLocationScreen extends StatefulWidget {
 }
 
 class _AddLocationScreenState extends State<AddLocationScreen> {
-  static const String _apiKey = 'AIzaSyBpCA99uGvcf267xPpDxv1dWsFkOqB3RYU';
+  static const String _apiKey = ApiEndpoints.googleApiKey;
 
   // â”€â”€ Map â”€â”€
   GoogleMapController? _mapController;

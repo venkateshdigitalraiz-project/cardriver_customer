@@ -6,9 +6,13 @@ class ChargesModel extends ChargesEntity {
     super.local,
     super.outstation,
     super.permanentJobs,
+    super.valetParking,
   });
 
   factory ChargesModel.fromJson(Map<String, dynamic> json) {
+    final valetJson =
+        json['valletparking'] ?? json['valetParking'] ?? json['valetparking'];
+
     return ChargesModel(
       id: json['_id']?.toString() ?? '',
       local: json['local'] != null && json['local'] is Map<String, dynamic>
@@ -29,6 +33,9 @@ class ChargesModel extends ChargesEntity {
                   ))
               .toList()
           : const [],
+      valetParking: valetJson != null && valetJson is Map<String, dynamic>
+          ? ValetParkingChargeModel.fromJson(valetJson)
+          : const ValetParkingChargeEntity(),
     );
   }
 
@@ -205,5 +212,36 @@ class OutstationTripChargeModel extends OutstationTripChargeEntity {
       note: json['note']?.toString() ?? '',
       returnVehicles: parsedReturnVehicles,
     );
+  }
+}
+
+class ValetParkingChargeModel extends ValetParkingChargeEntity {
+  const ValetParkingChargeModel({
+    super.person,
+    super.hours,
+    super.customerPrice,
+    super.driverPrice,
+  });
+
+  factory ValetParkingChargeModel.fromJson(Map<String, dynamic> json) {
+    return ValetParkingChargeModel(
+      person: (json['person'] as num?)?.toInt() ?? 1,
+      hours: (json['hours'] as num?)?.toInt() ?? 6,
+      customerPrice:
+          ((json['customerprice'] ?? json['customerPrice'] ?? 1200) as num)
+              .toDouble(),
+      driverPrice:
+          ((json['driverprice'] ?? json['driverPrice'] ?? 1200) as num)
+              .toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'person': person,
+      'hours': hours,
+      'customerprice': customerPrice,
+      'driverprice': driverPrice,
+    };
   }
 }
